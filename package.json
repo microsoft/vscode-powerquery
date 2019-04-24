@@ -25,7 +25,7 @@
 					"pq",
 					"m",
 					"mout"
-			],
+				],
 				"configuration": "./language-configuration.json"
 			}
 		],
