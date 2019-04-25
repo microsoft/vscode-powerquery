@@ -33,7 +33,7 @@
     "grammars": [
       {
         "language": "powerquery",
-        "scopeName": "text.powerquery",
+        "scopeName": "source.powerquery",
         "path": "./syntaxes/powerquery.tmLanguage.json"
       }
     ]
