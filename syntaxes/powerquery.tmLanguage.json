@@ -1,7 +1,10 @@
 {
   "name": "powerquery",
   "scopeName": "source.powerquery",
-  "fileTypes": ["pq", "pqm"],
+  "fileTypes": [
+    "pq",
+    "pqm"
+  ],
   "uuid": "41968B57-12E6-4AC5-92A4-A837010E8B0A",
   "patterns": [
     {
