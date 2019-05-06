@@ -8,31 +8,29 @@ A minimal example can be found in [example.ts](src/example.ts).
 
 ## Things to note
 
-##### Parser
+### Parser
 
 The AST is built using the [powerquery-parser](https://github.com/Microsoft/powerquery-parser) project.
 
-##### Error Handling
+### Error Handling
 
 The project tries avoiding using `try/catch` blocks. Instead it prefers to use the `Result` type to carry exceptions between boundaries, and `Option` for explicit nullability. This means library users should assume public functions won't throw an uncaught exception.
 
-## Dependency Justication
-
 ## How to build
 
-* Install NodeJS
-* `npm install`
-* `npm run-script build`
+- Install NodeJS
+- `npm install`
+- `npm run-script build`
 
 ## How to run tests
 
-* Install NodeJS
-* `npm install`
-* `npm test`
+- Install NodeJS
+- `npm install`
+- `npm test`
 
 ## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 
