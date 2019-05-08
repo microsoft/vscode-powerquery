@@ -1,17 +1,18 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
     "target": "es6",
-    "outDir": "out",
-    "lib": ["es6"],
+    "module": "commonjs",
     "sourceMap": true,
-    "rootDir": "src",
+    "outDir": "lib",
     "strict": true,
     "noFallthroughCasesInSwitch": true,
     "noEmitOnError": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "declaration": true,
+    "rootDir": "src"
   },
-  "exclude": ["node_modules", ".vscode-test", "packages"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "src/test/"]
 }

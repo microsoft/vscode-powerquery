@@ -1,0 +1,40 @@
+{
+  "name": "@microsoft/powerquery-formatter",
+  "version": "0.0.4",
+  "description": "Code formatting library for the Power Query / M language.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "dependencies": {
+    "powerquery-parser": "latest"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.5",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
+    "ts-loader": "^5.3.3",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.1.6"
+  },
+  "files": [
+    "lib/format/*",
+    "lib/index.d.ts",
+    "lib/index.js",
+    "lib/index.js.map"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha -r ts-node/register src/test/**/*.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Microsoft/vscode-powerquery.git",
+    "directory": "packages/format"
+  },
+  "author": "Jordan Bolton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Microsoft/vscode-powerquery/issues"
+  },
+  "homepage": "https://github.com/Microsoft/vscode-powerquery/packages/fmt/#readme"
+}
