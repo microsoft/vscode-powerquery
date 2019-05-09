@@ -1,0 +1,40 @@
+{
+  "name": "@microsoft/powerquery-library",
+  "version": "0.0.1",
+  "description": "Common library definition files for the Power Query / M language.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha -r ts-node/register test/**/*.ts"
+  },
+  "files": [
+    "lib/library/*",
+    "lib/index.d.ts",
+    "lib/index.js",
+    "lib/index.js.map"
+  ],
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.5",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "ts-loader": "^6.0.0",
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microsoft/vscode-powerquery.git",
+    "directory": "packages/library"
+  },
+  "keywords": [
+    "powerquery"
+  ],
+  "author": "Matt Masson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/microsoft/vscode-powerquery/issues"
+  },
+  "homepage": "https://github.com/microsoft/vscode-powerquery/packages/library/#readme"
+}
