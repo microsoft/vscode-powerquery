@@ -11,8 +11,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "declaration": true,
+    "resolveJsonModule": true,
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "test"]
+  "exclude": ["node_modules", "src/test"]
 }
