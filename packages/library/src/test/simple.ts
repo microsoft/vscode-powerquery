@@ -19,7 +19,8 @@ describe("Library export", () => {
 
         const ex = def[val];
         expect(ex.label != null);
-        expect(ex.signatures.length).eq(2, "expecting 2 signatures");
-        expect(ex.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
+        expect(ex.signatures != null);
+        expect(ex.signatures!.length).eq(2, "expecting 2 signatures");
+        expect(ex.signatures![0].parameters.length).eq(1, "expecting 1 parameter in first signature");
     });
 });
