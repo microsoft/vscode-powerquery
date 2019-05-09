@@ -28,13 +28,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Microsoft/vscode-powerquery.git",
+    "url": "git+https://github.com/microsoft/vscode-powerquery.git",
     "directory": "packages/format"
   },
+  "keywords": [
+    "powerquery"
+  ],
   "author": "Jordan Bolton",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-powerquery/issues"
+    "url": "https://github.com/microsoft/vscode-powerquery/issues"
   },
-  "homepage": "https://github.com/Microsoft/vscode-powerquery/packages/fmt/#readme"
+  "homepage": "https://github.com/microsoft/vscode-powerquery/packages/format/#readme"
 }
