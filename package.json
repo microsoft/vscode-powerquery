@@ -44,11 +44,14 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile:format": "tsc -p ./packages/format/tsconfig.json",
-    "compile": "npm run compile:format && tsc -p ./",
+    "compile:library": "tsc -p ./packages/library/tsconfig.json",
+    "compile": "npm run compile:format && npm run compile:library && tsc -p ./",
     "watch:format": "tsc -watch -p ./packages/format/tsconfig.json",
+    "watch:library": "tsc -watch -p ./packages/library/tsconfig.json",
     "watch": "tsc -watch -p ./",
-    "test:packages": "npm run test:format",
+    "test:packages": "npm run test:format && npm run test:library",
     "test:format": "cd packages && cd format && npm test",
+    "test:library": "cd packages && cd library && npm test",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
   "repository": {
@@ -57,7 +60,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/mocha": "^2.2.42",
     "@types/node": "^8.10.25",
     "typescript": "^3.1.4",
     "vscode": "^1.1.25"
