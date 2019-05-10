@@ -14,8 +14,15 @@ import {
 	DidChangeConfigurationNotification,
 	CompletionItem,
 	CompletionItemKind,
-	TextDocumentPositionParams
+	TextDocumentPositionParams,
+	DocumentFormattingParams,
+	TextEdit,
+	FormattingOptions,
+	Range
 } from 'vscode-languageserver';
+
+import { format, FormatError, FormatRequest, IndentationLiteral, NewlineLiteral, Result, ResultKind, SerializerOptions } from "powerquery-format";
+import { ClientRequest } from 'http';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -49,6 +56,7 @@ connection.onInitialize((params: InitializeParams) => {
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
+			documentFormattingProvider: true,
 			// Tell the client that the server supports code completion
 			completionProvider: {
 				resolveProvider: true
@@ -70,25 +78,25 @@ connection.onInitialized(() => {
 });
 
 // The example settings
-interface ExampleSettings {
+interface PowerQuerySettings {
 	maxNumberOfProblems: number;
 }
 
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-let globalSettings: ExampleSettings = defaultSettings;
+const defaultSettings: PowerQuerySettings = { maxNumberOfProblems: 1000 };
+let globalSettings: PowerQuerySettings = defaultSettings;
 
 // Cache the settings of all open documents
-let documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
+let documentSettings: Map<string, Thenable<PowerQuerySettings>> = new Map();
 
 connection.onDidChangeConfiguration(change => {
 	if (hasConfigurationCapability) {
 		// Reset all cached document settings
 		documentSettings.clear();
 	} else {
-		globalSettings = <ExampleSettings>(
+		globalSettings = <PowerQuerySettings>(
 			(change.settings.powerquery || defaultSettings)
 		);
 	}
@@ -97,7 +105,7 @@ connection.onDidChangeConfiguration(change => {
 	documents.all().forEach(validateTextDocument);
 });
 
-function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
+function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
 	if (!hasConfigurationCapability) {
 		return Promise.resolve(globalSettings);
 	}
@@ -174,6 +182,64 @@ connection.onDidChangeWatchedFiles(_change => {
 	// Monitored files have change in VSCode
 	connection.console.log('We received an file change event');
 });
+
+connection.onDocumentFormatting(
+	(_documentfomattingParams: DocumentFormattingParams): TextEdit[] => {
+		const document: TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
+		const options: FormattingOptions = _documentfomattingParams.options;
+		let textEditResult: TextEdit[] = [];
+
+		let indentationLiteral: IndentationLiteral;
+		if (options.insertSpaces) {
+			indentationLiteral = IndentationLiteral.SpaceX4;
+		}
+		else {
+			indentationLiteral = IndentationLiteral.Tab;
+		}
+
+		const serializerOptions: SerializerOptions = {
+			indentationLiteral,
+			newlineLiteral: NewlineLiteral.Unix
+		};
+
+		const formatRequest: FormatRequest = {
+			document: document.getText(),
+			options: serializerOptions
+		};
+
+		const formatResult: Result<string, FormatError.TFormatError> = format(formatRequest);
+		if (formatResult.kind === ResultKind.Ok) {
+			textEditResult.push(
+				TextEdit.replace(fullDocumentRange(document), formatResult.value)
+			);
+		} else {
+			// TODO: should this go in the failed promise path?
+			const error = formatResult.error;
+			let message: string;
+			if (FormatError.isTFormatError(error)) {
+				message = error.innerError.message;
+			}
+			else {
+				message = "An unknown error occured during formatting.";
+			}
+
+			connection.window.showErrorMessage(message);
+		}
+
+		return textEditResult
+	}
+);
+
+// TODO: is there a better way to do this?
+function fullDocumentRange(document: TextDocument): Range {
+	return {
+		start: document.positionAt(0),
+		end: {
+			line: document.lineCount - 1,
+			character: Number.MAX_VALUE
+		}
+	};
+}
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
