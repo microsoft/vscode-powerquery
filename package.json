@@ -64,7 +64,7 @@
     "compile:format": "tsc -p ./packages/format/tsconfig.json",
     "compile:library": "tsc -p ./packages/library/tsconfig.json",
     "compile": "npm run compile:format && npm run compile:library && tsc -b",
-    "watch": "tsc -watch -b",
+    "watch": "tsc -b -watch",
     "test:packages": "npm run test:format && npm run test:library",
     "test:format": "cd packages && cd format && npm test",
     "test:library": "cd packages && cd library && npm test",
