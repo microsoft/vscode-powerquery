@@ -18,11 +18,22 @@ import {
 	DocumentFormattingParams,
 	TextEdit,
 	FormattingOptions,
-	Range
+	Range,
+	Position
 } from 'vscode-languageserver';
 
-import { format, FormatError, FormatRequest, IndentationLiteral, NewlineLiteral, Result, ResultKind, SerializerOptions } from "powerquery-format";
-import { ClientRequest } from 'http';
+import {
+	format,
+	FormatError,
+	FormatRequest,
+	IndentationLiteral,
+	NewlineLiteral,
+	Result,
+	ResultKind,
+	SerializerOptions
+} from "powerquery-format";
+
+import * as PowerQueryParser from "@microsoft/powerquery-parser";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -102,7 +113,7 @@ connection.onDidChangeConfiguration(change => {
 	}
 
 	// Revalidate all open text documents
-	documents.all().forEach(validateTextDocument);
+	documents.all().forEach(validateDocument);
 });
 
 function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
@@ -125,53 +136,104 @@ documents.onDidClose(e => {
 	documentSettings.delete(e.document.uri);
 });
 
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-	validateTextDocument(change.document);
+	validateDocument(change.document);
 });
 
-async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-	// In this simple example we get the settings for every validate run.
-	let settings = await getDocumentSettings(textDocument.uri);
+function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerError): Diagnostic[] | null {
+	let diagnostics: Diagnostic[] = null;
 
-	// The validator creates diagnostics for all uppercase words length 2 and more
-	let text = textDocument.getText();
-	let pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
+	// TODO: handle other types of lexer errors
+	if (error instanceof PowerQueryParser.LexerError.ErrorLineError) {
+		diagnostics = [];
+		for (let lineNumber of Object.keys(error.errors)) {
+			const errorLine = error.errors[Number.parseInt(lineNumber)];
+			const innerError = errorLine.error.innerError;
+			if ((<any>innerError).graphemePosition) {
+				const graphemePosition: PowerQueryParser.StringHelpers.GraphemePosition = (<any>innerError).graphemePosition;
+				const message = innerError.message;
+				const position: Position = {
+					line: graphemePosition.lineNumber,
+					character: graphemePosition.columnNumber
+				};
 
-	let problems = 0;
-	let diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		let diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
+				// TODO: "lex" errors aren't that useful to display to end user. Should we make it more generic?
+				diagnostics.push({
+					message: message,
+					severity: DiagnosticSeverity.Error,
+					range: {
+						start: position,
+						end: position
+					}
+				});
+			}
 		}
-		diagnostics.push(diagnostic);
+	}
+
+	return diagnostics;
+}
+
+function parserErrorToDiagnostic(error: PowerQueryParser.ParserError.TInnerParserError): Diagnostic | null {
+	let message = error.message;
+	let errorToken: PowerQueryParser.Token = null;
+
+	if (error instanceof PowerQueryParser.ParserError.ExpectedAnyTokenKindError ||
+		error instanceof PowerQueryParser.ParserError.ExpectedTokenKindError) {
+		errorToken = error.maybeFoundToken;
+	} else if (error instanceof PowerQueryParser.ParserError.InvalidPrimitiveTypeError) {
+		errorToken = error.token;
+	} else if (error instanceof PowerQueryParser.ParserError.UnterminatedBracketError) {
+		errorToken = error.openBracketToken;
+	} else if (error instanceof PowerQueryParser.ParserError.UnterminatedParenthesesError) {
+		errorToken = error.openParenthesesToken;
+	} else if (error instanceof PowerQueryParser.ParserError.UnusedTokensRemainError) {
+		errorToken = error.firstUnusedToken;
+	}
+
+	if (errorToken !== null) {
+		return {
+			message: message,
+			severity: DiagnosticSeverity.Error,
+			range: {
+				start: {
+					line: errorToken.positionStart.lineNumber,
+					character: errorToken.positionStart.columnNumber
+				},
+				end: {
+					line: errorToken.positionEnd.lineNumber,
+					character: errorToken.positionEnd.columnNumber
+				}
+			}
+		};
+	}
+
+	return null;
+}
+
+async function validateDocument(textDocument: TextDocument): Promise<void> {
+	// In this simple example we get the settings for every validate run.
+	//let settings = await getDocumentSettings(textDocument.uri);
+
+	const text: string = textDocument.getText();
+	let diagnostics: Diagnostic[] = [];
+
+	// TODO: how do we retrieve the line terminator for the workspace/current document?
+	const parseResult = PowerQueryParser.lexAndParse(text, "\r\n");
+	if (parseResult.kind !== PowerQueryParser.ResultKind.Ok) {
+		const error = parseResult.error;
+		const innerError = error.innerError;
+
+		if (PowerQueryParser.ParserError.isTInnerParserError(innerError)) {
+			let diagnostic = parserErrorToDiagnostic(innerError);
+			if (diagnostic) {
+				diagnostics.push(diagnostic);
+			}
+		} else if (PowerQueryParser.LexerError.isTInnerLexerError(innerError)) {
+			let lexerErrorDiagnostics = lexerErrorToDiagnostics(innerError);
+			if (lexerErrorDiagnostics != null) {
+				diagnostics = lexerErrorDiagnostics;
+			}
+		}
 	}
 
 	// Send the computed diagnostics to VSCode.
@@ -197,9 +259,10 @@ connection.onDocumentFormatting(
 			indentationLiteral = IndentationLiteral.Tab;
 		}
 
+		// TODO: get the newline terminator for the document/workspace
 		const serializerOptions: SerializerOptions = {
 			indentationLiteral,
-			newlineLiteral: NewlineLiteral.Unix
+			newlineLiteral: NewlineLiteral.Windows
 		};
 
 		const formatRequest: FormatRequest = {

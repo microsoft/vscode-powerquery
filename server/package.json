@@ -1,6 +1,6 @@
 {
   "name": "vscode-powerquery-server",
-  "description": "Example implementation of a language server in node.",
+  "description": "Power Query language server implementation.",
   "version": "0.0.1",
   "author": "Microsoft Corporation",
   "license": "MIT",
