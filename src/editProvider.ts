@@ -1,3 +1,4 @@
+/*
 import { format, FormatError, FormatRequest, IndentationLiteral, NewlineLiteral, Result, ResultKind, SerializerOptions } from "powerquery-format";
 import * as vscode from "vscode";
 import { CancellationToken, DocumentFormattingEditProvider, FormattingOptions, Range, TextDocument, TextEdit } from "vscode";
@@ -56,3 +57,4 @@ function fullDocumentRange(document: TextDocument): Range {
     const lastLineId = document.lineCount - 1;
     return new Range(0, 0, lastLineId, document.lineAt(lastLineId).text.length);
 }
+*/

@@ -1,3 +1,4 @@
+/*
 import * as vscode from 'vscode';
 import { PowerQueryEditProvider } from "./editProvider";
 
@@ -19,3 +20,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() { }
+*/
