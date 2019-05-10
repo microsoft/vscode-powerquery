@@ -1,0 +1,25 @@
+{
+  "name": "vscode-powerquery-client",
+  "description": "VSCode part of language server",
+  "author": "Microsoft Corporation",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publisher": "vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/vscode-powerquery/"
+  },
+  "engines": {
+    "vscode": "^1.26.0"
+  },
+  "scripts": {
+    "update-vscode": "vscode-install",
+    "postinstall": "vscode-install"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^5.2.1"
+  },
+  "devDependencies": {
+    "vscode": "^1.1.34"
+  }
+}

@@ -11,8 +11,25 @@
   "activationEvents": [
     "onLanguage:powerquery"
   ],
-  "main": "./out/extension.js",
+  "main": "./client/out/extension",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Power Query configuration",
+      "properties": {
+        "powerquery.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server."
+        }
+      }
+    },
     "languages": [
       {
         "id": "powerquery",
@@ -42,17 +59,18 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
     "compile:format": "tsc -p ./packages/format/tsconfig.json",
     "compile:library": "tsc -p ./packages/library/tsconfig.json",
-    "compile": "npm run compile:format && npm run compile:library && tsc -p ./",
-    "watch:format": "tsc -watch -p ./packages/format/tsconfig.json",
-    "watch:library": "tsc -watch -p ./packages/library/tsconfig.json",
-    "watch": "tsc -watch -p ./",
+    "compile": "npm run compile:format && npm run compile:library && tsc -b",
+    "watch": "tsc -watch -b",
     "test:packages": "npm run test:format && npm run test:library",
     "test:format": "cd packages && cd format && npm test",
     "test:library": "cd packages && cd library && npm test",
-    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    "test": "sh ./scripts/e2e.sh",
+    "postinstall:packages": "cd packages && cd format && npm install && cd .. && cd library && npm install && cd .. && cd ..",
+    "postinstall:vscode": "cd client && npm install && cd ../server && npm install && cd ..",
+    "postinstall": "npm run postinstall:packages && npm run postinstall:vscode"
   },
   "repository": {
     "type": "git",
@@ -60,9 +78,11 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^8.10.25",
-    "typescript": "^3.1.4",
-    "vscode": "^1.1.25"
+    "@types/mocha": "^5.2.0",
+    "@types/node": "^8.0.0",
+    "typescript": "^3.4.5",
+    "tslint": "^5.16.0",
+    "vscode": "^1.1.30"
   },
   "dependencies": {
     "powerquery-format": "./packages/format"
