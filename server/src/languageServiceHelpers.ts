@@ -1,6 +1,5 @@
-import { LibraryDefinition } from 'powerquery-library';
-import { CompletionItem, CompletionItemKind, MarkupContent, Hover, MarkupKind } from 'vscode-languageserver';
-import { ExportKind } from 'powerquery-library/lib/library/jsonTypes';
+import { LibraryDefinition, ExportKind, Signature, Parameter } from 'powerquery-library';
+import { CompletionItem, CompletionItemKind, MarkupContent, Hover, MarkupKind, SignatureInformation, ParameterInformation } from 'vscode-languageserver';
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -18,7 +17,7 @@ export class LanguageServiceHelpers {
 		let contents: MarkupContent = null;
 
 		// TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
-		if (definition.kind === ExportKind.Function || definition.kind === ExportKind.Constructor) {
+		if (LanguageServiceHelpers.IsFunction(definition)) {
 			contents = LanguageServiceHelpers.FormatFunctionDefinition(definition);
 		} else if (definition.kind == ExportKind.Type) {
 			contents = LanguageServiceHelpers.FormatTypeDefinition(definition);
@@ -29,6 +28,11 @@ export class LanguageServiceHelpers {
 		return {
 			contents: contents
 		}
+	}
+
+	public static IsFunction(definition: LibraryDefinition) {
+		return (definition &&
+			(definition.kind === ExportKind.Function || definition.kind === ExportKind.Constructor));
 	}
 
 	public static ExportKindToCompletionItemKind(kind: ExportKind): CompletionItemKind {
@@ -45,6 +49,32 @@ export class LanguageServiceHelpers {
 			default:
 				throw "Unmapped ExportKind: " + ExportKind;
 		}
+	}
+
+	public static SignaturesToSignatureInformation(signatures: Signature[]): SignatureInformation[] {
+		const result: SignatureInformation[] = [];
+		signatures.forEach(s => {
+			result.push({
+				label: s.label,
+				documentation: s.documentation,
+				parameters: LanguageServiceHelpers.ParametersToParameterInformation(s.parameters)
+			});
+		});
+
+		return result;
+	}
+
+	public static ParametersToParameterInformation(parameters: Parameter[]): ParameterInformation[] {
+		const result: ParameterInformation[] = [];
+		parameters.forEach(p => {
+			result.push({
+				// use the range from the signature
+				label: [p.labelOffsetStart, p.labelOffsetEnd],
+				documentation: p.documentation
+			});
+		});
+
+		return result;
 	}
 
 	private static FormatTypeDefinition(definition: LibraryDefinition): MarkupContent {
