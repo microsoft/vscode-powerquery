@@ -20,7 +20,8 @@ import {
 	FormattingOptions,
 	Range,
 	Position,
-	Hover
+	Hover,
+	SignatureHelp
 } from 'vscode-languageserver';
 
 import {
@@ -37,7 +38,7 @@ import {
 import * as PowerQueryParser from "@microsoft/powerquery-parser";
 import { LanguageServiceHelpers } from './languageServiceHelpers';
 import { LibraryDefinition, Library, AllModules } from 'powerquery-library';
-import { Lexer } from '@microsoft/powerquery-parser';
+import { DocumentSymbol } from './symbol';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -81,7 +82,10 @@ connection.onInitialize((params: InitializeParams) => {
 				// TODO: is it better to return the first pass without documention to reduce message size?
 				resolveProvider: false
 			},
-			hoverProvider: true
+			hoverProvider: true,
+			// signatureHelpProvider: {
+			// 	triggerCharacters: ['(', ',']
+			// }
 		}
 	};
 });
@@ -329,6 +333,53 @@ function fullDocumentRange(document: TextDocument): Range {
 	};
 }
 
+function getSymbolDefinitionAt(_textDocumentPosition: TextDocumentPositionParams): DocumentSymbol | null {
+	const token = getTokenAt(_textDocumentPosition);
+	if (token) {
+		let definition: LibraryDefinition = null;
+		if (token.kind === PowerQueryParser.LineTokenKind.Identifier) {
+			let tokenText: string = token.data;
+			definition = pqLibrary[tokenText];
+		}
+
+		return new DocumentSymbol(token, definition);
+	}
+
+	return null;
+}
+
+function getLineTokensAt(_textDocumentPosition: TextDocumentPositionParams): readonly PowerQueryParser.LineToken[] {
+	const document: TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
+	const position: Position = _textDocumentPosition.position;
+
+	// Get symbol at current position
+	// TODO: parsing result should be cached
+	// TODO: switch to new parser interface that is line terminator agnostic.
+	const lexResult = PowerQueryParser.Lexer.fromSplit(document.getText(), "\r\n");
+	const line = lexResult.lines[position.line];
+
+	if (line) {
+		return line.tokens;
+	}
+
+	return null;
+}
+
+function getTokenAt(_textDocumentPosition: TextDocumentPositionParams): PowerQueryParser.LineToken {
+	const lineTokens = getLineTokensAt(_textDocumentPosition);
+	if (lineTokens) {
+		const position: Position = _textDocumentPosition.position;
+		for (let i: number = 0; i < lineTokens.length; i++) {
+			let currentToken = lineTokens[i];
+			if (currentToken.positionStart.columnNumber <= position.character && currentToken.positionEnd.columnNumber >= position.character) {
+				return currentToken;
+			}
+		}
+	}
+
+	return null;
+}
+
 // TODO: make completion requests context sensitive
 connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
@@ -338,50 +389,47 @@ connection.onCompletion(
 
 connection.onHover(
 	(_textDocumentPosition: TextDocumentPositionParams): Hover => {
-		const document: TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
-		const position: Position = _textDocumentPosition.position;
-
-		// Get symbol at current position
-		// TODO: parsing result should be cached
-		// TODO: switch to new parser interface that is line terminator agnostic.
-		const lexResult = PowerQueryParser.Lexer.fromSplit(document.getText(), "\r\n");
-		const line = lexResult.lines[position.line];
-
-		if (line) {
-			let token: PowerQueryParser.LineToken = null;
-			for (let i: number = 0; i < line.tokens.length; i++) {
-				let currentToken = line.tokens[i];
-				if (currentToken.positionStart.columnNumber <= position.character && currentToken.positionEnd.columnNumber >= position.character) {
-					token = currentToken;
-					break;
+		let result: Hover = null;
+		const symbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
+		if (symbol.definition) {
+			const position = _textDocumentPosition.position;
+			const hover: Hover = LanguageServiceHelpers.LibraryDefinitionToHover(symbol.definition);
+			// fill in the range information
+			hover.range = {
+				start: {
+					line: position.line,
+					character: symbol.token.positionStart.columnNumber
+				},
+				end: {
+					line: position.line,
+					character: symbol.token.positionEnd.columnNumber
 				}
 			}
-
-			if (token !== null && token.kind === PowerQueryParser.LineTokenKind.Identifier) {
-				let tokenText: string = token.data;
-				let definition: LibraryDefinition = pqLibrary[tokenText];
-				if (definition) {
-					let hover: Hover = LanguageServiceHelpers.LibraryDefinitionToHover(definition);
-					// fill in the range information
-					hover.range = {
-						start: {
-							line: position.line,
-							character: token.positionStart.columnNumber
-						},
-						end: {
-							line: position.line,
-							character: token.positionEnd.columnNumber
-						}
-					}
-
-					return hover;
-				}
-			}
+			result = hover;
 		}
 
-		return null;
+		return result;
 	}
 );
+
+// connection.onSignatureHelp(
+// 	(_textDocumentPosition: TextDocumentPositionParams): SignatureHelp => {
+// 		let result: SignatureHelp = null;
+// 		const symbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
+// 		if (symbol.definition && LanguageServiceHelpers.IsFunction(symbol.definition)) {
+// 			const signatures = LanguageServiceHelpers.SignaturesToSignatureInformation(symbol.definition.signatures);
+
+// 			// TODO: calculate the correct activeSignature and activeParameter
+// 			result = {
+// 				signatures: signatures,
+// 				activeSignature: signatures.length,	// use the last signature
+// 				activeParameter: null
+// 			}
+// 		}
+
+// 		return result;
+// 	}
+// );
 
 /*
 connection.onDidOpenTextDocument((params) => {
