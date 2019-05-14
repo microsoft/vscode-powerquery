@@ -34,6 +34,8 @@ import {
 } from "powerquery-format";
 
 import * as PowerQueryParser from "@microsoft/powerquery-parser";
+import { LanguageServiceHelpers } from './languageServiceHelpers';
+import { LibraryDefinition, Library, AllModules } from 'powerquery-library';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -46,6 +48,9 @@ let documents: TextDocuments = new TextDocuments();
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
+
+let pqLibrary: Library;
+let defaultCompletionItems: CompletionItem[];
 
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
@@ -64,13 +69,15 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
 
+	initializeLibrary();
+
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
 			documentFormattingProvider: true,
-			// Tell the client that the server supports code completion
 			completionProvider: {
-				resolveProvider: true
+				// TODO: is it better to return the first pass without documention to reduce message size?
+				resolveProvider: false
 			}
 		}
 	};
@@ -87,6 +94,17 @@ connection.onInitialized(() => {
 		});
 	}
 });
+
+function initializeLibrary() {
+	pqLibrary = AllModules;
+	defaultCompletionItems = [];
+
+	for (let key in pqLibrary) {
+		const definition: LibraryDefinition = pqLibrary[key];
+		const completionItem = LanguageServiceHelpers.LibraryDefinitionToCompletionItem(definition);
+		defaultCompletionItems.push(completionItem);
+	}
+}
 
 // The example settings
 interface PowerQuerySettings {
@@ -137,6 +155,7 @@ documents.onDidClose(e => {
 });
 
 documents.onDidChangeContent(change => {
+	// TODO: lex/parse document and store result.
 	validateDocument(change.document);
 });
 
@@ -214,10 +233,12 @@ async function validateDocument(textDocument: TextDocument): Promise<void> {
 	// In this simple example we get the settings for every validate run.
 	//let settings = await getDocumentSettings(textDocument.uri);
 
+	// TODO: our document store needs to nornalize line terminators.
+	// TODO: parser result should be calculated as result of changed and stored in TextDocument.
 	const text: string = textDocument.getText();
 	let diagnostics: Diagnostic[] = [];
 
-	// TODO: how do we retrieve the line terminator for the workspace/current document?
+	// TODO: switch to new parser interface that is line terminator agnostic.
 	const parseResult = PowerQueryParser.lexAndParse(text, "\r\n");
 	if (parseResult.kind !== PowerQueryParser.ResultKind.Ok) {
 		const error = parseResult.error;
@@ -245,6 +266,7 @@ connection.onDidChangeWatchedFiles(_change => {
 	connection.console.log('We received an file change event');
 });
 
+// TODO: Update formatter to use @microsoft/powerquery-parser
 connection.onDocumentFormatting(
 	(_documentfomattingParams: DocumentFormattingParams): TextEdit[] => {
 		const document: TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
@@ -304,39 +326,10 @@ function fullDocumentRange(document: TextDocument): Range {
 	};
 }
 
-// This handler provides the initial list of the completion items.
+// TODO: make completion requests context sensitive
 connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		return [
-			{
-				label: 'TypeScript',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'JavaScript',
-				kind: CompletionItemKind.Text,
-				data: 2
-			}
-		];
-	}
-);
-
-// This handler resolves additional information for the item selected in
-// the completion list.
-connection.onCompletionResolve(
-	(item: CompletionItem): CompletionItem => {
-		if (item.data === 1) {
-			item.detail = 'TypeScript details';
-			item.documentation = 'TypeScript documentation';
-		} else if (item.data === 2) {
-			item.detail = 'JavaScript details';
-			item.documentation = 'JavaScript documentation';
-		}
-		return item;
+		return defaultCompletionItems;
 	}
 );
 

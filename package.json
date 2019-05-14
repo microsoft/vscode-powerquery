@@ -87,6 +87,7 @@
   },
   "dependencies": {
     "powerquery-format": "./packages/format",
+    "powerquery-library": "./packages/library",
     "@microsoft/powerquery-parser": "latest"
   }
 }
