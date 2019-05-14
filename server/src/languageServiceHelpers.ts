@@ -1,5 +1,5 @@
 import { LibraryDefinition } from 'powerquery-library';
-import { CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, MarkupContent, Hover, MarkupKind } from 'vscode-languageserver';
 import { ExportKind } from 'powerquery-library/lib/library/jsonTypes';
 
 // Copyright (c) Microsoft Corporation.
@@ -12,6 +12,23 @@ export class LanguageServiceHelpers {
 			kind: LanguageServiceHelpers.ExportKindToCompletionItemKind(definition.kind),
 			documentation: definition.summary
 		};
+	}
+
+	public static LibraryDefinitionToHover(definition: LibraryDefinition): Hover {
+		let contents: MarkupContent = null;
+
+		// TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
+		if (definition.kind === ExportKind.Function || definition.kind === ExportKind.Constructor) {
+			contents = LanguageServiceHelpers.FormatFunctionDefinition(definition);
+		} else if (definition.kind == ExportKind.Type) {
+			contents = LanguageServiceHelpers.FormatTypeDefinition(definition);
+		} else {
+			contents = LanguageServiceHelpers.FormatConstantDefinition(definition);
+		}
+
+		return {
+			contents: contents
+		}
 	}
 
 	public static ExportKindToCompletionItemKind(kind: ExportKind): CompletionItemKind {
@@ -27,6 +44,40 @@ export class LanguageServiceHelpers {
 				return CompletionItemKind.Struct;
 			default:
 				throw "Unmapped ExportKind: " + ExportKind;
+		}
+	}
+
+	private static FormatTypeDefinition(definition: LibraryDefinition): MarkupContent {
+		return {
+			kind: MarkupKind.Markdown,
+			value: [
+				"(type) " + definition.label,
+				'\n',
+				definition.summary
+			].join('\n')
+		}
+	}
+
+	private static FormatConstantDefinition(definition: LibraryDefinition): MarkupContent {
+		return {
+			kind: MarkupKind.Markdown,
+			value: [
+				"(constant) " + definition.label,
+				'\n',
+				definition.summary
+			].join('\n')
+		}
+	}
+
+	private static FormatFunctionDefinition(definition: LibraryDefinition): MarkupContent {
+		return {
+			kind: MarkupKind.Markdown,
+			value: [
+				'```powerquery',
+				definition.signatures[definition.signatures.length - 1].label,
+				'```',
+				definition.summary
+			].join('\n')
 		}
 	}
 }

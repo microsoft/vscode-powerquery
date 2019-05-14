@@ -19,7 +19,8 @@ import {
 	TextEdit,
 	FormattingOptions,
 	Range,
-	Position
+	Position,
+	Hover
 } from 'vscode-languageserver';
 
 import {
@@ -36,6 +37,7 @@ import {
 import * as PowerQueryParser from "@microsoft/powerquery-parser";
 import { LanguageServiceHelpers } from './languageServiceHelpers';
 import { LibraryDefinition, Library, AllModules } from 'powerquery-library';
+import { Lexer } from '@microsoft/powerquery-parser';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -78,7 +80,8 @@ connection.onInitialize((params: InitializeParams) => {
 			completionProvider: {
 				// TODO: is it better to return the first pass without documention to reduce message size?
 				resolveProvider: false
-			}
+			},
+			hoverProvider: true
 		}
 	};
 });
@@ -330,6 +333,53 @@ function fullDocumentRange(document: TextDocument): Range {
 connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		return defaultCompletionItems;
+	}
+);
+
+connection.onHover(
+	(_textDocumentPosition: TextDocumentPositionParams): Hover => {
+		const document: TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
+		const position: Position = _textDocumentPosition.position;
+
+		// Get symbol at current position
+		// TODO: parsing result should be cached
+		// TODO: switch to new parser interface that is line terminator agnostic.
+		const lexResult = PowerQueryParser.Lexer.fromSplit(document.getText(), "\r\n");
+		const line = lexResult.lines[position.line];
+
+		if (line) {
+			let token: PowerQueryParser.LineToken = null;
+			for (let i: number = 0; i < line.tokens.length; i++) {
+				let currentToken = line.tokens[i];
+				if (currentToken.positionStart.columnNumber <= position.character && currentToken.positionEnd.columnNumber >= position.character) {
+					token = currentToken;
+					break;
+				}
+			}
+
+			if (token !== null && token.kind === PowerQueryParser.LineTokenKind.Identifier) {
+				let tokenText: string = token.data;
+				let definition: LibraryDefinition = pqLibrary[tokenText];
+				if (definition) {
+					let hover: Hover = LanguageServiceHelpers.LibraryDefinitionToHover(definition);
+					// fill in the range information
+					hover.range = {
+						start: {
+							line: position.line,
+							character: token.positionStart.columnNumber
+						},
+						end: {
+							line: position.line,
+							character: token.positionEnd.columnNumber
+						}
+					}
+
+					return hover;
+				}
+			}
+		}
+
+		return null;
 	}
 );
 
