@@ -1,4 +1,4 @@
-import { Ast, CommonError, isNever, Option, Result, ResultKind } from "powerquery-parser";
+import { Ast, CommonError, isNever, Option, Result, ResultKind } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "./passes/comment";
 import { getSerializerWriteKind, SerializeCommentParameter, SerializerParameterMap, SerializerWriteKind } from "./passes/serializerParameter";
 

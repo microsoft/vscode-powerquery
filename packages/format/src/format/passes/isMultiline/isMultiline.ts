@@ -1,4 +1,4 @@
-import { Ast, CommonError, Result, ResultKind, Traverse } from "powerquery-parser";
+import { Ast, CommonError, Result, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "../comment";
 import { ParentMap } from "../parent";
 import { IsMultilineMap } from "./common";

@@ -1,4 +1,4 @@
-import { Ast, Traverse } from "powerquery-parser";
+import { Ast, Traverse } from "@microsoft/powerquery-parser";
 import { maybeGetParent, ParentMap } from "../parent";
 import { getIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 

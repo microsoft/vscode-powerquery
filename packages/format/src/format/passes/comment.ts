@@ -1,4 +1,4 @@
-import { TokenRangeMap, Ast, TComment, Option, Traverse, CommonError } from "powerquery-parser";
+import { TokenRangeMap, Ast, TComment, Option, Traverse, CommonError } from "@microsoft/powerquery-parser";
 
 export type CommentCollectionMap = TokenRangeMap<CommentCollection>;
 

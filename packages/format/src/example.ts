@@ -1,5 +1,5 @@
 import { FormatRequest, IndentationLiteral, NewlineLiteral, format } from "./format"
-import { ResultKind } from "powerquery-parser";
+import { ResultKind } from "@microsoft/powerquery-parser";
 
 const document = `
 // taken from: https://en.wikipedia.org/wiki/Exponentiation_by_squaring

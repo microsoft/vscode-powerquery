@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "dependencies": {
-    "powerquery-parser": "latest"
+    "@microsoft/powerquery-parser": "latest"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",

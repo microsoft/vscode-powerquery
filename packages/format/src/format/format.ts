@@ -1,4 +1,4 @@
-import { lexAndParse, Result, ResultKind, Traverse } from "powerquery-parser";
+import { lexAndParse, Result, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 import { FormatError } from "./error";
 import * as commentPass from "./passes/comment";
 import * as isMultilinePass from "./passes/isMultiline/isMultiline";

@@ -1,4 +1,4 @@
-import { Ast, isNever, Option, ResultKind, TokenRangeMap, Traverse } from "powerquery-parser";
+import { Ast, isNever, Option, ResultKind, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
 
 export type LinearLengthMap = TokenRangeMap<number>;
 
