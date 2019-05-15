@@ -839,7 +839,7 @@ function visitComments(
         }
 
         commentParameters.push({
-            literal: comment.literal,
+            literal: comment.data,
             writeKind,
         });
     }
