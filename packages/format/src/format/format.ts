@@ -1,4 +1,4 @@
-import { lexAndParse, Result, ResultKind, Traverse } from "@microsoft/powerquery-parser";
+import { lexAndParse, Result, ResultKind, Traverse, LexAndParseOk, LexAndParseErr } from "@microsoft/powerquery-parser";
 import { FormatError } from "./error";
 import * as commentPass from "./passes/comment";
 import * as isMultilinePass from "./passes/isMultiline/isMultiline";
@@ -12,7 +12,7 @@ export interface FormatRequest {
 }
 
 export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const parseResult = lexAndParse(formatRequest.text);
+    const parseResult: Result<LexAndParseOk, LexAndParseErr> = lexAndParse(formatRequest.text);
     if (parseResult.kind === ResultKind.Err) {
         return parseResult;
     }
