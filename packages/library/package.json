@@ -31,7 +31,7 @@
   "keywords": [
     "powerquery"
   ],
-  "author": "Matt Masson",
+  "author": "Microsoft Corporation",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/microsoft/vscode-powerquery/issues"

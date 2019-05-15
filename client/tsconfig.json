@@ -5,9 +5,9 @@
     "outDir": "out",
     "rootDir": "src",
     "lib": ["es6"],
-    "sourceMap": true
+    "sourceMap": true,
+    "composite": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", ".vscode-test", "packages"],
-  "references": [{ "path": "./client" }, { "path": "./server" }]
+  "exclude": ["node_modules", ".vscode-test"]
 }

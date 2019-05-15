@@ -63,4 +63,4 @@ typings/
 out/
 scratch/
 .vscode-test/
-package-lock.json
+**/tsconfig.tsbuildinfo
