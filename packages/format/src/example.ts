@@ -1,7 +1,7 @@
 import { FormatRequest, IndentationLiteral, NewlineLiteral, format } from "./format"
 import { ResultKind } from "@microsoft/powerquery-parser";
 
-const document = `
+const text = `
 // taken from: https://en.wikipedia.org/wiki/Exponentiation_by_squaring
 // removed negative powers, sure to have bugs
 //
@@ -34,7 +34,7 @@ let
 in
     fastPow(2, 8)`
 const request: FormatRequest = {
-    document,
+    text,
     options: {
         indentationLiteral: IndentationLiteral.SpaceX4,
         newlineLiteral: NewlineLiteral.Unix,

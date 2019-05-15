@@ -30,11 +30,10 @@ export function compare(expected: string, actual: string, options = DefaultSeria
     expect(edgeActualLine).to.equal(edgeExpectedLine, `line:${minLength + 1}`);
 }
 
-// attempts to format the document, then takes the result and formats the result
-// to ensure I don't emit any new tokens.
-export function runFormat(document: string, serializerOptions = DefaultSerializerOptions): string {
-    document = document.trim();
-    const firstFormatRequest = createFormatRequest(document, serializerOptions);
+// attempts to format text twice to ensure the formatter emits the same tokens.
+export function runFormat(text: string, serializerOptions = DefaultSerializerOptions): string {
+    text = text.trim();
+    const firstFormatRequest = createFormatRequest(text, serializerOptions);
     const firstFormatResult = format(firstFormatRequest);
     if (firstFormatResult.kind === ResultKind.Err) {
         throw firstFormatResult.error;
@@ -52,9 +51,9 @@ export function runFormat(document: string, serializerOptions = DefaultSerialize
     return firstOk;
 }
 
-function createFormatRequest(document: string, serializerOptions = DefaultSerializerOptions): FormatRequest {
+function createFormatRequest(text: string, serializerOptions = DefaultSerializerOptions): FormatRequest {
     return {
-        document,
+        text,
         options: serializerOptions,
     }
 }

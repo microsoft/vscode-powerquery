@@ -7,12 +7,12 @@ import * as serializerParameterPass from "./passes/serializerParameter";
 import { SerializerPassthroughMaps, Serializer, SerializerOptions, SerializerRequest } from "./serializer";
 
 export interface FormatRequest {
-    readonly document: string,
+    readonly text: string,
     readonly options: SerializerOptions,
 }
 
 export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const parseResult = lexAndParse(formatRequest.document);
+    const parseResult = lexAndParse(formatRequest.text);
     if (parseResult.kind === ResultKind.Err) {
         return parseResult;
     }
