@@ -68,7 +68,7 @@
     "test:packages": "npm run test:format && npm run test:library",
     "test:format": "cd packages && cd format && npm test",
     "test:library": "cd packages && cd library && npm test",
-    "test": "sh ./scripts/e2e.sh",
+    "test": "node ./scripts/e2e.js",
     "postinstall:packages": "cd packages && cd format && npm install && cd .. && cd library && npm install && cd .. && cd ..",
     "postinstall:vscode": "cd client && npm install && cd ../server && npm install && cd ..",
     "postinstall": "npm run postinstall:packages && npm run postinstall:vscode"
