@@ -2,7 +2,7 @@ import { expect } from "chai";
 import "mocha";
 import { format, FormatRequest } from "../../format/format";
 import { IndentationLiteral, NewlineLiteral, SerializerOptions } from "../../format/serializer";
-import { ResultKind } from "powerquery-parser";
+import { ResultKind } from "@microsoft/powerquery-parser";
 
 const DefaultSerializerOptions: SerializerOptions = {
     indentationLiteral: IndentationLiteral.SpaceX4,
