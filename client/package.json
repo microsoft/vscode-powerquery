@@ -1,10 +1,10 @@
 {
   "name": "vscode-powerquery-client",
-  "description": "VSCode part of language server",
+  "description": "VS Code part of language server",
   "author": "Microsoft Corporation",
   "license": "MIT",
   "version": "0.0.1",
-  "publisher": "vscode",
+  "publisher": "powerquery",
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode-powerquery/"
