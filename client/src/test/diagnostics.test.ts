@@ -8,16 +8,16 @@ import * as assert from 'assert'
 import { getDocUri, activate } from './helper'
 
 describe('Should get diagnostics', () => {
-  const docUri = getDocUri('diagnostics.txt')
+  const docUri = getDocUri('diagnostics.pq')
 
-  it('Diagnoses uppercase texts', async () => {
-    await testDiagnostics(docUri, [
-      { message: 'ANY is all uppercase.', range: toRange(0, 0, 0, 3), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' },
-      { message: 'ANY is all uppercase.', range: toRange(0, 14, 0, 17), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' },
-      { message: 'OS is all uppercase.', range: toRange(0, 18, 0, 20), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' }
-    ])
-  })
-})
+  it('Simple test', async () => {
+    await testDiagnostics(docUri, [{
+      message: 'Expected to find a Equal on line 0, column 9, but a KeywordNot was found instead.',
+      range: toRange(0, 9, 0, 12),
+      severity: vscode.DiagnosticSeverity.Error
+    }]);
+  });
+});
 
 function toRange(sLine: number, sChar: number, eLine: number, eChar: number) {
   const start = new vscode.Position(sLine, sChar)
@@ -37,5 +37,5 @@ async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.D
     assert.equal(actualDiagnostic.message, expectedDiagnostic.message)
     assert.deepEqual(actualDiagnostic.range, expectedDiagnostic.range)
     assert.equal(actualDiagnostic.severity, expectedDiagnostic.severity)
-  })
+  });
 }
