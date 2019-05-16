@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "node_modules\\.bin\\tsc",
     "test": "mocha -r ts-node/register src/test/**/*.ts"
   },
   "files": [
