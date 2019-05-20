@@ -1,4 +1,4 @@
-import { lexAndParse, Result, ResultKind, Traverse } from "powerquery-parser";
+import { lexAndParse, Result, ResultKind, Traverse, LexAndParseOk, LexAndParseErr } from "@microsoft/powerquery-parser";
 import { FormatError } from "./error";
 import * as commentPass from "./passes/comment";
 import * as isMultilinePass from "./passes/isMultiline/isMultiline";
@@ -7,12 +7,12 @@ import * as serializerParameterPass from "./passes/serializerParameter";
 import { SerializerPassthroughMaps, Serializer, SerializerOptions, SerializerRequest } from "./serializer";
 
 export interface FormatRequest {
-    readonly document: string,
+    readonly text: string,
     readonly options: SerializerOptions,
 }
 
 export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const parseResult = lexAndParse(formatRequest.document);
+    const parseResult: Result<LexAndParseOk, LexAndParseErr> = lexAndParse(formatRequest.text);
     if (parseResult.kind === ResultKind.Err) {
         return parseResult;
     }

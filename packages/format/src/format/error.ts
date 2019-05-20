@@ -1,4 +1,4 @@
-import { LexerError, ParserError } from "powerquery-parser";
+import { LexerError, ParserError } from "@microsoft/powerquery-parser";
 
 export namespace FormatError {
     export type TFormatError = (

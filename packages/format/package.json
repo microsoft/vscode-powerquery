@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "dependencies": {
-    "powerquery-parser": "latest"
+    "@microsoft/powerquery-parser": "^0.1.7"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
@@ -23,7 +23,7 @@
     "lib/index.js.map"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node_modules\\.bin\\tsc",
     "test": "mocha -r ts-node/register src/test/**/*.ts"
   },
   "repository": {

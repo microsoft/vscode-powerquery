@@ -60,10 +60,10 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
-    "compile:format": "tsc -p ./packages/format/tsconfig.json",
-    "compile:library": "tsc -p ./packages/library/tsconfig.json",
-    "compile": "npm run compile:format && npm run compile:library && tsc -b",
+    "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run build",
+    "build:format": "tsc -p ./packages/format/tsconfig.json",
+    "build:library": "tsc -p ./packages/library/tsconfig.json",
+    "build": "npm run build:format && npm run build:library && tsc -b",
     "watch": "tsc -b -watch",
     "test:packages": "npm run test:format && npm run test:library",
     "test:format": "cd packages && cd format && npm test",
@@ -88,6 +88,6 @@
   "dependencies": {
     "powerquery-format": "./packages/format",
     "powerquery-library": "./packages/library",
-    "@microsoft/powerquery-parser": "latest"
+    "@microsoft/powerquery-parser": "^0.1.7"
   }
 }

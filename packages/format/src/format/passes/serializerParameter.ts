@@ -1,4 +1,4 @@
-import { Ast, CommonError, isNever, Option, TComment, TokenRangeMap, Traverse } from "powerquery-parser";
+import { Ast, CommonError, isNever, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "./comment";
 import { getIsMultiline, IsMultilineMap } from "./isMultiline/common";
 import { maybeGetParent, ParentMap } from "./parent";
@@ -839,7 +839,7 @@ function visitComments(
         }
 
         commentParameters.push({
-            literal: comment.literal,
+            literal: comment.data,
             writeKind,
         });
     }

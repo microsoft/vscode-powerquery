@@ -1,4 +1,4 @@
-import { TokenRangeMap, Ast, TComment, Option, Traverse, CommonError } from "powerquery-parser";
+import { Ast, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
 
 export type CommentCollectionMap = TokenRangeMap<CommentCollection>;
 
@@ -18,7 +18,7 @@ export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<T
             result: {},
             comments,
             commentsIndex: 0,
-            currentComment: comments[0],
+            maybeCurrentComment: comments[0],
         },
         maybeEarlyExitFn: earlyExit,
         visitNodeFn: visitNode,
@@ -31,15 +31,15 @@ interface Request extends Traverse.IRequest<State, CommentCollectionMap> { }
 interface State extends Traverse.IState<CommentCollectionMap> {
     readonly comments: ReadonlyArray<TComment>,
     commentsIndex: number,
-    currentComment: Option<TComment>,
+    maybeCurrentComment: Option<TComment>,
 }
 
 function earlyExit(node: Ast.TNode, state: State): boolean {
-    const currentComment = state.currentComment;
-    if (!currentComment) {
+    const maybeCurrentComment: Option<TComment> = state.maybeCurrentComment;
+    if (maybeCurrentComment === undefined) {
         return true;
     }
-    else if (node.tokenRange.tokenEndIndex < currentComment.phantomTokenIndex) {
+    else if (node.tokenRange.positionEnd.codeUnit < maybeCurrentComment.positionStart.codeUnit) {
         return true;
     }
     else {
@@ -52,35 +52,31 @@ function visitNode(node: Ast.TNode, state: State) {
         return;
     }
 
-    let currentComment = state.currentComment;
-    while (currentComment && currentComment.phantomTokenIndex === node.tokenRange.tokenStartIndex) {
-        attachCurrentComment(node, state);
-        currentComment = state.currentComment;
-    }
-}
+    let maybeCurrentComment: Option<TComment> = state.maybeCurrentComment;
+    while (maybeCurrentComment && maybeCurrentComment.positionStart.codeUnit < node.tokenRange.positionStart.codeUnit) {
+        const currentComment: TComment = maybeCurrentComment;
+        const commentMap: CommentCollectionMap = state.result;
+        const nodeCacheKey: string = node.tokenRange.hash;
+        const commentCollection: CommentCollection = commentMap[nodeCacheKey];
 
-function attachCurrentComment(node: Ast.TNode, state: State) {
-    const comment = state.currentComment;
-    if (!comment) {
-        throw new CommonError.InvariantError("tried attaching currentComment but there are no comments left");
-    }
-
-    const commentMap = state.result;
-    const cacheKey = node.tokenRange.hash;
-    const commentCollection = commentMap[cacheKey];
-    if (!commentCollection) {
-        commentMap[cacheKey] = {
-            prefixedComments: [comment],
-            prefixedCommentsContainsNewline: comment.containsNewline,
-        };
-    }
-    else {
-        commentCollection.prefixedComments.push(comment);
-        if (comment.containsNewline) {
-            commentCollection.prefixedCommentsContainsNewline = true;
+        // first comment for node
+        if (commentCollection === undefined) {
+            commentMap[nodeCacheKey] = {
+                prefixedComments: [currentComment],
+                prefixedCommentsContainsNewline: currentComment.containsNewline,
+            };
         }
+        // at least one comment already attached to node
+        else {
+            commentCollection.prefixedComments.push(currentComment);
+            if (currentComment.containsNewline) {
+                commentCollection.prefixedCommentsContainsNewline = true;
+            }
+        }
+
+        state.commentsIndex += 1;
+        maybeCurrentComment = state.comments[state.commentsIndex];
     }
 
-    state.commentsIndex += 1;
-    state.currentComment = state.comments[state.commentsIndex];
+    state.maybeCurrentComment = maybeCurrentComment;
 }

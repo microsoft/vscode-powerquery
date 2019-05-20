@@ -1,4 +1,4 @@
-import { TokenRangeMap, Ast } from "powerquery-parser";
+import { TokenRangeMap, Ast } from "@microsoft/powerquery-parser";
 
 export type IsMultilineMap = TokenRangeMap<boolean>;
 

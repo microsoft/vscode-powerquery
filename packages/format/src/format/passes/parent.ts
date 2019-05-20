@@ -1,4 +1,4 @@
-import { Ast, Option, TokenRangeMap, Traverse } from "powerquery-parser";
+import { Ast, Option, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
 
 export type ParentMap = TokenRangeMap<Ast.TNode>;
 

@@ -246,7 +246,7 @@ async function validateDocument(textDocument: TextDocument): Promise<void> {
 	let diagnostics: Diagnostic[] = [];
 
 	// TODO: switch to new parser interface that is line terminator agnostic.
-	const parseResult = PowerQueryParser.lexAndParse(text, "\r\n");
+	const parseResult = PowerQueryParser.lexAndParse(text);
 	if (parseResult.kind !== PowerQueryParser.ResultKind.Ok) {
 		const error = parseResult.error;
 		const innerError = error.innerError;
@@ -295,7 +295,7 @@ connection.onDocumentFormatting(
 		};
 
 		const formatRequest: FormatRequest = {
-			document: document.getText(),
+			text: document.getText(),
 			options: serializerOptions
 		};
 
@@ -355,7 +355,7 @@ function getLineTokensAt(_textDocumentPosition: TextDocumentPositionParams): rea
 	// Get symbol at current position
 	// TODO: parsing result should be cached
 	// TODO: switch to new parser interface that is line terminator agnostic.
-	const lexResult = PowerQueryParser.Lexer.fromSplit(document.getText(), "\r\n");
+	const lexResult = PowerQueryParser.Lexer.stateFrom(document.getText());
 	const line = lexResult.lines[position.line];
 
 	if (line) {
@@ -371,7 +371,7 @@ function getTokenAt(_textDocumentPosition: TextDocumentPositionParams): PowerQue
 		const position: Position = _textDocumentPosition.position;
 		for (let i: number = 0; i < lineTokens.length; i++) {
 			let currentToken = lineTokens[i];
-			if (currentToken.positionStart.columnNumber <= position.character && currentToken.positionEnd.columnNumber >= position.character) {
+			if (currentToken.positionStart <= position.character && currentToken.positionEnd >= position.character) {
 				return currentToken;
 			}
 		}
@@ -398,11 +398,11 @@ connection.onHover(
 			hover.range = {
 				start: {
 					line: position.line,
-					character: symbol.token.positionStart.columnNumber
+					character: symbol.token.positionStart,
 				},
 				end: {
 					line: position.line,
-					character: symbol.token.positionEnd.columnNumber
+					character: symbol.token.positionEnd,
 				}
 			}
 			result = hover;

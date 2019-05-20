@@ -13,6 +13,11 @@
     "declaration": true,
     "rootDir": "src"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "src/test/"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/test",
+  ]
 }
