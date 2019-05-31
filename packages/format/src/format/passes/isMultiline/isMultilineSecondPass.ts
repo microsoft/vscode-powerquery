@@ -1,6 +1,6 @@
 import { Ast, Traverse } from "@microsoft/powerquery-parser";
 import { maybeGetParent, ParentMap } from "../parent";
-import { getIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
+import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 
 export function createTraversalRequest(
     ast: Ast.TNode,
@@ -36,7 +36,7 @@ function visitNode(node: Ast.TNode, state: State) {
         case Ast.NodeKind.RelationalExpression: {
             const isMultilineMap = state.result;
             const maybeParent = maybeGetParent(node, state.parentMap);
-            if (maybeParent && Ast.isTBinOpExpression(maybeParent) && getIsMultiline(maybeParent, isMultilineMap)) {
+            if (maybeParent && Ast.isTBinOpExpression(maybeParent) && expectGetIsMultiline(maybeParent, isMultilineMap)) {
                 setIsMultiline(node, isMultilineMap, true);
             }
             break;
