@@ -117,13 +117,13 @@ export class Serializer {
 
     private visitNode(node: Ast.TNode) {
         const cacheKey = node.tokenRange.hash;
-        const maybeIndentationChange = this.passthroughMaps.serializerParameterMap.indentationChange[cacheKey];
+        const maybeIndentationChange = this.passthroughMaps.serializerParameterMap.indentationChange.get(cacheKey);
         if (maybeIndentationChange) {
             this.indentationLevel += 1;
         }
 
         if (node.terminalNode) {
-            const maybeComments = this.passthroughMaps.serializerParameterMap.comments[cacheKey];
+            const maybeComments = this.passthroughMaps.serializerParameterMap.comments.get(cacheKey);
             if (maybeComments) {
                 this.visitComments(maybeComments);
             }

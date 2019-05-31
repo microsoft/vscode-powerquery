@@ -1,7 +1,7 @@
 import { Ast, CommonError, isNever, Option, StringHelpers, Traverse } from "@microsoft/powerquery-parser";
-import { CommentCollectionMap } from "../comment";
+import { CommentCollectionMap, CommentCollection } from "../comment";
 import { maybeGetParent, ParentMap } from "../parent";
-import { getIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
+import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 import { getLinearLength, LinearLengthMap } from "./linearLength";
 
 export function createTraversalRequest(
@@ -12,10 +12,10 @@ export function createTraversalRequest(
     return {
         ast,
         state: {
-            result: {},
+            result: new Map(),
             commentCollectionMap,
             parentMap,
-            linearLengthMap: {},
+            linearLengthMap: new Map(),
         },
         visitNodeFn: visitNode,
         visitNodeStrategy: Traverse.VisitNodeStrategy.DepthFirst,
@@ -193,7 +193,7 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.FunctionExpression:
-            isMultiline = getIsMultiline(node.expression, isMultilineMap);
+            isMultiline = expectGetIsMultiline(node.expression, isMultilineMap);
             break;
 
         case Ast.NodeKind.IdentifierExpression: {
@@ -281,7 +281,7 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.LiteralExpression:
-            if (node.literalKind === Ast.LiteralKind.Str && StringHelpers.containsNewline(node.literal)) {
+            if (node.literalKind === Ast.LiteralKind.Str && containsNewline(node.literal)) {
                 isMultiline = true;
             }
             break;
@@ -305,11 +305,11 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.PrimitiveType:
-            isMultiline = getIsMultiline(node.primitiveType, isMultilineMap);
+            isMultiline = expectGetIsMultiline(node.primitiveType, isMultilineMap);
             break;
 
         case Ast.NodeKind.RecordType:
-            isMultiline = getIsMultiline(node.fields, isMultilineMap);
+            isMultiline = expectGetIsMultiline(node.fields, isMultilineMap);
             break;
 
         case Ast.NodeKind.RecursivePrimaryExpression:
@@ -402,7 +402,7 @@ function isAnyMultiline(
     ...maybeNodes: Option<Ast.TNode>[]
 ): boolean {
     for (const maybeNode of maybeNodes) {
-        if (maybeNode && getIsMultiline(maybeNode, isMultilineMap)) {
+        if (maybeNode && expectGetIsMultiline(maybeNode, isMultilineMap)) {
             return true;
         }
     }
@@ -430,8 +430,8 @@ function setIsMultilineWithCommentCheck(node: Ast.TNode, state: State, isMultili
 }
 
 function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
-    const cacheKey = node.tokenRange.hash;
-    const maybeCommentCollection = state.commentCollectionMap[cacheKey]
+    const cacheKey: string = node.tokenRange.hash;
+    const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(cacheKey);
     if (maybeCommentCollection) {
         return maybeCommentCollection.prefixedCommentsContainsNewline;
     }
@@ -485,4 +485,15 @@ function numTBinOpExpressions(node: Ast.TNode): number {
     else {
         return 1;
     }
+}
+
+function containsNewline(text: string): boolean {
+    const textLength: number = text.length;
+
+    for (let index: number = 0; index < textLength; index += 1) {
+        if (StringHelpers.maybeNewlineKindAt(text, index)) {
+            return true;
+        }
+    }
+    return false;
 }
