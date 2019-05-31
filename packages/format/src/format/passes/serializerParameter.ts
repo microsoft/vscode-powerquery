@@ -40,14 +40,14 @@ export function createTraversalRequest(
         ast,
         state: {
             result: {
-                writeKind: {},
-                indentationChange: {},
-                comments: {},
+                writeKind: new Map(),
+                indentationChange: new Map(),
+                comments: new Map(),
             },
             parentMap,
             commentCollectionMap,
             isMultilineMap,
-            workspaceMap: {},
+            workspaceMap: new Map(),
         },
         visitNodeFn: visitNode,
         visitNodeStrategy: Traverse.VisitNodeStrategy.BreadthFirst,
@@ -60,7 +60,7 @@ export function getSerializerWriteKind(
     serializerParametersMap: SerializerParameterMap
 ): SerializerWriteKind {
     const cacheKey = node.tokenRange.hash;
-    const maybeWriteKind = serializerParametersMap.writeKind[cacheKey];
+    const maybeWriteKind = serializerParametersMap.writeKind.get(cacheKey);
     if (maybeWriteKind) {
         return maybeWriteKind;
     }
@@ -735,7 +735,7 @@ function visitNode(node: Ast.TNode, state: State) {
                 throw new CommonError.InvariantError("maybeWriteKind should be truthy", details);
             }
 
-            state.result.writeKind[cacheKey] = maybeWriteKind;
+            state.result.writeKind.set(cacheKey, maybeWriteKind);
             break;
         }
 
@@ -746,7 +746,7 @@ function visitNode(node: Ast.TNode, state: State) {
 
 function getWorkspace(node: Ast.TNode, state: State, fallback = DefaultWorkspace): Workspace {
     const cacheKey = node.tokenRange.hash;
-    const maybeWorkspace: Option<Workspace> = state.workspaceMap[cacheKey];
+    const maybeWorkspace: Option<Workspace> = state.workspaceMap.get(cacheKey);
 
     if (maybeWorkspace !== undefined) {
         return maybeWorkspace;
@@ -758,7 +758,7 @@ function getWorkspace(node: Ast.TNode, state: State, fallback = DefaultWorkspace
 
 function setWorkspace(node: Ast.TNode, state: State, workspace: Workspace) {
     const cacheKey = node.tokenRange.hash;
-    state.workspaceMap[cacheKey] = workspace;
+    state.workspaceMap.set(cacheKey, workspace);
 }
 
 // sets indentationChange for the parent using the parent's Workspace,
@@ -788,7 +788,7 @@ function maybePropagateWriteKind(parent: Ast.TNode, maybeFirstChild: Option<Ast.
 function maybeSetIndentationChange(node: Ast.TNode, state: State, maybeIndentationChange: Option<IndentationChange>) {
     if (maybeIndentationChange) {
         const cacheKey = node.tokenRange.hash;
-        state.result.indentationChange[cacheKey] = maybeIndentationChange;
+        state.result.indentationChange.set(cacheKey, maybeIndentationChange);
     }
 }
 
@@ -807,7 +807,7 @@ function visitComments(
     maybeWriteKind: Option<SerializerWriteKind>
 ): Option<SerializerWriteKind> {
     const cacheKey = node.tokenRange.hash;
-    const maybeComments = state.commentCollectionMap[cacheKey];
+    const maybeComments = state.commentCollectionMap.get(cacheKey);
     if (!maybeComments) {
         return maybeWriteKind;
     }
@@ -844,7 +844,7 @@ function visitComments(
         });
     }
 
-    state.result.comments[cacheKey] = commentParameters;
+    state.result.comments.set(cacheKey, commentParameters);
 
     const lastComment = comments[comments.length - 1];
     if (lastComment.containsNewline) {

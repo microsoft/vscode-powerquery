@@ -1,10 +1,10 @@
-import { lexAndParse, Result, ResultKind, Traverse, LexAndParseOk, LexAndParseErr } from "@microsoft/powerquery-parser";
+import { lexAndParse, LexAndParseErr, LexAndParseOk, Result, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 import { FormatError } from "./error";
 import * as commentPass from "./passes/comment";
 import * as isMultilinePass from "./passes/isMultiline/isMultiline";
 import * as parentPass from "./passes/parent";
 import * as serializerParameterPass from "./passes/serializerParameter";
-import { SerializerPassthroughMaps, Serializer, SerializerOptions, SerializerRequest } from "./serializer";
+import { Serializer, SerializerOptions, SerializerPassthroughMaps, SerializerRequest } from "./serializer";
 
 export interface FormatRequest {
     readonly text: string,
@@ -21,7 +21,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
     const ast = parseSuccess.ast;
     const comments = parseSuccess.comments;
 
-    let commentCollectionMap = {};
+    let commentCollectionMap: commentPass.CommentCollectionMap = new Map();
     const commentPassRequest = commentPass.createTraversalRequest(ast, comments);
     if (commentPassRequest) {
         const commentPassResult = Traverse.traverseAst(commentPassRequest);
