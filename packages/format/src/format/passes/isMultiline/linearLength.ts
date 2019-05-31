@@ -2,18 +2,22 @@ import { Ast, isNever, Option, ResultKind, TokenRangeMap, Traverse } from "@micr
 
 export type LinearLengthMap = TokenRangeMap<number>;
 
-// lazy evaluates a potentially large AST
-// returns the text length of the node if IsMultiline is set to false
-// nodes which can't ever have a linear length (such as IfExpressions) will evaluate to NaN
+// Lazy evaluation of a potentially large AST.
+// Returns the text length of the node if IsMultiline is set to false.
+// Nodes which can't ever have a linear length (such as IfExpressions) will evaluate to NaN.
 export function getLinearLength(node: Ast.TNode, linearLengthMap: LinearLengthMap): number {
     const cacheKey = node.tokenRange.hash;
-    let linearLength = linearLengthMap[cacheKey];
-    if (linearLength === undefined) {
-        linearLength = calculateLinearLength(node, linearLengthMap);
-        linearLengthMap[cacheKey] = linearLength;
-    }
+    const maybeLinearLength: Option<number> = linearLengthMap.get(cacheKey);
 
-    return linearLength;
+    if (maybeLinearLength === undefined) {
+        const linearLength: number = calculateLinearLength(node, linearLengthMap);
+        linearLengthMap.set(cacheKey, linearLength);
+        return linearLength;
+    }
+    else {
+        const linearLength: number = maybeLinearLength;
+        return linearLength;
+    }
 }
 
 interface Request extends Traverse.IRequest<State, number> { }
@@ -25,6 +29,7 @@ interface State extends Traverse.IState<number> {
 function calculateLinearLength(node: Ast.TNode, linearLengthMap: LinearLengthMap): number {
     const linearLengthRequest = createTraversalRequest(node, linearLengthMap);
     const linearLengthResult = Traverse.traverseAst(linearLengthRequest);
+
     if (linearLengthResult.kind === ResultKind.Err) {
         throw linearLengthResult.error;
     }
@@ -195,7 +200,7 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.FieldSpecificationList: {
-            let initialLength = 0;
+            let initialLength: number = 0;
             if (node.maybeOpenRecordMarkerConstant && node.content.length) {
                 initialLength += 2;
             }
@@ -220,7 +225,7 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.FunctionExpression: {
-            let initialLength = 2;
+            let initialLength: number = 2;
             if (node.maybeFunctionReturnType) {
                 initialLength += 2;
             }
@@ -303,7 +308,7 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.Parameter: {
-            let initialLength = 0;
+            let initialLength: number = 0;
             if (node.maybeOptionalConstant) {
                 initialLength += 1;
             }
@@ -352,7 +357,7 @@ function visitNode(node: Ast.TNode, state: State) {
             break;
 
         case Ast.NodeKind.SectionMember: {
-            let initialLength = 0;
+            let initialLength: number = 0;
             if (node.maybeLiteralAttributes) {
                 initialLength += 1;
             }
@@ -376,7 +381,7 @@ function visitNode(node: Ast.TNode, state: State) {
                 linearLength = NaN;
             }
             else {
-                let initialLength = 0;
+                let initialLength: number = 0;
                 if (node.maybeLiteralAttributes) {
                     initialLength += 1;
                 }
@@ -433,8 +438,8 @@ function visitNode(node: Ast.TNode, state: State) {
             throw isNever(node);
     }
 
-    const cacheKey = node.tokenRange.hash;
-    state.linearLengthMap[cacheKey] = linearLength;
+    const cacheKey: string = node.tokenRange.hash;
+    state.linearLengthMap.set(cacheKey, linearLength);
     state.result = linearLength;
 }
 
@@ -443,10 +448,10 @@ function sumLinearLengths(
     linearLengthMap: LinearLengthMap,
     ...maybeNodes: Option<Ast.TNode>[]
 ): number {
-    let summedLinearLength = initialLength;
+    let summedLinearLength: number = initialLength;
     for (const maybeNode of maybeNodes) {
         if (maybeNode) {
-            const nodeLinearLength = getLinearLength(maybeNode, linearLengthMap);
+            const nodeLinearLength: number = getLinearLength(maybeNode, linearLengthMap);
             summedLinearLength += nodeLinearLength;
         }
     }

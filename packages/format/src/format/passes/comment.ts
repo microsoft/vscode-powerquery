@@ -15,7 +15,7 @@ export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<T
     return {
         ast,
         state: {
-            result: {},
+            result: new Map(),
             comments,
             commentsIndex: 0,
             maybeCurrentComment: comments[0],
@@ -56,18 +56,20 @@ function visitNode(node: Ast.TNode, state: State) {
     while (maybeCurrentComment && maybeCurrentComment.positionStart.codeUnit < node.tokenRange.positionStart.codeUnit) {
         const currentComment: TComment = maybeCurrentComment;
         const commentMap: CommentCollectionMap = state.result;
-        const nodeCacheKey: string = node.tokenRange.hash;
-        const commentCollection: CommentCollection = commentMap[nodeCacheKey];
+        const cacheKey: string = node.tokenRange.hash;
+        const maybeCommentCollection: Option<CommentCollection> = commentMap.get(cacheKey);
 
-        // first comment for node
-        if (commentCollection === undefined) {
-            commentMap[nodeCacheKey] = {
+        // It's the first comment for the TNode
+        if (maybeCommentCollection === undefined) {
+            const commentCollection: CommentCollection = {
                 prefixedComments: [currentComment],
                 prefixedCommentsContainsNewline: currentComment.containsNewline,
             };
+            commentMap.set(cacheKey, commentCollection);
         }
-        // at least one comment already attached to node
+        // At least one comment already attached to the TNode
         else {
+            const commentCollection: CommentCollection = maybeCommentCollection;
             commentCollection.prefixedComments.push(currentComment);
             if (currentComment.containsNewline) {
                 commentCollection.prefixedCommentsContainsNewline = true;

@@ -6,7 +6,7 @@ export function createTraversalRequest(ast: Ast.TNode): Request {
     return {
         ast,
         state: {
-            result: {},
+            result: new Map(),
         },
         visitNodeFn: visitNode,
         visitNodeStrategy: Traverse.VisitNodeStrategy.BreadthFirst,
@@ -16,7 +16,7 @@ export function createTraversalRequest(ast: Ast.TNode): Request {
 
 export function maybeGetParent(node: Ast.TNode, parentMap: ParentMap): Option<Ast.TNode> {
     const cacheKey = node.tokenRange.hash;
-    return parentMap[cacheKey];
+    return parentMap.get(cacheKey);
 }
 
 interface Request extends Traverse.IRequest<State, ParentMap> { }
@@ -29,5 +29,5 @@ function visitNode(node: Ast.TNode, state: State) {
 
 function visitNodeChildren(parent: Ast.TNode, child: Ast.TNode, state: State) {
     const cacheKey = child.tokenRange.hash;
-    state.result[cacheKey] = parent;
+    state.result.set(cacheKey, parent);
 }
