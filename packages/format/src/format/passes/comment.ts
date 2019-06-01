@@ -3,8 +3,8 @@ import { Ast, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/power
 export type CommentCollectionMap = TokenRangeMap<CommentCollection>;
 
 export interface CommentCollection {
-    readonly prefixedComments: TComment[],
-    prefixedCommentsContainsNewline: boolean,
+    readonly prefixedComments: TComment[];
+    prefixedCommentsContainsNewline: boolean;
 }
 
 export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<TComment>): Option<Request> {
@@ -23,31 +23,29 @@ export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<T
         maybeEarlyExitFn: earlyExit,
         visitNodeFn: visitNode,
         visitNodeStrategy: Traverse.VisitNodeStrategy.DepthFirst,
-    }
+    };
 }
 
-interface Request extends Traverse.IRequest<State, CommentCollectionMap> { }
+interface Request extends Traverse.IRequest<State, CommentCollectionMap> {}
 
 interface State extends Traverse.IState<CommentCollectionMap> {
-    readonly comments: ReadonlyArray<TComment>,
-    commentsIndex: number,
-    maybeCurrentComment: Option<TComment>,
+    readonly comments: ReadonlyArray<TComment>;
+    commentsIndex: number;
+    maybeCurrentComment: Option<TComment>;
 }
 
 function earlyExit(node: Ast.TNode, state: State): boolean {
     const maybeCurrentComment: Option<TComment> = state.maybeCurrentComment;
     if (maybeCurrentComment === undefined) {
         return true;
-    }
-    else if (node.tokenRange.positionEnd.codeUnit < maybeCurrentComment.positionStart.codeUnit) {
+    } else if (node.tokenRange.positionEnd.codeUnit < maybeCurrentComment.positionStart.codeUnit) {
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
 
-function visitNode(node: Ast.TNode, state: State) {
+function visitNode(node: Ast.TNode, state: State): void {
     if (!node.terminalNode) {
         return;
     }
