@@ -44,5 +44,12 @@
   "bugs": {
     "url": "https://github.com/microsoft/vscode-powerquery/issues"
   },
-  "homepage": "https://github.com/microsoft/vscode-powerquery/packages/format/#readme"
+  "homepage": "https://github.com/microsoft/vscode-powerquery/packages/format/#readme",
+  "prettier": {
+    "trailingComma": "all",
+    "tabWidth": 4,
+    "semi": true,
+    "singleQuote": false,
+    "printWidth": 120
+  }
 }
