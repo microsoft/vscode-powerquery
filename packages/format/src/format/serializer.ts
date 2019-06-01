@@ -1,6 +1,12 @@
 import { Ast, CommonError, isNever, Option, Result, ResultKind } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "./passes/comment";
-import { getSerializerWriteKind, SerializeCommentParameter, SerializerParameterMap, SerializerWriteKind } from "./passes/serializerParameter";
+import {
+    getSerializerWriteKind,
+    IndentationChange,
+    SerializeCommentParameter,
+    SerializerParameterMap,
+    SerializerWriteKind,
+} from "./passes/serializerParameter";
 
 export const enum IndentationLiteral {
     SpaceX4 = "    ",
@@ -28,19 +34,14 @@ export class Serializer {
     }
 
     public static run(request: SerializerRequest): Result<string, CommonError.CommonError> {
-        const serializer = new Serializer(
-            request.document,
-            request.maps,
-            request.options,
-        );
+        const serializer: Serializer = new Serializer(request.document, request.maps, request.options);
 
         try {
             return {
                 kind: ResultKind.Ok,
                 value: serializer.run(),
             };
-        }
-        catch (err) {
+        } catch (err) {
             return {
                 kind: ResultKind.Err,
                 error: CommonError.ensureCommonError(err),
@@ -53,17 +54,16 @@ export class Serializer {
         return this.formatted;
     }
 
-    private append(str: string) {
+    private append(str: string): void {
         this.formatted += str;
         if (str === this.serializerOptions.newlineLiteral) {
             this.currentLine = "";
-        }
-        else {
+        } else {
             this.currentLine += str;
         }
     }
 
-    private serialize(str: string, serializerWriteKind: SerializerWriteKind) {
+    private serialize(str: string, serializerWriteKind: SerializerWriteKind): void {
         switch (serializerWriteKind) {
             case SerializerWriteKind.Any:
                 this.append(str);
@@ -92,7 +92,7 @@ export class Serializer {
         }
     }
 
-    private serializeIndented(str: string) {
+    private serializeIndented(str: string): void {
         if (this.currentLine !== "") {
             this.append(this.serializerOptions.newlineLiteral);
         }
@@ -100,9 +100,9 @@ export class Serializer {
         this.append(str);
     }
 
-    private serializePadded(str: string, padLeft: boolean, padRight: boolean) {
+    private serializePadded(str: string, padLeft: boolean, padRight: boolean): void {
         if (padLeft && this.currentLine) {
-            const lastWrittenCharacter = this.currentLine[this.currentLine.length - 1];
+            const lastWrittenCharacter: Option<string> = this.currentLine[this.currentLine.length - 1];
             if (lastWrittenCharacter !== " " && lastWrittenCharacter !== "\t") {
                 this.append(" ");
             }
@@ -115,15 +115,19 @@ export class Serializer {
         }
     }
 
-    private visitNode(node: Ast.TNode) {
-        const cacheKey = node.tokenRange.hash;
-        const maybeIndentationChange = this.passthroughMaps.serializerParameterMap.indentationChange.get(cacheKey);
+    private visitNode(node: Ast.TNode): void {
+        const cacheKey: string = node.tokenRange.hash;
+        const maybeIndentationChange: Option<
+            IndentationChange
+        > = this.passthroughMaps.serializerParameterMap.indentationChange.get(cacheKey);
         if (maybeIndentationChange) {
             this.indentationLevel += 1;
         }
 
         if (node.terminalNode) {
-            const maybeComments = this.passthroughMaps.serializerParameterMap.comments.get(cacheKey);
+            const maybeComments: Option<
+                ReadonlyArray<SerializeCommentParameter>
+            > = this.passthroughMaps.serializerParameterMap.comments.get(cacheKey);
             if (maybeComments) {
                 this.visitComments(maybeComments);
             }
@@ -189,7 +193,10 @@ export class Serializer {
                 break;
 
             case Ast.NodeKind.Constant: {
-                const writeKind = getSerializerWriteKind(node, this.passthroughMaps.serializerParameterMap);
+                const writeKind: SerializerWriteKind = getSerializerWriteKind(
+                    node,
+                    this.passthroughMaps.serializerParameterMap,
+                );
                 this.serialize(node.literal, writeKind);
                 break;
             }
@@ -247,7 +254,10 @@ export class Serializer {
 
             case Ast.NodeKind.GeneralizedIdentifier:
             case Ast.NodeKind.Identifier: {
-                const writeKind = getSerializerWriteKind(node, this.passthroughMaps.serializerParameterMap);
+                const writeKind: SerializerWriteKind = getSerializerWriteKind(
+                    node,
+                    this.passthroughMaps.serializerParameterMap,
+                );
                 this.serialize(`${node.literal}`, writeKind);
                 break;
             }
@@ -289,7 +299,10 @@ export class Serializer {
                 break;
 
             case Ast.NodeKind.LiteralExpression: {
-                const writeKind = getSerializerWriteKind(node, this.passthroughMaps.serializerParameterMap);
+                const writeKind: SerializerWriteKind = getSerializerWriteKind(
+                    node,
+                    this.passthroughMaps.serializerParameterMap,
+                );
                 this.serialize(node.literal, writeKind);
                 break;
             }
@@ -362,53 +375,55 @@ export class Serializer {
         }
     }
 
-    private maybeVisitNode(maybeNode: Option<Ast.TNode>) {
+    private maybeVisitNode(maybeNode: Option<Ast.TNode>): void {
         if (maybeNode) {
             this.visitNode(maybeNode);
         }
     }
 
-    private visitArray(nodes: ReadonlyArray<Ast.TNode>) {
+    private visitArray(nodes: ReadonlyArray<Ast.TNode>): void {
         for (const node of nodes) {
             this.visitNode(node);
         }
     }
 
-    private visitComments(collection: ReadonlyArray<SerializeCommentParameter>) {
+    private visitComments(collection: ReadonlyArray<SerializeCommentParameter>): void {
         for (const comment of collection) {
             this.serialize(comment.literal, comment.writeKind);
         }
     }
 
     private currentIndentation(): string {
-        let indentationLiteral = this.indentationCache[this.indentationLevel];
-        if (indentationLiteral === undefined) {
-            this.expandIndentationCache(this.indentationLevel);
-            indentationLiteral = this.indentationCache[this.indentationLevel];
+        const maybeIndentationLiteral: Option<string> = this.indentationCache[this.indentationLevel];
+        if (maybeIndentationLiteral === undefined) {
+            return this.expandIndentationCache(this.indentationLevel);
+        } else {
+            return maybeIndentationLiteral;
         }
-        return indentationLiteral;
     }
 
-    private expandIndentationCache(level: number) {
-        for (let i = this.indentationCache.length; i <= level; i++) {
-            const previousIndentation = this.indentationCache[i - 1];
-            this.indentationCache[i] = previousIndentation + this.serializerOptions.indentationLiteral;
+    private expandIndentationCache(level: number): string {
+        for (let index: number = this.indentationCache.length; index <= level; index += 1) {
+            const previousIndentation: string = this.indentationCache[index - 1] || "";
+            this.indentationCache[index] = previousIndentation + this.serializerOptions.indentationLiteral;
         }
+
+        return this.indentationCache[this.indentationCache.length - 1];
     }
 }
 
 export interface SerializerRequest {
-    readonly document: Ast.TDocument,
-    readonly maps: SerializerPassthroughMaps,
-    readonly options: SerializerOptions,
+    readonly document: Ast.TDocument;
+    readonly maps: SerializerPassthroughMaps;
+    readonly options: SerializerOptions;
 }
 
 export interface SerializerPassthroughMaps {
-    readonly commentCollectionMap: CommentCollectionMap,
-    readonly serializerParameterMap: SerializerParameterMap,
+    readonly commentCollectionMap: CommentCollectionMap;
+    readonly serializerParameterMap: SerializerParameterMap;
 }
 
 export interface SerializerOptions {
-    readonly indentationLiteral: IndentationLiteral,
-    readonly newlineLiteral: NewlineLiteral,
+    readonly indentationLiteral: IndentationLiteral;
+    readonly newlineLiteral: NewlineLiteral;
 }

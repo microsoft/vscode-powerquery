@@ -30,6 +30,8 @@ export interface SerializeCommentParameter {
     readonly writeKind: SerializerWriteKind;
 }
 
+export interface Request extends Traverse.IRequest<State, SerializerParameterMap> {}
+
 export function createTraversalRequest(
     ast: Ast.TNode,
     parentMap: ParentMap,
@@ -67,8 +69,6 @@ export function getSerializerWriteKind(
         throw new CommonError.InvariantError("expected node to be in SerializerParameterMap.writeKind", node);
     }
 }
-
-interface Request extends Traverse.IRequest<State, SerializerParameterMap> {}
 
 interface State extends Traverse.IState<SerializerParameterMap> {
     readonly parentMap: ParentMap;

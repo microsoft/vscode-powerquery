@@ -7,6 +7,8 @@ export interface CommentCollection {
     prefixedCommentsContainsNewline: boolean;
 }
 
+export interface Request extends Traverse.IRequest<State, CommentCollectionMap> {}
+
 export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<TComment>): Option<Request> {
     if (!comments.length) {
         return;
@@ -25,8 +27,6 @@ export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<T
         visitNodeStrategy: Traverse.VisitNodeStrategy.DepthFirst,
     };
 }
-
-interface Request extends Traverse.IRequest<State, CommentCollectionMap> {}
 
 interface State extends Traverse.IState<CommentCollectionMap> {
     readonly comments: ReadonlyArray<TComment>;

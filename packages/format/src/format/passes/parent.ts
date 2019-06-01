@@ -2,6 +2,8 @@ import { Ast, Option, TokenRangeMap, Traverse } from "@microsoft/powerquery-pars
 
 export type ParentMap = TokenRangeMap<Ast.TNode>;
 
+export interface Request extends Traverse.IRequest<State, ParentMap> {}
+
 export function createTraversalRequest(ast: Ast.TNode): Request {
     return {
         ast,
@@ -18,8 +20,6 @@ export function maybeGetParent(node: Ast.TNode, parentMap: ParentMap): Option<As
     const cacheKey: string = node.tokenRange.hash;
     return parentMap.get(cacheKey);
 }
-
-interface Request extends Traverse.IRequest<State, ParentMap> {}
 
 interface State extends Traverse.IState<ParentMap> {}
 
