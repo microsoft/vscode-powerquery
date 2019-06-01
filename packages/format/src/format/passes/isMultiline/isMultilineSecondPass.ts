@@ -1,12 +1,10 @@
-import { Ast, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, Option, Traverse } from "@microsoft/powerquery-parser";
 import { maybeGetParent, ParentMap } from "../parent";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 
-export function createTraversalRequest(
-    ast: Ast.TNode,
-    isMultilineMap: IsMultilineMap,
-    parentMap: ParentMap,
-): Request {
+export interface Request extends Traverse.IRequest<State, IsMultilineMap> {}
+
+export function createTraversalRequest(ast: Ast.TNode, isMultilineMap: IsMultilineMap, parentMap: ParentMap): Request {
     return {
         ast,
         state: {
@@ -16,27 +14,29 @@ export function createTraversalRequest(
         visitNodeFn: visitNode,
         visitNodeStrategy: Traverse.VisitNodeStrategy.BreadthFirst,
         maybeEarlyExitFn: undefined,
-    }
+    };
 }
 
-interface Request extends Traverse.IRequest<State, IsMultilineMap> { }
-
 interface State extends Traverse.IState<IsMultilineMap> {
-    readonly parentMap: ParentMap,
+    readonly parentMap: ParentMap;
 }
 
 // if a list or record is a child node,
 // then by default it should be considered multiline if it has one or more values
-function visitNode(node: Ast.TNode, state: State) {
+function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         // TBinOpExpression
         case Ast.NodeKind.ArithmeticExpression:
         case Ast.NodeKind.EqualityExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
-            const isMultilineMap = state.result;
-            const maybeParent = maybeGetParent(node, state.parentMap);
-            if (maybeParent && Ast.isTBinOpExpression(maybeParent) && expectGetIsMultiline(maybeParent, isMultilineMap)) {
+            const isMultilineMap: IsMultilineMap = state.result;
+            const maybeParent: Option<Ast.TNode> = maybeGetParent(node, state.parentMap);
+            if (
+                maybeParent &&
+                Ast.isTBinOpExpression(maybeParent) &&
+                expectGetIsMultiline(maybeParent, isMultilineMap)
+            ) {
                 setIsMultiline(node, isMultilineMap, true);
             }
             break;
@@ -47,10 +47,10 @@ function visitNode(node: Ast.TNode, state: State) {
         case Ast.NodeKind.RecordExpression:
         case Ast.NodeKind.RecordLiteral:
             if (node.content.length) {
-                const parentMap = state.parentMap;
+                const parentMap: Map<string, Ast.TNode> = state.parentMap;
 
-                let maybeParent = maybeGetParent(node, parentMap);
-                let maybeCsv;
+                let maybeParent: Option<Ast.TNode> = maybeGetParent(node, parentMap);
+                let maybeCsv: Option<Ast.TCsv>;
                 if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
                     maybeCsv = maybeParent;
                     maybeParent = maybeGetParent(maybeParent, parentMap);
@@ -71,9 +71,12 @@ function visitNode(node: Ast.TNode, state: State) {
                                 setIsMultiline(maybeCsv, state.result, true);
                             }
                             setIsMultiline(node, state.result, true);
-                            break;
                     }
                 }
             }
+            break;
+
+        default:
+            break;
     }
 }
