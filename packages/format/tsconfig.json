@@ -11,7 +11,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "declaration": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "incremental": true,
   },
   "include": [
     "src/**/*.ts"
