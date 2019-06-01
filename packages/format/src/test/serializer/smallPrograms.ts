@@ -1,9 +1,9 @@
 import "mocha";
 import { compare, runFormat } from "./common";
 
-describe("small programs", () => {
-    it("fastPow", () => {
-        const expected = `
+describe(`small programs`, () => {
+    it(`fastPow`, () => {
+        const expected: string = `
 // taken from: https://en.wikipedia.org/wiki/Exponentiation_by_squaring
 // removed negative powers, sure to have bugs
 //
@@ -36,7 +36,7 @@ let
                     * @fastPow(x * x, (p - 1) / 2)
 in
     fastPow(2, 8)`;
-        const actual = runFormat(`
+        const actual: string = runFormat(`
 // taken from: https://en.wikipedia.org/wiki/Exponentiation_by_squaring
 // removed negative powers, sure to have bugs
 //
