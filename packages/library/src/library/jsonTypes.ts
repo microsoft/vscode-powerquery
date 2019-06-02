@@ -3,14 +3,14 @@
 
 export interface Module {
     name: string;
-    version: string | null;
+    version: string | undefined;
 }
 
 export enum ExportKind {
     Constant = "Constant",
     Constructor = "Constructor",
     Function = "Function",
-    Type = "Type"
+    Type = "Type",
 }
 
 export interface Export {
@@ -18,18 +18,18 @@ export interface Export {
     kind: ExportKind;
     summary: string;
     module: Module;
-    signatures: Signature[] | null;
+    signatures: Signature[] | undefined;
 }
 
 export interface Signature {
     label: string;
-    documentation: string | null;
+    documentation: string | undefined;
     parameters: Parameter[];
 }
 
 export interface Parameter {
     label: string;
-    documentation: string | null;
+    documentation: string | undefined;
     labelOffsetStart: number;
     labelOffsetEnd: number;
 }
