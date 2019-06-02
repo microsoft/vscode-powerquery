@@ -33,6 +33,13 @@
     "url": "git+https://github.com/microsoft/vscode-powerquery.git",
     "directory": "packages/library"
   },
+  "prettier": {
+    "trailingComma": "all",
+    "tabWidth": 4,
+    "semi": true,
+    "singleQuote": false,
+    "printWidth": 120
+  },
   "keywords": [
     "powerquery"
   ],
