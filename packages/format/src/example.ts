@@ -1,7 +1,11 @@
-import { FormatRequest, IndentationLiteral, NewlineLiteral, format } from "./format"
-import { ResultKind } from "@microsoft/powerquery-parser";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/* tslint:disable:no-console */
+import { Result, ResultKind } from "@microsoft/powerquery-parser";
+import { format, FormatRequest, IndentationLiteral, NewlineLiteral } from "./format";
+import { TFormatError } from "./format/error";
 
-const text = `
+const text: string = `
 // taken from: https://en.wikipedia.org/wiki/Exponentiation_by_squaring
 // removed negative powers, sure to have bugs
 //
@@ -32,19 +36,18 @@ let
             else
                 x * @fastPow(x * x, (p - 1) / 2)
 in
-    fastPow(2, 8)`
+    fastPow(2, 8)`;
 const request: FormatRequest = {
     text,
     options: {
         indentationLiteral: IndentationLiteral.SpaceX4,
         newlineLiteral: NewlineLiteral.Unix,
     },
-}
+};
 
-const formatResult = format(request);
+const formatResult: Result<string, TFormatError> = format(request);
 if (formatResult.kind === ResultKind.Ok) {
     console.log(formatResult.value);
-}
-else {
-    console.log(JSON.stringify(formatResult.error, null, 4));
+} else {
+    console.log(JSON.stringify(formatResult.error, undefined, 4));
 }

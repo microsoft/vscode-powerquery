@@ -11,12 +11,20 @@ export function runMultipleTraversalRequests(
     commentCollectionMap: CommentCollectionMap,
     parentMap: ParentMap,
 ): Result<IsMultilineMap, CommonError.CommonError> {
-    const firstPassRequest = isMultilineFirstPass.createTraversalRequest(ast, commentCollectionMap, parentMap);
-    const firstPassResult = Traverse.traverseAst(firstPassRequest);
+    const firstPassRequest: isMultilineFirstPass.Request = isMultilineFirstPass.createTraversalRequest(
+        ast,
+        commentCollectionMap,
+        parentMap,
+    );
+    const firstPassResult: Result<IsMultilineMap, CommonError.CommonError> = Traverse.traverseAst(firstPassRequest);
     if (firstPassResult.kind === ResultKind.Err) {
         return firstPassResult;
     }
 
-    const secondPassRequest = isMultilineSecondPass.createTraversalRequest(ast, firstPassResult.value, parentMap);
+    const secondPassRequest: isMultilineSecondPass.Request = isMultilineSecondPass.createTraversalRequest(
+        ast,
+        firstPassResult.value,
+        parentMap,
+    );
     return Traverse.traverseAst(secondPassRequest);
 }

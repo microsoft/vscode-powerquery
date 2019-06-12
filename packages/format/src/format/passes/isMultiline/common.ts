@@ -1,4 +1,4 @@
-import { Ast, Option, TokenRangeMap, CommonError } from "@microsoft/powerquery-parser";
+import { Ast, CommonError, Option, TokenRangeMap } from "@microsoft/powerquery-parser";
 
 export type IsMultilineMap = TokenRangeMap<boolean>;
 
@@ -7,12 +7,11 @@ export function expectGetIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilin
     if (maybeIsMultiline === undefined) {
         throw new CommonError.InvariantError(`isMultiline is missing for TokenRange ${node.tokenRange.hash}`);
     }
-    const isMultiline: boolean = maybeIsMultiline;
 
-    return isMultiline;
+    return maybeIsMultiline;
 }
 
-export function setIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilineMap, isMultiline: boolean) {
-    const cacheKey = node.tokenRange.hash;
+export function setIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilineMap, isMultiline: boolean): void {
+    const cacheKey: string = node.tokenRange.hash;
     isMultilineMap.set(cacheKey, isMultiline);
 }
