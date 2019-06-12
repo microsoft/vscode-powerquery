@@ -17,6 +17,7 @@ export interface Export {
     readonly label: string;
     readonly kind: ExportKind;
     readonly summary: string;
+    // tslint:disable-next-line: no-reserved-keywords
     readonly module: Module;
     readonly signatures: ReadonlyArray<Signature> | undefined;
 }
