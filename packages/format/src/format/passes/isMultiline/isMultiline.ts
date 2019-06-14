@@ -10,7 +10,7 @@ export function runMultipleTraversalRequests(
     ast: Ast.TDocument,
     commentCollectionMap: CommentCollectionMap,
     parentMap: ParentMap,
-): Result<IsMultilineMap, CommonError.CommonError> {
+): Traverse.TriedTraverse<IsMultilineMap> {
     const firstPassRequest: isMultilineFirstPass.Request = isMultilineFirstPass.createTraversalRequest(
         ast,
         commentCollectionMap,

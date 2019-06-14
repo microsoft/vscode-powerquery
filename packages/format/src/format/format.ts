@@ -1,7 +1,7 @@
 import {
     Ast,
     CommonError,
-    lexAndParse,
+    tryLexAndParse,
     LexAndParseErr,
     LexAndParseOk,
     Option,
@@ -9,6 +9,7 @@ import {
     ResultKind,
     TComment,
     Traverse,
+    TriedLexAndParse,
 } from "@microsoft/powerquery-parser";
 import { FormatError } from ".";
 import * as commentPass from "./passes/comment";
@@ -24,7 +25,7 @@ export interface FormatRequest {
 }
 
 export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const parseResult: Result<LexAndParseOk, LexAndParseErr> = lexAndParse(formatRequest.text);
+    const parseResult: TriedLexAndParse = tryLexAndParse(formatRequest.text);
     if (parseResult.kind === ResultKind.Err) {
         return parseResult;
     }
