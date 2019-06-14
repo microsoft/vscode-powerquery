@@ -1,15 +1,13 @@
 import {
     Ast,
     CommonError,
-    tryLexAndParse,
-    LexAndParseErr,
     LexAndParseOk,
-    Option,
     Result,
     ResultKind,
     TComment,
     Traverse,
     TriedLexAndParse,
+    tryLexAndParse,
 } from "@microsoft/powerquery-parser";
 import { FormatError } from ".";
 import * as commentPass from "./passes/comment";
@@ -30,23 +28,22 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         return parseResult;
     }
 
-    const parseSuccess: LexAndParseOk = parseResult.value;
-    const ast: Ast.TDocument = parseSuccess.ast;
-    const comments: ReadonlyArray<TComment> = parseSuccess.comments;
+    const lexAndParseOk: LexAndParseOk = parseResult.value;
+    const ast: Ast.TDocument = lexAndParseOk.ast;
+    const comments: ReadonlyArray<TComment> = lexAndParseOk.comments;
 
     let commentCollectionMap: commentPass.CommentCollectionMap = new Map();
-    const maybeCommentPassRequest: Option<commentPass.Request> = commentPass.createTraversalRequest(ast, comments);
-    if (maybeCommentPassRequest) {
-        const commentPassRequest: commentPass.Request = maybeCommentPassRequest;
-        const commentPassResult: Result<
-            commentPass.CommentCollectionMap,
-            CommonError.CommonError
-        > = Traverse.traverseAst(commentPassRequest);
-        if (commentPassResult.kind === ResultKind.Err) {
-            return commentPassResult;
-        } else {
-            commentCollectionMap = commentPassResult.value;
+    if (comments.length) {
+        const triedCommentPass: Traverse.TriedTraverse<commentPass.CommentCollectionMap> = commentPass.tryTraverse(
+            ast,
+            lexAndParseOk.nodeIdMapCollection,
+            comments,
+        );
+
+        if (triedCommentPass.kind === ResultKind.Err) {
+            return triedCommentPass;
         }
+        commentCollectionMap = triedCommentPass.value;
     }
 
     const parentPassRequest: parentPass.Request = parentPass.createTraversalRequest(ast);
@@ -87,7 +84,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         serializerParameterMap,
     };
     const serializeRequest: SerializerRequest = {
-        document: parseSuccess.ast,
+        document: lexAndParseOk.ast,
         maps,
         options: formatRequest.options,
     };
