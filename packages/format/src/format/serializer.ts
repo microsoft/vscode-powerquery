@@ -176,6 +176,7 @@ export class Serializer {
                 for (const child of children) {
                     this.visitNode(child);
                 }
+                break;
         }
 
         if (maybeIndentationChange) {
