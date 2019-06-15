@@ -1,25 +1,20 @@
-import {
-    Ast,
-    CommonError,
-    isNever,
-    Option,
-    Result,
-    ResultKind,
-    TokenRangeMap,
-    Traverse,
-} from "@microsoft/powerquery-parser";
+import { Ast, isNever, NodeIdMap, Option, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 
-export type LinearLengthMap = TokenRangeMap<number>;
+export type LinearLengthMap = Map<number, number>;
 
 // Lazy evaluation of a potentially large AST.
 // Returns the text length of the node if IsMultiline is set to false.
 // Nodes which can't ever have a linear length (such as IfExpressions) will evaluate to NaN.
-export function getLinearLength(node: Ast.TNode, linearLengthMap: LinearLengthMap): number {
-    const cacheKey: string = node.tokenRange.hash;
+export function getLinearLength(
+    node: Ast.TNode,
+    nodeIdMapCollection: NodeIdMap.Collection,
+    linearLengthMap: LinearLengthMap,
+): number {
+    const cacheKey: number = node.id;
     const maybeLinearLength: Option<number> = linearLengthMap.get(cacheKey);
 
     if (maybeLinearLength === undefined) {
-        const linearLength: number = calculateLinearLength(node, linearLengthMap);
+        const linearLength: number = calculateLinearLength(node, nodeIdMapCollection, linearLengthMap);
         linearLengthMap.set(cacheKey, linearLength);
         return linearLength;
     } else {
@@ -27,34 +22,37 @@ export function getLinearLength(node: Ast.TNode, linearLengthMap: LinearLengthMa
     }
 }
 
-interface Request extends Traverse.IRequest<State, number> {}
-
 interface State extends Traverse.IState<number> {
-    linearLengthMap: LinearLengthMap;
+    readonly nodeIdMapCollection: NodeIdMap.Collection;
+    readonly linearLengthMap: LinearLengthMap;
 }
 
-function calculateLinearLength(node: Ast.TNode, linearLengthMap: LinearLengthMap): number {
-    const linearLengthRequest: Request = createTraversalRequest(node, linearLengthMap);
-    const linearLengthResult: Result<number, CommonError.CommonError> = Traverse.traverseAst(linearLengthRequest);
-
-    if (linearLengthResult.kind === ResultKind.Err) {
-        throw linearLengthResult.error;
-    } else {
-        return linearLengthResult.value;
-    }
-}
-
-function createTraversalRequest(ast: Ast.TNode, linearLengthMap: LinearLengthMap): Request {
-    return {
-        ast,
-        state: {
-            result: 0,
-            linearLengthMap,
-        },
-        visitNodeFn: visitNode,
-        visitNodeStrategy: Traverse.VisitNodeStrategy.DepthFirst,
-        maybeEarlyExitFn: undefined,
+function calculateLinearLength(
+    node: Ast.TNode,
+    nodeIdMapCollection: NodeIdMap.Collection,
+    linearLengthMap: LinearLengthMap,
+): number {
+    const state: State = {
+        result: 0,
+        nodeIdMapCollection,
+        linearLengthMap,
     };
+
+    const triedTraverse: Traverse.TriedTraverse<number> = Traverse.tryTraverseAst(
+        node,
+        nodeIdMapCollection,
+        state,
+        Traverse.VisitNodeStrategy.DepthFirst,
+        visitNode,
+        Traverse.expectExpandAllAstChildren,
+        undefined,
+    );
+
+    if (triedTraverse.kind === ResultKind.Err) {
+        throw triedTraverse.error;
+    } else {
+        return triedTraverse.value;
+    }
 }
 
 function visitNode(node: Ast.TNode, state: State): void {
@@ -69,7 +67,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.NullableType:
         case Ast.NodeKind.OtherwiseExpression:
         case Ast.NodeKind.TypePrimaryType:
-            linearLength = sumLinearLengths(1, state.linearLengthMap, node.constant, node.paired);
+            linearLength = sumLinearLengths(1, state, node.constant, node.paired);
             break;
 
         // TBinOpExpression
@@ -77,14 +75,14 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.EqualityExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression:
-            linearLength = sumLinearLengths(2 * node.rest.length, state.linearLengthMap, node.first, ...node.rest);
+            linearLength = sumLinearLengths(2 * node.rest.length, state, node.first, ...node.rest);
             break;
 
         // TBinOpKeyword
         case Ast.NodeKind.IsExpression:
         case Ast.NodeKind.AsExpression:
         case Ast.NodeKind.MetadataExpression: {
-            linearLength = sumLinearLengths(2, state.linearLengthMap, node.left, node.constant, node.right);
+            linearLength = sumLinearLengths(2, state, node.left, node.constant, node.right);
             break;
         }
 
@@ -93,7 +91,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.GeneralizedIdentifierPairedExpression:
         case Ast.NodeKind.IdentifierExpressionPairedExpression:
         case Ast.NodeKind.IdentifierPairedExpression:
-            linearLength = sumLinearLengths(2, state.linearLengthMap, node.key, node.equalConstant, node.value);
+            linearLength = sumLinearLengths(2, state, node.key, node.equalConstant, node.value);
             break;
 
         // TWrapped where Content is TCsv[] and no extra attributes
@@ -105,7 +103,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.RecordLiteral:
             linearLength = sumLinearLengths(
                 node.content.length ? node.content.length - 1 : 0,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.closeWrapperConstant,
                 ...node.content,
@@ -117,7 +115,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.Csv:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, node.node, node.maybeCommaConstant);
+            linearLength = sumLinearLengths(0, state, node.node, node.maybeCommaConstant);
             break;
 
         case Ast.NodeKind.ErrorHandlingExpression: {
@@ -127,7 +125,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             }
             linearLength = sumLinearLengths(
                 initialLength,
-                state.linearLengthMap,
+                state,
                 node.tryConstant,
                 node.protectedExpression,
                 node.maybeOtherwiseExpression,
@@ -138,7 +136,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.FieldProjection:
             linearLength = sumLinearLengths(
                 0,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.closeWrapperConstant,
                 node.maybeOptionalConstant,
@@ -149,7 +147,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.FieldSelector:
             linearLength = sumLinearLengths(
                 0,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.content,
                 node.closeWrapperConstant,
@@ -160,7 +158,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.FieldSpecification:
             linearLength = sumLinearLengths(
                 0,
-                state.linearLengthMap,
+                state,
                 node.maybeOptionalConstant,
                 node.name,
                 node.maybeFieldTypeSpeification,
@@ -174,7 +172,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             }
             linearLength = sumLinearLengths(
                 initialLength,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.closeWrapperConstant,
                 node.maybeOpenRecordMarkerConstant,
@@ -184,7 +182,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         }
 
         case Ast.NodeKind.FieldTypeSpecification:
-            linearLength = sumLinearLengths(2, state.linearLengthMap, node.equalConstant, node.fieldType);
+            linearLength = sumLinearLengths(2, state, node.equalConstant, node.fieldType);
             break;
 
         case Ast.NodeKind.FunctionExpression: {
@@ -194,7 +192,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             }
             linearLength = sumLinearLengths(
                 initialLength,
-                state.linearLengthMap,
+                state,
                 node.parameters,
                 node.maybeFunctionReturnType,
                 node.fatArrowConstant,
@@ -204,13 +202,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         }
 
         case Ast.NodeKind.FunctionType:
-            linearLength = sumLinearLengths(
-                2,
-                state.linearLengthMap,
-                node.functionConstant,
-                node.parameters,
-                node.functionReturnType,
-            );
+            linearLength = sumLinearLengths(2, state, node.functionConstant, node.parameters, node.functionReturnType);
             break;
 
         case Ast.NodeKind.GeneralizedIdentifier:
@@ -219,13 +211,13 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.IdentifierExpression:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, node.maybeInclusiveConstant, node.identifier);
+            linearLength = sumLinearLengths(0, state, node.maybeInclusiveConstant, node.identifier);
             break;
 
         case Ast.NodeKind.ItemAccessExpression:
             linearLength = sumLinearLengths(
                 0,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.content,
                 node.closeWrapperConstant,
@@ -240,7 +232,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.ListType:
             linearLength = sumLinearLengths(
                 0,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.content,
                 node.closeWrapperConstant,
@@ -248,7 +240,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.NotImplementedExpression:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, node.ellipsisConstant);
+            linearLength = sumLinearLengths(0, state, node.ellipsisConstant);
             break;
 
         case Ast.NodeKind.Parameter: {
@@ -261,7 +253,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             }
             linearLength = sumLinearLengths(
                 initialLength,
-                state.linearLengthMap,
+                state,
                 node.maybeOptionalConstant,
                 node.name,
                 node.maybeParameterType,
@@ -272,7 +264,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.ParenthesizedExpression:
             linearLength = sumLinearLengths(
                 0,
-                state.linearLengthMap,
+                state,
                 node.openWrapperConstant,
                 node.content,
                 node.closeWrapperConstant,
@@ -280,15 +272,15 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.PrimitiveType:
-            linearLength = getLinearLength(node.primitiveType, state.linearLengthMap);
+            linearLength = getLinearLength(node.primitiveType, state.nodeIdMapCollection, state.linearLengthMap);
             break;
 
         case Ast.NodeKind.RecordType:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, node.fields);
+            linearLength = sumLinearLengths(0, state, node.fields);
             break;
 
         case Ast.NodeKind.RecursivePrimaryExpression:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, node.head, ...node.recursiveExpressions);
+            linearLength = sumLinearLengths(0, state, node.head, ...node.recursiveExpressions);
             break;
 
         case Ast.NodeKind.SectionMember: {
@@ -302,7 +294,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             linearLength = sumLinearLengths(
                 initialLength,
-                state.linearLengthMap,
+                state,
                 node.maybeLiteralAttributes,
                 node.maybeSharedConstant,
                 node.namePairedExpression,
@@ -325,7 +317,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
                 linearLength = sumLinearLengths(
                     initialLength,
-                    state.linearLengthMap,
+                    state,
                     node.maybeLiteralAttributes,
                     node.sectionConstant,
                     node.maybeName,
@@ -337,15 +329,15 @@ function visitNode(node: Ast.TNode, state: State): void {
         }
 
         case Ast.NodeKind.TableType:
-            linearLength = sumLinearLengths(1, state.linearLengthMap, node.tableConstant, node.rowType);
+            linearLength = sumLinearLengths(1, state, node.tableConstant, node.rowType);
             break;
 
         case Ast.NodeKind.UnaryExpression:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, ...node.expressions);
+            linearLength = sumLinearLengths(0, state, ...node.expressions);
             break;
 
         case Ast.NodeKind.UnaryExpressionHelper:
-            linearLength = sumLinearLengths(0, state.linearLengthMap, node.operatorConstant, node.node);
+            linearLength = sumLinearLengths(0, state, node.operatorConstant, node.node);
             break;
 
         // is always multiline, therefore cannot have linear line length
@@ -358,20 +350,20 @@ function visitNode(node: Ast.TNode, state: State): void {
             throw isNever(node);
     }
 
-    const cacheKey: string = node.tokenRange.hash;
+    const cacheKey: number = node.id;
     state.linearLengthMap.set(cacheKey, linearLength);
     state.result = linearLength;
 }
 
-function sumLinearLengths(
-    initialLength: number,
-    linearLengthMap: LinearLengthMap,
-    ...maybeNodes: Option<Ast.TNode>[]
-): number {
+function sumLinearLengths(initialLength: number, state: State, ...maybeNodes: Option<Ast.TNode>[]): number {
     let summedLinearLength: number = initialLength;
     for (const maybeNode of maybeNodes) {
         if (maybeNode) {
-            const nodeLinearLength: number = getLinearLength(maybeNode, linearLengthMap);
+            const nodeLinearLength: number = getLinearLength(
+                maybeNode,
+                state.nodeIdMapCollection,
+                state.linearLengthMap,
+            );
             summedLinearLength += nodeLinearLength;
         }
     }

@@ -1,33 +1,35 @@
-import { Ast, CommonError, isNever, Option, StringHelpers, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, CommonError, isNever, NodeIdMap, Option, StringHelpers, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "../comment";
-import { maybeGetParent, ParentMap } from "../parent";
+import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 import { getLinearLength, LinearLengthMap } from "./linearLength";
 
-export interface Request extends Traverse.IRequest<State, IsMultilineMap> {}
-
-export function createTraversalRequest(
+export function tryTraverse(
     ast: Ast.TNode,
     commentCollectionMap: CommentCollectionMap,
-    parentMap: ParentMap,
-): Request {
-    return {
-        ast,
-        state: {
-            result: new Map(),
-            commentCollectionMap,
-            parentMap,
-            linearLengthMap: new Map(),
-        },
-        visitNodeFn: visitNode,
-        visitNodeStrategy: Traverse.VisitNodeStrategy.DepthFirst,
-        maybeEarlyExitFn: undefined,
+    nodeIdMapCollection: NodeIdMap.Collection,
+): Traverse.TriedTraverse<IsMultilineMap> {
+    const state: State = {
+        result: new Map(),
+        commentCollectionMap,
+        nodeIdMapCollection,
+        linearLengthMap: new Map(),
     };
+
+    return Traverse.tryTraverseAst<State, IsMultilineMap>(
+        ast,
+        nodeIdMapCollection,
+        state,
+        Traverse.VisitNodeStrategy.DepthFirst,
+        visitNode,
+        Traverse.expectExpandAllAstChildren,
+        undefined,
+    );
 }
 
 export interface State extends Traverse.IState<IsMultilineMap> {
     readonly commentCollectionMap: CommentCollectionMap;
-    readonly parentMap: ParentMap;
+    readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly linearLengthMap: LinearLengthMap;
 }
 
@@ -68,11 +70,13 @@ function visitNode(node: Ast.TNode, state: State): void {
             if (numExpressions > TBinOpExpressionExpressionNumberThreshold) {
                 isMultiline = true;
             } else {
-                const linearLength: number = getLinearLength(node, state.linearLengthMap);
+                const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
                 if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                     isMultiline = true;
                 } else {
-                    isMultiline = isAnyMultilineUnaryHelper(isMultilineMap, node.rest, node.first);
+                    isMultiline =
+                        isAnyMultilineUnaryHelper(isMultilineMap, node.rest) ||
+                        expectGetIsMultiline(node.first, isMultilineMap);
                 }
             }
             break;
@@ -192,9 +196,9 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             if (args.length > 1) {
                 const linearLengthMap: LinearLengthMap = state.linearLengthMap;
-                const linearLength: number = getLinearLength(node, linearLengthMap);
-                const maybeParent: Option<Ast.TNode> = maybeGetParent(node, state.parentMap);
-                if (!maybeParent || maybeParent.kind !== Ast.NodeKind.RecursivePrimaryExpression) {
+                const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, linearLengthMap);
+                const maybeParent: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
+                if (maybeParent === undefined || maybeParent.kind !== Ast.NodeKind.RecursivePrimaryExpression) {
                     const details: {} = {
                         node,
                         maybeParent,
@@ -205,7 +209,11 @@ function visitNode(node: Ast.TNode, state: State): void {
                     );
                 }
 
-                const headLinearLength: number = getLinearLength(maybeParent.head, linearLengthMap);
+                const headLinearLength: number = getLinearLength(
+                    maybeParent.head,
+                    state.nodeIdMapCollection,
+                    linearLengthMap,
+                );
                 const compositeLinearLength: number = linearLength + headLinearLength;
 
                 // if it's beyond the threshold check if it's a long literal
@@ -379,12 +387,8 @@ function isAnyMultiline(isMultilineMap: IsMultilineMap, ...maybeNodes: Option<As
 function isAnyMultilineUnaryHelper(
     isMultilineMap: IsMultilineMap,
     unaryExpressions: ReadonlyArray<Ast.TUnaryExpressionHelper>,
-    ...nodes: Ast.TNode[]
 ): boolean {
-    for (const unaryExpression of unaryExpressions) {
-        nodes.push(unaryExpression.node);
-    }
-    return isAnyMultiline(isMultilineMap, ...nodes);
+    return isAnyMultiline(isMultilineMap, ...unaryExpressions);
 }
 
 function setIsMultilineWithCommentCheck(node: Ast.TNode, state: State, isMultiline: boolean): void {
@@ -396,8 +400,7 @@ function setIsMultilineWithCommentCheck(node: Ast.TNode, state: State, isMultili
 }
 
 function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
-    const cacheKey: string = node.tokenRange.hash;
-    const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(cacheKey);
+    const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(node.id);
     if (maybeCommentCollection) {
         return maybeCommentCollection.prefixedCommentsContainsNewline;
     } else {
@@ -410,7 +413,7 @@ function maybeGetInvokeExpressionIdentifier(
     node: Ast.InvokeExpression,
     state: State,
 ): Option<Ast.IdentifierExpression> {
-    const maybeRecursivePrimaryExpression: Option<Ast.TNode> = maybeGetParent(node, state.parentMap);
+    const maybeRecursivePrimaryExpression: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
     if (
         !maybeRecursivePrimaryExpression ||
         maybeRecursivePrimaryExpression.kind !== Ast.NodeKind.RecursivePrimaryExpression

@@ -1,31 +1,33 @@
-import { Ast, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, NodeIdMap, Option, TComment, Traverse } from "@microsoft/powerquery-parser";
 
-export type CommentCollectionMap = TokenRangeMap<CommentCollection>;
+export type CommentCollectionMap = Map<number, CommentCollection>;
 
 export interface CommentCollection {
     readonly prefixedComments: TComment[];
     prefixedCommentsContainsNewline: boolean;
 }
 
-export interface Request extends Traverse.IRequest<State, CommentCollectionMap> {}
-
-export function createTraversalRequest(ast: Ast.TNode, comments: ReadonlyArray<TComment>): Option<Request> {
-    if (!comments.length) {
-        return;
-    }
-
-    return {
-        ast,
-        state: {
-            result: new Map(),
-            comments,
-            commentsIndex: 0,
-            maybeCurrentComment: comments[0],
-        },
-        maybeEarlyExitFn: earlyExit,
-        visitNodeFn: visitNode,
-        visitNodeStrategy: Traverse.VisitNodeStrategy.DepthFirst,
+export function tryTraverse(
+    root: Ast.TNode,
+    nodeIdMapCollection: NodeIdMap.Collection,
+    comments: ReadonlyArray<TComment>,
+): Traverse.TriedTraverse<CommentCollectionMap> {
+    const state: State = {
+        result: new Map(),
+        comments,
+        commentsIndex: 0,
+        maybeCurrentComment: comments[0],
     };
+
+    return Traverse.tryTraverseAst<State, CommentCollectionMap>(
+        root,
+        nodeIdMapCollection,
+        state,
+        Traverse.VisitNodeStrategy.DepthFirst,
+        visitNode,
+        Traverse.expectExpandAllAstChildren,
+        earlyExit,
+    );
 }
 
 interface State extends Traverse.IState<CommentCollectionMap> {
@@ -46,7 +48,7 @@ function earlyExit(node: Ast.TNode, state: State): boolean {
 }
 
 function visitNode(node: Ast.TNode, state: State): void {
-    if (!node.terminalNode) {
+    if (!node.isLeaf) {
         return;
     }
 
@@ -54,7 +56,7 @@ function visitNode(node: Ast.TNode, state: State): void {
     while (maybeCurrentComment && maybeCurrentComment.positionStart.codeUnit < node.tokenRange.positionStart.codeUnit) {
         const currentComment: TComment = maybeCurrentComment;
         const commentMap: CommentCollectionMap = state.result;
-        const cacheKey: string = node.tokenRange.hash;
+        const cacheKey: number = node.id;
         const maybeCommentCollection: Option<CommentCollection> = commentMap.get(cacheKey);
 
         // It's the first comment for the TNode

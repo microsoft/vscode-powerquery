@@ -1,24 +1,29 @@
-import { Ast, Option, Traverse } from "@microsoft/powerquery-parser";
-import { maybeGetParent, ParentMap } from "../parent";
+import { Ast, NodeIdMap, Option, Traverse } from "@microsoft/powerquery-parser";
+import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 
-export interface Request extends Traverse.IRequest<State, IsMultilineMap> {}
-
-export function createTraversalRequest(ast: Ast.TNode, isMultilineMap: IsMultilineMap, parentMap: ParentMap): Request {
-    return {
-        ast,
-        state: {
-            result: isMultilineMap,
-            parentMap,
-        },
-        visitNodeFn: visitNode,
-        visitNodeStrategy: Traverse.VisitNodeStrategy.BreadthFirst,
-        maybeEarlyExitFn: undefined,
+export function tryTraverse(
+    ast: Ast.TNode,
+    isMultilineMap: IsMultilineMap,
+    nodeIdMapCollection: NodeIdMap.Collection,
+): Traverse.TriedTraverse<IsMultilineMap> {
+    const state: State = {
+        result: isMultilineMap,
+        nodeIdMapCollection,
     };
+    return Traverse.tryTraverseAst(
+        ast,
+        nodeIdMapCollection,
+        state,
+        Traverse.VisitNodeStrategy.BreadthFirst,
+        visitNode,
+        Traverse.expectExpandAllAstChildren,
+        undefined,
+    );
 }
 
 interface State extends Traverse.IState<IsMultilineMap> {
-    readonly parentMap: ParentMap;
+    readonly nodeIdMapCollection: NodeIdMap.Collection;
 }
 
 // if a list or record is a child node,
@@ -31,7 +36,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
             const isMultilineMap: IsMultilineMap = state.result;
-            const maybeParent: Option<Ast.TNode> = maybeGetParent(node, state.parentMap);
+            const maybeParent: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
             if (
                 maybeParent &&
                 Ast.isTBinOpExpression(maybeParent) &&
@@ -47,13 +52,13 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.RecordExpression:
         case Ast.NodeKind.RecordLiteral:
             if (node.content.length) {
-                const parentMap: Map<string, Ast.TNode> = state.parentMap;
+                const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
 
-                let maybeParent: Option<Ast.TNode> = maybeGetParent(node, parentMap);
+                let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
                 let maybeCsv: Option<Ast.TCsv>;
                 if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
                     maybeCsv = maybeParent;
-                    maybeParent = maybeGetParent(maybeParent, parentMap);
+                    maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
                 }
 
                 if (maybeParent) {
