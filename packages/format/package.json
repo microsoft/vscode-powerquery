@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/powerquery-formatter",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Code formatting library for the Power Query / M language.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
