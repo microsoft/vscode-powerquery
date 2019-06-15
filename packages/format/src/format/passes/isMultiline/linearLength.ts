@@ -1,6 +1,6 @@
-import { Ast, isNever, NodeIdMap, Option, ResultKind, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, isNever, NodeIdMap, Option, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 
-export type LinearLengthMap = TokenRangeMap<number>;
+export type LinearLengthMap = Map<number, number>;
 
 // Lazy evaluation of a potentially large AST.
 // Returns the text length of the node if IsMultiline is set to false.
@@ -10,7 +10,7 @@ export function getLinearLength(
     nodeIdMapCollection: NodeIdMap.Collection,
     linearLengthMap: LinearLengthMap,
 ): number {
-    const cacheKey: string = node.tokenRange.hash;
+    const cacheKey: number = node.id;
     const maybeLinearLength: Option<number> = linearLengthMap.get(cacheKey);
 
     if (maybeLinearLength === undefined) {
@@ -350,7 +350,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             throw isNever(node);
     }
 
-    const cacheKey: string = node.tokenRange.hash;
+    const cacheKey: number = node.id;
     state.linearLengthMap.set(cacheKey, linearLength);
     state.result = linearLength;
 }

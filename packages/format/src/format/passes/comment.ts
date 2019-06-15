@@ -1,6 +1,6 @@
-import { Ast, NodeIdMap, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, NodeIdMap, Option, TComment, Traverse } from "@microsoft/powerquery-parser";
 
-export type CommentCollectionMap = TokenRangeMap<CommentCollection>;
+export type CommentCollectionMap = Map<number, CommentCollection>;
 
 export interface CommentCollection {
     readonly prefixedComments: TComment[];
@@ -56,7 +56,7 @@ function visitNode(node: Ast.TNode, state: State): void {
     while (maybeCurrentComment && maybeCurrentComment.positionStart.codeUnit < node.tokenRange.positionStart.codeUnit) {
         const currentComment: TComment = maybeCurrentComment;
         const commentMap: CommentCollectionMap = state.result;
-        const cacheKey: string = node.tokenRange.hash;
+        const cacheKey: number = node.id;
         const maybeCommentCollection: Option<CommentCollection> = commentMap.get(cacheKey);
 
         // It's the first comment for the TNode

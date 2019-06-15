@@ -1,13 +1,4 @@
-import {
-    Ast,
-    CommonError,
-    isNever,
-    NodeIdMap,
-    Option,
-    TComment,
-    TokenRangeMap,
-    Traverse,
-} from "@microsoft/powerquery-parser";
+import { Ast, CommonError, isNever, NodeIdMap, Option, TComment, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "./comment";
 import { maybeGetParent } from "./common";
 import { expectGetIsMultiline, IsMultilineMap } from "./isMultiline/common";
@@ -29,9 +20,9 @@ export const enum SerializerWriteKind {
 }
 
 export interface SerializerParameterMap {
-    readonly indentationChange: TokenRangeMap<IndentationChange>;
-    readonly writeKind: TokenRangeMap<SerializerWriteKind>;
-    readonly comments: TokenRangeMap<ReadonlyArray<SerializeCommentParameter>>;
+    readonly indentationChange: Map<number, IndentationChange>;
+    readonly writeKind: Map<number, SerializerWriteKind>;
+    readonly comments: Map<number, ReadonlyArray<SerializeCommentParameter>>;
 }
 
 export interface SerializeCommentParameter {
@@ -71,12 +62,12 @@ export function getSerializerWriteKind(
     node: Ast.TNode,
     serializerParametersMap: SerializerParameterMap,
 ): SerializerWriteKind {
-    const cacheKey: string = node.tokenRange.hash;
-    const maybeWriteKind: Option<SerializerWriteKind> = serializerParametersMap.writeKind.get(cacheKey);
+    const maybeWriteKind: Option<SerializerWriteKind> = serializerParametersMap.writeKind.get(node.id);
     if (maybeWriteKind) {
         return maybeWriteKind;
     } else {
-        throw new CommonError.InvariantError("expected node to be in SerializerParameterMap.writeKind", node);
+        const details: {} = { node };
+        throw new CommonError.InvariantError("expected node to be in SerializerParameterMap.writeKind", details);
     }
 }
 
@@ -84,7 +75,7 @@ interface State extends Traverse.IState<SerializerParameterMap> {
     readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly commentCollectionMap: CommentCollectionMap;
     readonly isMultilineMap: IsMultilineMap;
-    readonly workspaceMap: TokenRangeMap<Workspace>;
+    readonly workspaceMap: Map<number, Workspace>;
 }
 
 // temporary storage used during traversal
@@ -704,7 +695,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.GeneralizedIdentifier:
         case Ast.NodeKind.Identifier:
         case Ast.NodeKind.LiteralExpression: {
-            const cacheKey: string = node.tokenRange.hash;
+            const cacheKey: number = node.id;
             const workspace: Workspace = getWorkspace(node, state);
             maybeSetIndentationChange(node, state, workspace.maybeIndentationChange);
 
@@ -728,8 +719,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 }
 
 function getWorkspace(node: Ast.TNode, state: State, fallback: Workspace = DefaultWorkspace): Workspace {
-    const cacheKey: string = node.tokenRange.hash;
-    const maybeWorkspace: Option<Workspace> = state.workspaceMap.get(cacheKey);
+    const maybeWorkspace: Option<Workspace> = state.workspaceMap.get(node.id);
 
     if (maybeWorkspace !== undefined) {
         return maybeWorkspace;
@@ -739,8 +729,7 @@ function getWorkspace(node: Ast.TNode, state: State, fallback: Workspace = Defau
 }
 
 function setWorkspace(node: Ast.TNode, state: State, workspace: Workspace): void {
-    const cacheKey: string = node.tokenRange.hash;
-    state.workspaceMap.set(cacheKey, workspace);
+    state.workspaceMap.set(node.id, workspace);
 }
 
 // sets indentationChange for the parent using the parent's Workspace,
@@ -772,8 +761,7 @@ function maybeSetIndentationChange(
     maybeIndentationChange: Option<IndentationChange>,
 ): void {
     if (maybeIndentationChange) {
-        const cacheKey: string = node.tokenRange.hash;
-        state.result.indentationChange.set(cacheKey, maybeIndentationChange);
+        state.result.indentationChange.set(node.id, maybeIndentationChange);
     }
 }
 
@@ -791,7 +779,7 @@ function visitComments(
     state: State,
     maybeWriteKind: Option<SerializerWriteKind>,
 ): Option<SerializerWriteKind> {
-    const cacheKey: string = node.tokenRange.hash;
+    const cacheKey: number = node.id;
     const maybeComments: Option<CommentCollection> = state.commentCollectionMap.get(cacheKey);
     if (!maybeComments) {
         return maybeWriteKind;

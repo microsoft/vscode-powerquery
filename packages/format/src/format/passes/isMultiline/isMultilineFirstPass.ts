@@ -400,8 +400,7 @@ function setIsMultilineWithCommentCheck(node: Ast.TNode, state: State, isMultili
 }
 
 function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
-    const cacheKey: string = node.tokenRange.hash;
-    const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(cacheKey);
+    const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(node.id);
     if (maybeCommentCollection) {
         return maybeCommentCollection.prefixedCommentsContainsNewline;
     } else {

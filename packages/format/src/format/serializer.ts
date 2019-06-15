@@ -122,7 +122,7 @@ export class Serializer {
     }
 
     private visitNode(node: Ast.TNode): void {
-        const cacheKey: string = node.tokenRange.hash;
+        const cacheKey: number = node.id;
         const maybeIndentationChange: Option<
             IndentationChange
         > = this.passthroughMaps.serializerParameterMap.indentationChange.get(cacheKey);
