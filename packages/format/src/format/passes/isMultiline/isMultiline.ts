@@ -1,29 +1,24 @@
-import { Ast, CommonError, Result, ResultKind, Traverse, NodeIdMap } from "@microsoft/powerquery-parser";
+import { Ast, NodeIdMap, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "../comment";
 import { IsMultilineMap } from "./common";
-import * as isMultilineFirstPass from "./isMultilineFirstPass";
-import * as isMultilineSecondPass from "./isMultilineSecondPass";
+import { tryTraverse as tryTraverseFirstPass } from "./isMultilineFirstPass";
+import { tryTraverse as tryTraverseSecondPass } from "./isMultilineSecondPass";
 
 // runs a DFS pass followed by a BFS pass.
-export function runMultipleTraversalRequests(
+export function tryTraverse(
     ast: Ast.TDocument,
     commentCollectionMap: CommentCollectionMap,
     nodeIdMapCollection: NodeIdMap.Collection,
 ): Traverse.TriedTraverse<IsMultilineMap> {
-    const firstPassRequest: isMultilineFirstPass.Request = isMultilineFirstPass.createTraversalRequest(
+    const triedFirstPass: Traverse.TriedTraverse<IsMultilineMap> = tryTraverseFirstPass(
         ast,
         commentCollectionMap,
-        parentMap,
+        nodeIdMapCollection,
     );
-    const firstPassResult: Result<IsMultilineMap, CommonError.CommonError> = Traverse.traverseAst(firstPassRequest);
-    if (firstPassResult.kind === ResultKind.Err) {
-        return firstPassResult;
+    if (triedFirstPass.kind === ResultKind.Err) {
+        return triedFirstPass;
     }
+    const isMultilineMap: IsMultilineMap = triedFirstPass.value;
 
-    const secondPassRequest: isMultilineSecondPass.Request = isMultilineSecondPass.createTraversalRequest(
-        ast,
-        firstPassResult.value,
-        parentMap,
-    );
-    return Traverse.traverseAst(secondPassRequest);
+    return tryTraverseSecondPass(ast, isMultilineMap, nodeIdMapCollection);
 }

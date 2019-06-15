@@ -2,13 +2,13 @@ import {
     Ast,
     CommonError,
     LexAndParseOk,
+    NodeIdMap,
     Result,
     ResultKind,
     TComment,
     Traverse,
     TriedLexAndParse,
     tryLexAndParse,
-    NodeIdMap,
 } from "@microsoft/powerquery-parser";
 import { FormatError } from ".";
 import * as commentPass from "./passes/comment";
@@ -47,7 +47,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         commentCollectionMap = triedCommentPass.value;
     }
 
-    const isMultilinePassResult: Traverse.TriedTraverse<IsMultilineMap> = isMultilinePass.runMultipleTraversalRequests(
+    const isMultilinePassResult: Traverse.TriedTraverse<IsMultilineMap> = isMultilinePass.tryTraverse(
         ast,
         commentCollectionMap,
         nodeIdMapCollection,

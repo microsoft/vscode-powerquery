@@ -1,7 +1,7 @@
 import { Ast, CommonError, isNever, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "./comment";
 import { expectGetIsMultiline, IsMultilineMap } from "./isMultiline/common";
-import { maybeGetParent, ParentMap } from "./parent";
+import { maybeGetParent, ParentMap } from "./common";
 
 // TNodes (in general) have two responsibilities:
 // * if given a Workspace, then propagate the SerializerWriteKind to their first child,

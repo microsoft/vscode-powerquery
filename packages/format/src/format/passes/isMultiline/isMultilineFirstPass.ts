@@ -1,8 +1,8 @@
 import { Ast, CommonError, isNever, NodeIdMap, Option, StringHelpers, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "../comment";
+import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 import { getLinearLength, LinearLengthMap } from "./linearLength";
-import { maybeGetParent } from "../parent";
 
 export function tryTraverse(
     ast: Ast.TNode,
