@@ -1,6 +1,5 @@
-import { Ast, CommonError, Result, ResultKind, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, CommonError, Result, ResultKind, Traverse, NodeIdMap } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "../comment";
-import { ParentMap } from "../parent";
 import { IsMultilineMap } from "./common";
 import * as isMultilineFirstPass from "./isMultilineFirstPass";
 import * as isMultilineSecondPass from "./isMultilineSecondPass";
@@ -9,7 +8,7 @@ import * as isMultilineSecondPass from "./isMultilineSecondPass";
 export function runMultipleTraversalRequests(
     ast: Ast.TDocument,
     commentCollectionMap: CommentCollectionMap,
-    parentMap: ParentMap,
+    nodeIdMapCollection: NodeIdMap.Collection,
 ): Traverse.TriedTraverse<IsMultilineMap> {
     const firstPassRequest: isMultilineFirstPass.Request = isMultilineFirstPass.createTraversalRequest(
         ast,

@@ -8,12 +8,12 @@ import {
     Traverse,
     TriedLexAndParse,
     tryLexAndParse,
+    NodeIdMap,
 } from "@microsoft/powerquery-parser";
 import { FormatError } from ".";
 import * as commentPass from "./passes/comment";
 import { IsMultilineMap } from "./passes/isMultiline/common";
 import * as isMultilinePass from "./passes/isMultiline/isMultiline";
-import * as parentPass from "./passes/parent";
 import * as serializerParameterPass from "./passes/serializerParameter";
 import { Serializer, SerializerOptions, SerializerPassthroughMaps, SerializerRequest } from "./serializer";
 
@@ -23,20 +23,21 @@ export interface FormatRequest {
 }
 
 export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const parseResult: TriedLexAndParse = tryLexAndParse(formatRequest.text);
-    if (parseResult.kind === ResultKind.Err) {
-        return parseResult;
+    const triedLexAndParse: TriedLexAndParse = tryLexAndParse(formatRequest.text);
+    if (triedLexAndParse.kind === ResultKind.Err) {
+        return triedLexAndParse;
     }
 
-    const lexAndParseOk: LexAndParseOk = parseResult.value;
+    const lexAndParseOk: LexAndParseOk = triedLexAndParse.value;
     const ast: Ast.TDocument = lexAndParseOk.ast;
     const comments: ReadonlyArray<TComment> = lexAndParseOk.comments;
+    const nodeIdMapCollection: NodeIdMap.Collection = lexAndParseOk.nodeIdMapCollection;
 
     let commentCollectionMap: commentPass.CommentCollectionMap = new Map();
     if (comments.length) {
         const triedCommentPass: Traverse.TriedTraverse<commentPass.CommentCollectionMap> = commentPass.tryTraverse(
             ast,
-            lexAndParseOk.nodeIdMapCollection,
+            nodeIdMapCollection,
             comments,
         );
 
@@ -46,19 +47,11 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         commentCollectionMap = triedCommentPass.value;
     }
 
-    const parentPassRequest: parentPass.Request = parentPass.createTraversalRequest(ast);
-    const parentPassResult: Result<parentPass.ParentMap, CommonError.CommonError> = Traverse.traverseAst(
-        parentPassRequest,
+    const isMultilinePassResult: Traverse.TriedTraverse<IsMultilineMap> = isMultilinePass.runMultipleTraversalRequests(
+        ast,
+        commentCollectionMap,
+        nodeIdMapCollection,
     );
-    if (parentPassResult.kind === ResultKind.Err) {
-        return parentPassResult;
-    }
-    const parentMap: parentPass.ParentMap = parentPassResult.value;
-
-    const isMultilinePassResult: Result<
-        IsMultilineMap,
-        CommonError.CommonError
-    > = isMultilinePass.runMultipleTraversalRequests(ast, commentCollectionMap, parentMap);
     if (isMultilinePassResult.kind === ResultKind.Err) {
         return isMultilinePassResult;
     }
