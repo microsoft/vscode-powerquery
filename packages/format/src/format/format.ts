@@ -73,6 +73,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
     };
     const serializeRequest: SerializerRequest = {
         document: lexAndParseOk.ast,
+        nodeIdMapCollection,
         maps,
         options: formatRequest.options,
     };

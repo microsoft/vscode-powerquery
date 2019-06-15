@@ -70,7 +70,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             if (numExpressions > TBinOpExpressionExpressionNumberThreshold) {
                 isMultiline = true;
             } else {
-                const linearLength: number = getLinearLength(node, state.linearLengthMap);
+                const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
                 if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                     isMultiline = true;
                 } else {
@@ -196,7 +196,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             if (args.length > 1) {
                 const linearLengthMap: LinearLengthMap = state.linearLengthMap;
-                const linearLength: number = getLinearLength(node, linearLengthMap);
+                const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, linearLengthMap);
                 const maybeParent: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
                 if (maybeParent === undefined || maybeParent.kind !== Ast.NodeKind.RecursivePrimaryExpression) {
                     const details: {} = {
@@ -209,7 +209,11 @@ function visitNode(node: Ast.TNode, state: State): void {
                     );
                 }
 
-                const headLinearLength: number = getLinearLength(maybeParent.head, linearLengthMap);
+                const headLinearLength: number = getLinearLength(
+                    maybeParent.head,
+                    state.nodeIdMapCollection,
+                    linearLengthMap,
+                );
                 const compositeLinearLength: number = linearLength + headLinearLength;
 
                 // if it's beyond the threshold check if it's a long literal
