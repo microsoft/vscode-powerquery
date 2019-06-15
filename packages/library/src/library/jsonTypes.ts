@@ -1,35 +1,36 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export interface Module {
-    name: string;
-    version: string | null;
-}
-
-export enum ExportKind {
+export const enum ExportKind {
     Constant = "Constant",
     Constructor = "Constructor",
     Function = "Function",
-    Type = "Type"
+    Type = "Type",
+}
+
+export interface Module {
+    readonly name: string;
+    readonly version: string | undefined;
 }
 
 export interface Export {
-    label: string;
-    kind: ExportKind;
-    summary: string;
-    module: Module;
-    signatures: Signature[] | null;
+    readonly label: string;
+    readonly kind: ExportKind;
+    readonly summary: string;
+    // tslint:disable-next-line: no-reserved-keywords
+    readonly module: Module;
+    readonly signatures: ReadonlyArray<Signature>;
 }
 
 export interface Signature {
-    label: string;
-    documentation: string | null;
-    parameters: Parameter[];
+    readonly label: string;
+    readonly documentation: string | undefined;
+    readonly parameters: ReadonlyArray<Parameter>;
 }
 
 export interface Parameter {
-    label: string;
-    documentation: string | null;
-    labelOffsetStart: number;
-    labelOffsetEnd: number;
+    readonly label: string;
+    readonly documentation: string | undefined;
+    readonly labelOffsetStart: number;
+    readonly labelOffsetEnd: number;
 }
