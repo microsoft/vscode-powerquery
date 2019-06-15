@@ -1,6 +1,5 @@
 import {
     Ast,
-    CommonError,
     LexAndParseOk,
     NodeIdMap,
     Result,
@@ -11,10 +10,10 @@ import {
     tryLexAndParse,
 } from "@microsoft/powerquery-parser";
 import { FormatError } from ".";
-import * as commentPass from "./passes/comment";
+import { CommentCollectionMap, tryTraverse as tryTraverseComment } from "./passes/comment";
 import { IsMultilineMap } from "./passes/isMultiline/common";
-import * as isMultilinePass from "./passes/isMultiline/isMultiline";
-import * as serializerParameterPass from "./passes/serializerParameter";
+import { tryTraverse as tryTraverseIsMultilineMap } from "./passes/isMultiline/isMultiline";
+import { SerializerParameterMap, tryTraverse as tryTraverseSerializerParameter } from "./passes/serializerParameter";
 import { Serializer, SerializerOptions, SerializerPassthroughMaps, SerializerRequest } from "./serializer";
 
 export interface FormatRequest {
@@ -33,9 +32,9 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
     const comments: ReadonlyArray<TComment> = lexAndParseOk.comments;
     const nodeIdMapCollection: NodeIdMap.Collection = lexAndParseOk.nodeIdMapCollection;
 
-    let commentCollectionMap: commentPass.CommentCollectionMap = new Map();
+    let commentCollectionMap: CommentCollectionMap = new Map();
     if (comments.length) {
-        const triedCommentPass: Traverse.TriedTraverse<commentPass.CommentCollectionMap> = commentPass.tryTraverse(
+        const triedCommentPass: Traverse.TriedTraverse<CommentCollectionMap> = tryTraverseComment(
             ast,
             nodeIdMapCollection,
             comments,
@@ -47,30 +46,26 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         commentCollectionMap = triedCommentPass.value;
     }
 
-    const isMultilinePassResult: Traverse.TriedTraverse<IsMultilineMap> = isMultilinePass.tryTraverse(
+    const triedIsMultilineMap: Traverse.TriedTraverse<IsMultilineMap> = tryTraverseIsMultilineMap(
         ast,
         commentCollectionMap,
         nodeIdMapCollection,
     );
-    if (isMultilinePassResult.kind === ResultKind.Err) {
-        return isMultilinePassResult;
+    if (triedIsMultilineMap.kind === ResultKind.Err) {
+        return triedIsMultilineMap;
     }
-    const isMultilineMap: IsMultilineMap = isMultilinePassResult.value;
+    const isMultilineMap: IsMultilineMap = triedIsMultilineMap.value;
 
-    const serializerParameterPassRequest: serializerParameterPass.Request = serializerParameterPass.createTraversalRequest(
+    const triedSerializerParameter: Traverse.TriedTraverse<SerializerParameterMap> = tryTraverseSerializerParameter(
         ast,
-        parentMap,
+        nodeIdMapCollection,
         commentCollectionMap,
         isMultilineMap,
     );
-    const serializerParameterPassResult: Result<
-        serializerParameterPass.SerializerParameterMap,
-        CommonError.CommonError
-    > = Traverse.traverseAst(serializerParameterPassRequest);
-    if (serializerParameterPassResult.kind === ResultKind.Err) {
-        return serializerParameterPassResult;
+    if (triedSerializerParameter.kind === ResultKind.Err) {
+        return triedSerializerParameter;
     }
-    const serializerParameterMap: serializerParameterPass.SerializerParameterMap = serializerParameterPassResult.value;
+    const serializerParameterMap: SerializerParameterMap = triedSerializerParameter.value;
 
     const maps: SerializerPassthroughMaps = {
         commentCollectionMap,

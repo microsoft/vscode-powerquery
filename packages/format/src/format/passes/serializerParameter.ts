@@ -1,7 +1,16 @@
-import { Ast, CommonError, isNever, Option, TComment, TokenRangeMap, Traverse } from "@microsoft/powerquery-parser";
+import {
+    Ast,
+    CommonError,
+    isNever,
+    NodeIdMap,
+    Option,
+    TComment,
+    TokenRangeMap,
+    Traverse,
+} from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "./comment";
+import { maybeGetParent } from "./common";
 import { expectGetIsMultiline, IsMultilineMap } from "./isMultiline/common";
-import { maybeGetParent, ParentMap } from "./common";
 
 // TNodes (in general) have two responsibilities:
 // * if given a Workspace, then propagate the SerializerWriteKind to their first child,
@@ -30,31 +39,32 @@ export interface SerializeCommentParameter {
     readonly writeKind: SerializerWriteKind;
 }
 
-export interface Request extends Traverse.IRequest<State, SerializerParameterMap> {}
-
-export function createTraversalRequest(
+export function tryTraverse(
     ast: Ast.TNode,
-    parentMap: ParentMap,
+    nodeIdMapCollection: NodeIdMap.Collection,
     commentCollectionMap: CommentCollectionMap,
     isMultilineMap: IsMultilineMap,
-): Request {
-    return {
-        ast,
-        state: {
-            result: {
-                writeKind: new Map(),
-                indentationChange: new Map(),
-                comments: new Map(),
-            },
-            parentMap,
-            commentCollectionMap,
-            isMultilineMap,
-            workspaceMap: new Map(),
+): Traverse.TriedTraverse<SerializerParameterMap> {
+    const state: State = {
+        result: {
+            writeKind: new Map(),
+            indentationChange: new Map(),
+            comments: new Map(),
         },
-        visitNodeFn: visitNode,
-        visitNodeStrategy: Traverse.VisitNodeStrategy.BreadthFirst,
-        maybeEarlyExitFn: undefined,
+        nodeIdMapCollection,
+        commentCollectionMap,
+        isMultilineMap,
+        workspaceMap: new Map(),
     };
+    return Traverse.tryTraverseAst(
+        ast,
+        nodeIdMapCollection,
+        state,
+        Traverse.VisitNodeStrategy.BreadthFirst,
+        visitNode,
+        Traverse.expectExpandAllAstChildren,
+        undefined,
+    );
 }
 
 export function getSerializerWriteKind(
@@ -71,7 +81,7 @@ export function getSerializerWriteKind(
 }
 
 interface State extends Traverse.IState<SerializerParameterMap> {
-    readonly parentMap: ParentMap;
+    readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly commentCollectionMap: CommentCollectionMap;
     readonly isMultilineMap: IsMultilineMap;
     readonly workspaceMap: TokenRangeMap<Workspace>;
@@ -955,10 +965,10 @@ function getWrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): Serialize
         return SerializerWriteKind.Indented;
     }
 
-    const parentMap: ParentMap = state.parentMap;
-    let maybeParent: Option<Ast.TNode> = maybeGetParent(wrapped, parentMap);
+    const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
+    let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, wrapped.id);
     if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
-        maybeParent = maybeGetParent(maybeParent, parentMap);
+        maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
     }
 
     if (!maybeParent) {
