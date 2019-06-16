@@ -116,20 +116,21 @@ connection.onDidChangeConfiguration(change => {
     documents.all().forEach(validateDocument);
 });
 
-function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
-    if (!hasConfigurationCapability) {
-        return Promise.resolve(globalSettings);
-    }
-    let result: Thenable<PowerQuerySettings> = documentSettings.get(resource);
-    if (!result) {
-        result = connection.workspace.getConfiguration({
-            scopeUri: resource,
-            section: "powerquery",
-        });
-        documentSettings.set(resource, result);
-    }
-    return result;
-}
+// TODO jobolton: this is unused?
+// function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
+//     if (!hasConfigurationCapability) {
+//         return Promise.resolve(globalSettings);
+//     }
+//     let result: Thenable<PowerQuerySettings> = documentSettings.get(resource);
+//     if (!result) {
+//         result = connection.workspace.getConfiguration({
+//             scopeUri: resource,
+//             section: "powerquery",
+//         });
+//         documentSettings.set(resource, result);
+//     }
+//     return result;
+// }
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
@@ -253,7 +254,12 @@ connection.onDidChangeWatchedFiles(_change => {
 
 // TODO: Update formatter to use @microsoft/powerquery-parser
 connection.onDocumentFormatting((_documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
-    const document: LS.TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
+    const maybeDocument: undefined | LS.TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
+    if (maybeDocument === undefined) {
+        return [];
+    }
+    const document: LS.TextDocument = maybeDocument;
+
     const options: LS.FormattingOptions = _documentfomattingParams.options;
     const textEditResult: LS.TextEdit[] = [];
 
@@ -316,7 +322,7 @@ function maybeDocumentSymbolDefinitionAt(
 
     let maybeDefinition: undefined | LibraryDefinition;
     if (token.kind === PQP.LineTokenKind.Identifier) {
-        maybeDefinition = pqLibrary[token.data];
+        maybeDefinition = pqLibrary.get(token.data);
     }
 
     return new DocumentSymbol(token, maybeDefinition);
@@ -325,12 +331,16 @@ function maybeDocumentSymbolDefinitionAt(
 function maybeLineTokensAt(
     _textDocumentPosition: LS.TextDocumentPositionParams,
 ): undefined | ReadonlyArray<PQP.LineToken> {
-    const document: LS.TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
-    const position: LS.Position = _textDocumentPosition.position;
+    const maybeDocument: undefined | LS.TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
+    if (maybeDocument === undefined) {
+        return undefined;
+    }
+    const document: LS.TextDocument = maybeDocument;
 
     // Get symbol at current position
     // TODO: parsing result should be cached
     // TODO: switch to new parser interface that is line terminator agnostic.
+    const position: LS.Position = _textDocumentPosition.position;
     const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
     const maybeLine: undefined | PQP.Lexer.TLine = lexResult.lines[position.line];
 
