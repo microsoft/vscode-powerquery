@@ -5,6 +5,8 @@ import * as StandardLibrary from "./standard.json";
 
 export type Library = Map<string, Export>;
 
+export type LibraryDefinition = Export;
+
 export const AllModules: Library = loadAllModules();
 
 // TODO:
