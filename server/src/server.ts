@@ -13,7 +13,6 @@ import {
     InitializeParams,
     DidChangeConfigurationNotification,
     CompletionItem,
-    CompletionItemKind,
     TextDocumentPositionParams,
     DocumentFormattingParams,
     TextEdit,
@@ -21,7 +20,6 @@ import {
     Range,
     Position,
     Hover,
-    SignatureHelp,
 } from "vscode-languageserver";
 
 import {
