@@ -299,19 +299,20 @@ function fullDocumentRange(document: LS.TextDocument): LS.Range {
     };
 }
 
-function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionParams): DocumentSymbol | null {
-    const token: PQP.LineToken = getTokenAt(_textDocumentPosition);
-    if (token) {
-        let definition: LibraryDefinition = null;
+function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionParams): undefined | DocumentSymbol {
+    const maybeToken: undefined | PQP.LineToken = maybeGetTokenAt(_textDocumentPosition);
+    if (maybeToken) {
+        const token: PQP.LineToken = maybeToken;
+
+        let maybeDefinition: undefined | LibraryDefinition;
         if (token.kind === PQP.LineTokenKind.Identifier) {
-            let tokenText: string = token.data;
-            definition = pqLibrary[tokenText];
+            maybeDefinition = pqLibrary[token.data];
         }
 
-        return new DocumentSymbol(token, definition);
+        return new DocumentSymbol(maybeToken, maybeDefinition);
     }
 
-    return null;
+    return undefined;
 }
 
 function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): readonly PQP.LineToken[] {
@@ -321,8 +322,8 @@ function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): 
     // Get symbol at current position
     // TODO: parsing result should be cached
     // TODO: switch to new parser interface that is line terminator agnostic.
-    const lexResult = PQP.Lexer.stateFrom(document.getText());
-    const line = lexResult.lines[position.line];
+    const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
+    const line: PQP.Lexer.TLine = lexResult.lines[position.line];
 
     if (line) {
         return line.tokens;
@@ -331,19 +332,18 @@ function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): 
     return null;
 }
 
-function getTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): PQP.LineToken {
-    const lineTokens = getLineTokensAt(_textDocumentPosition);
+function maybeGetTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): undefined | PQP.LineToken {
+    const lineTokens: ReadonlyArray<PQP.LineToken> = getLineTokensAt(_textDocumentPosition);
     if (lineTokens) {
         const position: LS.Position = _textDocumentPosition.position;
-        for (let i: number = 0; i < lineTokens.length; i++) {
-            let currentToken = lineTokens[i];
-            if (currentToken.positionStart <= position.character && currentToken.positionEnd >= position.character) {
-                return currentToken;
+        for (const token of lineTokens) {
+            if (token.positionStart <= position.character && token.positionEnd >= position.character) {
+                return token;
             }
         }
     }
 
-    return null;
+    return undefined;
 }
 
 // TODO: make completion requests context sensitive
