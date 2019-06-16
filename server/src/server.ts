@@ -239,7 +239,10 @@ async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
     }
 
     // Send the computed diagnostics to VSCode.
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+    connection.sendDiagnostics({
+        uri: textDocument.uri,
+        diagnostics,
+    });
 }
 
 connection.onDidChangeWatchedFiles(_change => {
@@ -301,23 +304,24 @@ function fullDocumentRange(document: LS.TextDocument): LS.Range {
     };
 }
 
-function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionParams): undefined | DocumentSymbol {
-    const maybeToken: undefined | PQP.LineToken = maybeGetTokenAt(_textDocumentPosition);
-    if (maybeToken) {
-        const token: PQP.LineToken = maybeToken;
+function maybeDocumentSymbolDefinitionAt(
+    _textDocumentPosition: LS.TextDocumentPositionParams,
+): undefined | DocumentSymbol {
+    const maybeToken: undefined | PQP.LineToken = maybeTokenAt(_textDocumentPosition);
+    if (maybeToken === undefined) {
+        return undefined;
+    }
+    const token: PQP.LineToken = maybeToken;
 
-        let maybeDefinition: undefined | LibraryDefinition;
-        if (token.kind === PQP.LineTokenKind.Identifier) {
-            maybeDefinition = pqLibrary[token.data];
-        }
-
-        return new DocumentSymbol(token, maybeDefinition);
+    let maybeDefinition: undefined | LibraryDefinition;
+    if (token.kind === PQP.LineTokenKind.Identifier) {
+        maybeDefinition = pqLibrary[token.data];
     }
 
-    return undefined;
+    return new DocumentSymbol(token, maybeDefinition);
 }
 
-function maybeGetLineTokensAt(
+function maybeLineTokensAt(
     _textDocumentPosition: LS.TextDocumentPositionParams,
 ): undefined | ReadonlyArray<PQP.LineToken> {
     const document: LS.TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
@@ -327,20 +331,22 @@ function maybeGetLineTokensAt(
     // TODO: parsing result should be cached
     // TODO: switch to new parser interface that is line terminator agnostic.
     const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
-    const line: PQP.Lexer.TLine = lexResult.lines[position.line];
+    const maybeLine: undefined | PQP.Lexer.TLine = lexResult.lines[position.line];
 
-    return line !== undefined ? line.tokens : undefined;
+    return maybeLine !== undefined ? maybeLine.tokens : undefined;
 }
 
-function maybeGetTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): undefined | PQP.LineToken {
-    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeGetLineTokensAt(_textDocumentPosition);
-    if (maybeLineTokens) {
-        const lineTokens: ReadonlyArray<PQP.LineToken> = maybeLineTokens;
-        const position: LS.Position = _textDocumentPosition.position;
-        for (const token of lineTokens) {
-            if (token.positionStart <= position.character && token.positionEnd >= position.character) {
-                return token;
-            }
+function maybeTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): undefined | PQP.LineToken {
+    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeLineTokensAt(_textDocumentPosition);
+    if (maybeLineTokens === undefined) {
+        return undefined;
+    }
+    const lineTokens: ReadonlyArray<PQP.LineToken> = maybeLineTokens;
+
+    const position: LS.Position = _textDocumentPosition.position;
+    for (const token of lineTokens) {
+        if (token.positionStart <= position.character && token.positionEnd >= position.character) {
+            return token;
         }
     }
 
@@ -355,19 +361,19 @@ connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): 
 connection.onHover(
     (_textDocumentPosition: LS.TextDocumentPositionParams): LS.Hover => {
         let result: LS.Hover = null;
-        const documentSymbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
-        if (documentSymbol.definition) {
+        const maybeDocumentSymbol: undefined | DocumentSymbol = maybeDocumentSymbolDefinitionAt(_textDocumentPosition);
+        if (maybeDocumentSymbol.definition) {
             const position: LS.Position = _textDocumentPosition.position;
-            const hover: LS.Hover = LanguageServiceHelpers.LibraryDefinitionToHover(documentSymbol.definition);
+            const hover: LS.Hover = LanguageServiceHelpers.LibraryDefinitionToHover(maybeDocumentSymbol.definition);
             // fill in the range information
             hover.range = {
                 start: {
                     line: position.line,
-                    character: documentSymbol.token.positionStart,
+                    character: maybeDocumentSymbol.token.positionStart,
                 },
                 end: {
                     line: position.line,
-                    character: documentSymbol.token.positionEnd,
+                    character: maybeDocumentSymbol.token.positionEnd,
                 },
             };
             result = hover;
