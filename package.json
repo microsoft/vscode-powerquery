@@ -88,6 +88,6 @@
   "dependencies": {
     "powerquery-format": "./packages/format",
     "powerquery-library": "./packages/library",
-    "@microsoft/powerquery-parser": "0.1.11"
+    "@microsoft/powerquery-parser": "0.1.12"
   }
 }
