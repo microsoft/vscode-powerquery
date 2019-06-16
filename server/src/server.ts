@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import * as PowerQueryParser from "@microsoft/powerquery-parser";
+import * as PQP from "@microsoft/powerquery-parser";
 import {
     format,
     FormatError,
@@ -140,17 +140,15 @@ documents.onDidChangeContent(change => {
     validateDocument(change.document);
 });
 
-function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerError): LS.Diagnostic[] | null {
-    let diagnostics: LS.Diagnostic[] = null;
+function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): undefined | LS.Diagnostic[] {
+    const diagnostics: LS.Diagnostic[] = [];
 
     // TODO: handle other types of lexer errors
-    if (error instanceof PowerQueryParser.LexerError.ErrorLineMapError) {
-        diagnostics = [];
+    if (error instanceof PQP.LexerError.ErrorLineMapError) {
         for (const errorLine of error.errorLineMap.values()) {
-            const innerError: PowerQueryParser.LexerError.TInnerLexerError = errorLine.error.innerError;
+            const innerError: PQP.LexerError.TInnerLexerError = errorLine.error.innerError;
             if ((innerError as any).graphemePosition) {
-                const graphemePosition: PowerQueryParser.StringHelpers.GraphemePosition = (innerError as any)
-                    .graphemePosition;
+                const graphemePosition: PQP.StringHelpers.GraphemePosition = (innerError as any).graphemePosition;
                 const message: string = innerError.message;
                 const position: LS.Position = {
                     line: graphemePosition.lineNumber,
@@ -170,72 +168,70 @@ function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerE
         }
     }
 
-    return diagnostics;
+    return diagnostics.length ? diagnostics : undefined;
 }
 
-function parserErrorToDiagnostic(error: PowerQueryParser.ParserError.TInnerParserError): LS.Diagnostic | null {
-    let message = error.message;
-    let errorToken: PowerQueryParser.Token = null;
+function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError): undefined | LS.Diagnostic {
+    const message: string = error.message;
+    let errorToken: PQP.Token;
 
     if (
-        error instanceof PowerQueryParser.ParserError.ExpectedAnyTokenKindError ||
-        error instanceof PowerQueryParser.ParserError.ExpectedTokenKindError
+        error instanceof PQP.ParserError.ExpectedAnyTokenKindError ||
+        error instanceof PQP.ParserError.ExpectedTokenKindError
     ) {
         errorToken = error.maybeFoundToken.token;
-    } else if (error instanceof PowerQueryParser.ParserError.InvalidPrimitiveTypeError) {
+    } else if (error instanceof PQP.ParserError.InvalidPrimitiveTypeError) {
         errorToken = error.token;
-    } else if (error instanceof PowerQueryParser.ParserError.UnterminatedBracketError) {
+    } else if (error instanceof PQP.ParserError.UnterminatedBracketError) {
         errorToken = error.openBracketToken;
-    } else if (error instanceof PowerQueryParser.ParserError.UnterminatedParenthesesError) {
+    } else if (error instanceof PQP.ParserError.UnterminatedParenthesesError) {
         errorToken = error.openParenthesesToken;
-    } else if (error instanceof PowerQueryParser.ParserError.UnusedTokensRemainError) {
+    } else if (error instanceof PQP.ParserError.UnusedTokensRemainError) {
         errorToken = error.firstUnusedToken;
+    } else {
+        return undefined;
     }
 
-    if (errorToken !== null) {
-        return {
-            message: message,
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: {
-                    line: errorToken.positionStart.lineNumber,
-                    character: errorToken.positionStart.columnNumber,
-                },
-                end: {
-                    line: errorToken.positionEnd.lineNumber,
-                    character: errorToken.positionEnd.columnNumber,
-                },
+    return {
+        message: message,
+        severity: LS.DiagnosticSeverity.Error,
+        range: {
+            start: {
+                line: errorToken.positionStart.lineNumber,
+                character: errorToken.positionStart.columnNumber,
             },
-        };
-    }
-
-    return null;
+            end: {
+                line: errorToken.positionEnd.lineNumber,
+                character: errorToken.positionEnd.columnNumber,
+            },
+        },
+    };
 }
 
 async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
     // In this simple example we get the settings for every validate run.
-    //let settings = await getDocumentSettings(textDocument.uri);
+    // let settings = await getDocumentSettings(textDocument.uri);
 
     // TODO: our document store needs to nornalize line terminators.
     // TODO: parser result should be calculated as result of changed and stored in TextDocument.
     const text: string = textDocument.getText();
-    let diagnostics: LS.Diagnostic[] = [];
+    let diagnostics: LS.Diagnostic[];
 
     // TODO: switch to new parser interface that is line terminator agnostic.
-    const triedLexAndParse: PowerQueryParser.TriedLexAndParse = PowerQueryParser.tryLexAndParse(text);
-    if (triedLexAndParse.kind !== PowerQueryParser.ResultKind.Ok) {
-        const error = triedLexAndParse.error;
-        const innerError = error.innerError;
+    const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
+    if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
+        const lexAndParseErr: PQP.LexAndParseErr = triedLexAndParse.error;
+        const innerError = lexAndParseErr.innerError;
 
-        if (PowerQueryParser.ParserError.isTInnerParserError(innerError)) {
-            let diagnostic = parserErrorToDiagnostic(innerError);
-            if (diagnostic) {
-                diagnostics.push(diagnostic);
+        if (PQP.ParserError.isTInnerParserError(innerError)) {
+            const maybeDiagnostic: undefined | LS.Diagnostic = maybeParserErrorToDiagnostic(innerError);
+            if (maybeDiagnostic !== undefined) {
+                diagnostics = [maybeDiagnostic];
             }
-        } else if (PowerQueryParser.LexerError.isTInnerLexerError(innerError)) {
-            let lexerErrorDiagnostics = lexerErrorToDiagnostics(innerError);
-            if (lexerErrorDiagnostics != null) {
-                diagnostics = lexerErrorDiagnostics;
+        } else if (PQP.LexerError.isTInnerLexerError(innerError)) {
+            const maybeLexerErrorDiagnostics: undefined | LS.Diagnostic[] = maybeLexerErrorToDiagnostics(innerError);
+            if (maybeLexerErrorDiagnostics !== undefined) {
+                diagnostics = maybeLexerErrorDiagnostics;
             }
         }
     }
@@ -304,10 +300,10 @@ function fullDocumentRange(document: LS.TextDocument): LS.Range {
 }
 
 function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionParams): DocumentSymbol | null {
-    const token: PowerQueryParser.LineToken = getTokenAt(_textDocumentPosition);
+    const token: PQP.LineToken = getTokenAt(_textDocumentPosition);
     if (token) {
         let definition: LibraryDefinition = null;
-        if (token.kind === PowerQueryParser.LineTokenKind.Identifier) {
+        if (token.kind === PQP.LineTokenKind.Identifier) {
             let tokenText: string = token.data;
             definition = pqLibrary[tokenText];
         }
@@ -318,14 +314,14 @@ function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionPar
     return null;
 }
 
-function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): readonly PowerQueryParser.LineToken[] {
+function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): readonly PQP.LineToken[] {
     const document: LS.TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
     const position: LS.Position = _textDocumentPosition.position;
 
     // Get symbol at current position
     // TODO: parsing result should be cached
     // TODO: switch to new parser interface that is line terminator agnostic.
-    const lexResult = PowerQueryParser.Lexer.stateFrom(document.getText());
+    const lexResult = PQP.Lexer.stateFrom(document.getText());
     const line = lexResult.lines[position.line];
 
     if (line) {
@@ -335,7 +331,7 @@ function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): 
     return null;
 }
 
-function getTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): PowerQueryParser.LineToken {
+function getTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): PQP.LineToken {
     const lineTokens = getLineTokensAt(_textDocumentPosition);
     if (lineTokens) {
         const position: LS.Position = _textDocumentPosition.position;
