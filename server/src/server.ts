@@ -177,8 +177,9 @@ function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError):
     let errorToken: PQP.Token;
 
     if (
-        error instanceof PQP.ParserError.ExpectedAnyTokenKindError ||
-        error instanceof PQP.ParserError.ExpectedTokenKindError
+        (error instanceof PQP.ParserError.ExpectedAnyTokenKindError ||
+            error instanceof PQP.ParserError.ExpectedTokenKindError) &&
+        error.maybeFoundToken !== undefined
     ) {
         errorToken = error.maybeFoundToken.token;
     } else if (error instanceof PQP.ParserError.InvalidPrimitiveTypeError) {
@@ -216,7 +217,7 @@ async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
     // TODO: our document store needs to nornalize line terminators.
     // TODO: parser result should be calculated as result of changed and stored in TextDocument.
     const text: string = textDocument.getText();
-    let diagnostics: LS.Diagnostic[];
+    let diagnostics: LS.Diagnostic[] = [];
 
     // TODO: switch to new parser interface that is line terminator agnostic.
     const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
@@ -360,14 +361,12 @@ connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): 
 
 connection.onHover(
     (_textDocumentPosition: LS.TextDocumentPositionParams): LS.Hover => {
-        let maybeHover: undefined | LS.Hover = undefined;
+        let hover: LS.Hover;
 
         const maybeDocumentSymbol: undefined | DocumentSymbol = maybeDocumentSymbolDefinitionAt(_textDocumentPosition);
-        if (maybeDocumentSymbol.definition) {
+        if (maybeDocumentSymbol && maybeDocumentSymbol.definition) {
             const position: LS.Position = _textDocumentPosition.position;
-            const hover: LS.Hover = LanguageServiceHelpers.libraryDefinitionToHover(maybeDocumentSymbol.definition);
-            // fill in the range information
-            hover.range = {
+            const range: LS.Range = {
                 start: {
                     line: position.line,
                     character: maybeDocumentSymbol.token.positionStart,
@@ -377,10 +376,15 @@ connection.onHover(
                     character: maybeDocumentSymbol.token.positionEnd,
                 },
             };
-            maybeHover = hover;
+            hover = LanguageServiceHelpers.libraryDefinitionToHover(maybeDocumentSymbol.definition, range);
+        } else {
+            hover = {
+                range: undefined,
+                contents: [],
+            };
         }
 
-        return maybeHover;
+        return hover;
     },
 );
 

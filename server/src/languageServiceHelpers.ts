@@ -6,6 +6,7 @@ import {
     MarkupContent,
     MarkupKind,
     ParameterInformation,
+    Range,
     SignatureInformation,
 } from "vscode-languageserver";
 
@@ -20,8 +21,8 @@ export function libraryDefinitionToCompletionItem(definition: LibraryDefinition)
     };
 }
 
-export function libraryDefinitionToHover(definition: LibraryDefinition): Hover {
-    let contents: MarkupContent = undefined;
+export function libraryDefinitionToHover(definition: LibraryDefinition, range: Range): Hover {
+    let contents: undefined | MarkupContent = undefined;
 
     // TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
     if (isFunction(definition)) {
@@ -32,7 +33,10 @@ export function libraryDefinitionToHover(definition: LibraryDefinition): Hover {
         contents = formatConstantDefinition(definition);
     }
 
-    return { contents };
+    return {
+        contents,
+        range,
+    };
 }
 
 export function isFunction(definition: LibraryDefinition): boolean {
