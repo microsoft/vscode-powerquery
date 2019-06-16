@@ -14,6 +14,7 @@ import {
     ResultKind,
     SerializerOptions,
 } from "powerquery-format";
+import { TFormatError } from "powerquery-format/lib/format/error";
 import { AllModules, Library, LibraryDefinition } from "powerquery-library";
 import * as LS from "vscode-languageserver";
 import { LanguageServiceHelpers } from "./languageServiceHelpers";
@@ -101,7 +102,7 @@ const defaultSettings: PowerQuerySettings = { maxNumberOfProblems: 1000 };
 let globalSettings: PowerQuerySettings = defaultSettings;
 
 // Cache the settings of all open documents
-let documentSettings: Map<string, Thenable<PowerQuerySettings>> = new Map();
+const documentSettings: Map<string, Thenable<PowerQuerySettings>> = new Map();
 
 connection.onDidChangeConfiguration(change => {
     if (hasConfigurationCapability) {
@@ -119,7 +120,7 @@ function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
     if (!hasConfigurationCapability) {
         return Promise.resolve(globalSettings);
     }
-    let result = documentSettings.get(resource);
+    let result: Thenable<PowerQuerySettings> = documentSettings.get(resource);
     if (!result) {
         result = connection.workspace.getConfiguration({
             scopeUri: resource,
@@ -221,7 +222,8 @@ async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
     const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
     if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
         const lexAndParseErr: PQP.LexAndParseErr = triedLexAndParse.error;
-        const innerError = lexAndParseErr.innerError;
+        const innerError: PQP.LexerError.TInnerLexerError | PQP.ParserError.TInnerParserError =
+            lexAndParseErr.innerError;
 
         if (PQP.ParserError.isTInnerParserError(innerError)) {
             const maybeDiagnostic: undefined | LS.Diagnostic = maybeParserErrorToDiagnostic(innerError);
@@ -249,7 +251,7 @@ connection.onDidChangeWatchedFiles(_change => {
 connection.onDocumentFormatting((_documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
     const document: LS.TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
     const options: LS.FormattingOptions = _documentfomattingParams.options;
-    let textEditResult: LS.TextEdit[] = [];
+    const textEditResult: LS.TextEdit[] = [];
 
     let indentationLiteral: IndentationLiteral;
     if (options.insertSpaces) {
@@ -274,7 +276,7 @@ connection.onDocumentFormatting((_documentfomattingParams: LS.DocumentFormatting
         textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
     } else {
         // TODO: should this go in the failed promise path?
-        const error = formatResult.error;
+        const error: TFormatError = formatResult.error;
         let message: string;
         if (FormatError.isTFormatError(error)) {
             message = error.innerError.message;
@@ -315,7 +317,9 @@ function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionPar
     return undefined;
 }
 
-function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): readonly PQP.LineToken[] {
+function maybeGetLineTokensAt(
+    _textDocumentPosition: LS.TextDocumentPositionParams,
+): undefined | ReadonlyArray<PQP.LineToken> {
     const document: LS.TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
     const position: LS.Position = _textDocumentPosition.position;
 
@@ -325,16 +329,13 @@ function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): 
     const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
     const line: PQP.Lexer.TLine = lexResult.lines[position.line];
 
-    if (line) {
-        return line.tokens;
-    }
-
-    return null;
+    return line !== undefined ? line.tokens : undefined;
 }
 
 function maybeGetTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): undefined | PQP.LineToken {
-    const lineTokens: ReadonlyArray<PQP.LineToken> = getLineTokensAt(_textDocumentPosition);
-    if (lineTokens) {
+    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeGetLineTokensAt(_textDocumentPosition);
+    if (maybeLineTokens) {
+        const lineTokens: ReadonlyArray<PQP.LineToken> = maybeLineTokens;
         const position: LS.Position = _textDocumentPosition.position;
         for (const token of lineTokens) {
             if (token.positionStart <= position.character && token.positionEnd >= position.character) {
