@@ -3,25 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import {
-    createConnection,
-    TextDocuments,
-    TextDocument,
-    Diagnostic,
-    DiagnosticSeverity,
-    ProposedFeatures,
-    InitializeParams,
-    DidChangeConfigurationNotification,
-    CompletionItem,
-    TextDocumentPositionParams,
-    DocumentFormattingParams,
-    TextEdit,
-    FormattingOptions,
-    Range,
-    Position,
-    Hover,
-} from "vscode-languageserver";
-
+import * as PowerQueryParser from "@microsoft/powerquery-parser";
 import {
     format,
     FormatError,
@@ -32,39 +14,40 @@ import {
     ResultKind,
     SerializerOptions,
 } from "powerquery-format";
-
-import * as PowerQueryParser from "@microsoft/powerquery-parser";
+import { AllModules, Library, LibraryDefinition } from "powerquery-library";
+import * as LS from "vscode-languageserver";
 import { LanguageServiceHelpers } from "./languageServiceHelpers";
-import { LibraryDefinition, Library, AllModules } from "powerquery-library";
 import { DocumentSymbol } from "./symbol";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-let connection = createConnection(ProposedFeatures.all);
+const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
-let documents: TextDocuments = new TextDocuments();
+const documents: LS.TextDocuments = new LS.TextDocuments();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
-let hasDiagnosticRelatedInformationCapability: boolean = false;
+// TODO jobolton: this is unused?
+// let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 let pqLibrary: Library;
-let defaultCompletionItems: CompletionItem[];
+let defaultCompletionItems: LS.CompletionItem[];
 
-connection.onInitialize((params: InitializeParams) => {
-    let capabilities = params.capabilities;
+connection.onInitialize((params: LS.InitializeParams) => {
+    const capabilities: LS.ClientCapabilities = params.capabilities;
 
     // Does the client support the `workspace/configuration` request?
     // If not, we will fall back using global settings
     hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
     hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
-    hasDiagnosticRelatedInformationCapability = !!(
-        capabilities.textDocument &&
-        capabilities.textDocument.publishDiagnostics &&
-        capabilities.textDocument.publishDiagnostics.relatedInformation
-    );
+    // TODO jobolton: this is unused?
+    // hasDiagnosticRelatedInformationCapability = !!(
+    //     capabilities.textDocument &&
+    //     capabilities.textDocument.publishDiagnostics &&
+    //     capabilities.textDocument.publishDiagnostics.relatedInformation
+    // );
 
     initializeLibrary();
 
@@ -87,7 +70,7 @@ connection.onInitialize((params: InitializeParams) => {
 connection.onInitialized(() => {
     if (hasConfigurationCapability) {
         // Register for all configuration changes.
-        connection.client.register(DidChangeConfigurationNotification.type, undefined);
+        connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
     }
     if (hasWorkspaceFolderCapability) {
         connection.workspace.onDidChangeWorkspaceFolders(_event => {
@@ -96,13 +79,12 @@ connection.onInitialized(() => {
     }
 });
 
-function initializeLibrary() {
+function initializeLibrary(): void {
     pqLibrary = AllModules;
     defaultCompletionItems = [];
 
-    for (let key in pqLibrary) {
-        const definition: LibraryDefinition = pqLibrary[key];
-        const completionItem = LanguageServiceHelpers.LibraryDefinitionToCompletionItem(definition);
+    for (const definition of pqLibrary.values()) {
+        const completionItem: LS.CompletionItem = LanguageServiceHelpers.LibraryDefinitionToCompletionItem(definition);
         defaultCompletionItems.push(completionItem);
     }
 }
@@ -126,7 +108,7 @@ connection.onDidChangeConfiguration(change => {
         // Reset all cached document settings
         documentSettings.clear();
     } else {
-        globalSettings = <PowerQuerySettings>(change.settings.powerquery || defaultSettings);
+        globalSettings = (change.settings.powerquery || defaultSettings) as PowerQuerySettings;
     }
 
     // Revalidate all open text documents
@@ -158,19 +140,19 @@ documents.onDidChangeContent(change => {
     validateDocument(change.document);
 });
 
-function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerError): Diagnostic[] | null {
-    let diagnostics: Diagnostic[] = null;
+function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerError): LS.Diagnostic[] | null {
+    let diagnostics: LS.Diagnostic[] = null;
 
     // TODO: handle other types of lexer errors
     if (error instanceof PowerQueryParser.LexerError.ErrorLineMapError) {
         diagnostics = [];
         for (const errorLine of error.errorLineMap.values()) {
-            const innerError = errorLine.error.innerError;
-            if ((<any>innerError).graphemePosition) {
-                const graphemePosition: PowerQueryParser.StringHelpers.GraphemePosition = (<any>innerError)
+            const innerError: PowerQueryParser.LexerError.TInnerLexerError = errorLine.error.innerError;
+            if ((innerError as any).graphemePosition) {
+                const graphemePosition: PowerQueryParser.StringHelpers.GraphemePosition = (innerError as any)
                     .graphemePosition;
-                const message = innerError.message;
-                const position: Position = {
+                const message: string = innerError.message;
+                const position: LS.Position = {
                     line: graphemePosition.lineNumber,
                     character: graphemePosition.columnNumber,
                 };
@@ -178,7 +160,7 @@ function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerE
                 // TODO: "lex" errors aren't that useful to display to end user. Should we make it more generic?
                 diagnostics.push({
                     message: message,
-                    severity: DiagnosticSeverity.Error,
+                    severity: LS.DiagnosticSeverity.Error,
                     range: {
                         start: position,
                         end: position,
@@ -191,7 +173,7 @@ function lexerErrorToDiagnostics(error: PowerQueryParser.LexerError.TInnerLexerE
     return diagnostics;
 }
 
-function parserErrorToDiagnostic(error: PowerQueryParser.ParserError.TInnerParserError): Diagnostic | null {
+function parserErrorToDiagnostic(error: PowerQueryParser.ParserError.TInnerParserError): LS.Diagnostic | null {
     let message = error.message;
     let errorToken: PowerQueryParser.Token = null;
 
@@ -230,14 +212,14 @@ function parserErrorToDiagnostic(error: PowerQueryParser.ParserError.TInnerParse
     return null;
 }
 
-async function validateDocument(textDocument: TextDocument): Promise<void> {
+async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
     // In this simple example we get the settings for every validate run.
     //let settings = await getDocumentSettings(textDocument.uri);
 
     // TODO: our document store needs to nornalize line terminators.
     // TODO: parser result should be calculated as result of changed and stored in TextDocument.
     const text: string = textDocument.getText();
-    let diagnostics: Diagnostic[] = [];
+    let diagnostics: LS.Diagnostic[] = [];
 
     // TODO: switch to new parser interface that is line terminator agnostic.
     const triedLexAndParse: PowerQueryParser.TriedLexAndParse = PowerQueryParser.tryLexAndParse(text);
@@ -268,52 +250,50 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 
 // TODO: Update formatter to use @microsoft/powerquery-parser
-connection.onDocumentFormatting(
-    (_documentfomattingParams: DocumentFormattingParams): TextEdit[] => {
-        const document: TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
-        const options: FormattingOptions = _documentfomattingParams.options;
-        let textEditResult: TextEdit[] = [];
+connection.onDocumentFormatting((_documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
+    const document: LS.TextDocument = documents.get(_documentfomattingParams.textDocument.uri);
+    const options: LS.FormattingOptions = _documentfomattingParams.options;
+    let textEditResult: LS.TextEdit[] = [];
 
-        let indentationLiteral: IndentationLiteral;
-        if (options.insertSpaces) {
-            indentationLiteral = IndentationLiteral.SpaceX4;
+    let indentationLiteral: IndentationLiteral;
+    if (options.insertSpaces) {
+        indentationLiteral = IndentationLiteral.SpaceX4;
+    } else {
+        indentationLiteral = IndentationLiteral.Tab;
+    }
+
+    // TODO: get the newline terminator for the document/workspace
+    const serializerOptions: SerializerOptions = {
+        indentationLiteral,
+        newlineLiteral: NewlineLiteral.Windows,
+    };
+
+    const formatRequest: FormatRequest = {
+        text: document.getText(),
+        options: serializerOptions,
+    };
+
+    const formatResult: Result<string, FormatError.TFormatError> = format(formatRequest);
+    if (formatResult.kind === ResultKind.Ok) {
+        textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
+    } else {
+        // TODO: should this go in the failed promise path?
+        const error = formatResult.error;
+        let message: string;
+        if (FormatError.isTFormatError(error)) {
+            message = error.innerError.message;
         } else {
-            indentationLiteral = IndentationLiteral.Tab;
+            message = "An unknown error occured during formatting.";
         }
 
-        // TODO: get the newline terminator for the document/workspace
-        const serializerOptions: SerializerOptions = {
-            indentationLiteral,
-            newlineLiteral: NewlineLiteral.Windows,
-        };
+        connection.window.showErrorMessage(message);
+    }
 
-        const formatRequest: FormatRequest = {
-            text: document.getText(),
-            options: serializerOptions,
-        };
-
-        const formatResult: Result<string, FormatError.TFormatError> = format(formatRequest);
-        if (formatResult.kind === ResultKind.Ok) {
-            textEditResult.push(TextEdit.replace(fullDocumentRange(document), formatResult.value));
-        } else {
-            // TODO: should this go in the failed promise path?
-            const error = formatResult.error;
-            let message: string;
-            if (FormatError.isTFormatError(error)) {
-                message = error.innerError.message;
-            } else {
-                message = "An unknown error occured during formatting.";
-            }
-
-            connection.window.showErrorMessage(message);
-        }
-
-        return textEditResult;
-    },
-);
+    return textEditResult;
+});
 
 // TODO: is there a better way to do this?
-function fullDocumentRange(document: TextDocument): Range {
+function fullDocumentRange(document: LS.TextDocument): LS.Range {
     return {
         start: document.positionAt(0),
         end: {
@@ -323,8 +303,8 @@ function fullDocumentRange(document: TextDocument): Range {
     };
 }
 
-function getSymbolDefinitionAt(_textDocumentPosition: TextDocumentPositionParams): DocumentSymbol | null {
-    const token = getTokenAt(_textDocumentPosition);
+function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionParams): DocumentSymbol | null {
+    const token: PowerQueryParser.LineToken = getTokenAt(_textDocumentPosition);
     if (token) {
         let definition: LibraryDefinition = null;
         if (token.kind === PowerQueryParser.LineTokenKind.Identifier) {
@@ -338,9 +318,9 @@ function getSymbolDefinitionAt(_textDocumentPosition: TextDocumentPositionParams
     return null;
 }
 
-function getLineTokensAt(_textDocumentPosition: TextDocumentPositionParams): readonly PowerQueryParser.LineToken[] {
-    const document: TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
-    const position: Position = _textDocumentPosition.position;
+function getLineTokensAt(_textDocumentPosition: LS.TextDocumentPositionParams): readonly PowerQueryParser.LineToken[] {
+    const document: LS.TextDocument = documents.get(_textDocumentPosition.textDocument.uri);
+    const position: LS.Position = _textDocumentPosition.position;
 
     // Get symbol at current position
     // TODO: parsing result should be cached
@@ -355,10 +335,10 @@ function getLineTokensAt(_textDocumentPosition: TextDocumentPositionParams): rea
     return null;
 }
 
-function getTokenAt(_textDocumentPosition: TextDocumentPositionParams): PowerQueryParser.LineToken {
+function getTokenAt(_textDocumentPosition: LS.TextDocumentPositionParams): PowerQueryParser.LineToken {
     const lineTokens = getLineTokensAt(_textDocumentPosition);
     if (lineTokens) {
-        const position: Position = _textDocumentPosition.position;
+        const position: LS.Position = _textDocumentPosition.position;
         for (let i: number = 0; i < lineTokens.length; i++) {
             let currentToken = lineTokens[i];
             if (currentToken.positionStart <= position.character && currentToken.positionEnd >= position.character) {
@@ -371,28 +351,26 @@ function getTokenAt(_textDocumentPosition: TextDocumentPositionParams): PowerQue
 }
 
 // TODO: make completion requests context sensitive
-connection.onCompletion(
-    (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-        return defaultCompletionItems;
-    },
-);
+connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): LS.CompletionItem[] => {
+    return defaultCompletionItems;
+});
 
 connection.onHover(
-    (_textDocumentPosition: TextDocumentPositionParams): Hover => {
-        let result: Hover = null;
-        const symbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
-        if (symbol.definition) {
-            const position = _textDocumentPosition.position;
-            const hover: Hover = LanguageServiceHelpers.LibraryDefinitionToHover(symbol.definition);
+    (_textDocumentPosition: LS.TextDocumentPositionParams): LS.Hover => {
+        let result: LS.Hover = null;
+        const documentSymbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
+        if (documentSymbol.definition) {
+            const position: LS.Position = _textDocumentPosition.position;
+            const hover: LS.Hover = LanguageServiceHelpers.LibraryDefinitionToHover(documentSymbol.definition);
             // fill in the range information
             hover.range = {
                 start: {
                     line: position.line,
-                    character: symbol.token.positionStart,
+                    character: documentSymbol.token.positionStart,
                 },
                 end: {
                     line: position.line,
-                    character: symbol.token.positionEnd,
+                    character: documentSymbol.token.positionEnd,
                 },
             };
             result = hover;
