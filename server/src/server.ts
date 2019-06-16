@@ -17,7 +17,7 @@ import {
 import { TFormatError } from "powerquery-format/lib/format/error";
 import { AllModules, Library, LibraryDefinition } from "powerquery-library";
 import * as LS from "vscode-languageserver";
-import { LanguageServiceHelpers } from "./languageServiceHelpers";
+import * as LanguageServiceHelpers from "./languageServiceHelpers";
 import { DocumentSymbol } from "./symbol";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -85,7 +85,7 @@ function initializeLibrary(): void {
     defaultCompletionItems = [];
 
     for (const definition of pqLibrary.values()) {
-        const completionItem: LS.CompletionItem = LanguageServiceHelpers.LibraryDefinitionToCompletionItem(definition);
+        const completionItem: LS.CompletionItem = LanguageServiceHelpers.libraryDefinitionToCompletionItem(definition);
         defaultCompletionItems.push(completionItem);
     }
 }
@@ -199,11 +199,11 @@ function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError):
         range: {
             start: {
                 line: errorToken.positionStart.lineNumber,
-                character: errorToken.positionStart.columnNumber,
+                character: errorToken.positionStart.lineCodeUnit,
             },
             end: {
                 line: errorToken.positionEnd.lineNumber,
-                character: errorToken.positionEnd.columnNumber,
+                character: errorToken.positionEnd.lineCodeUnit,
             },
         },
     };
@@ -360,11 +360,12 @@ connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): 
 
 connection.onHover(
     (_textDocumentPosition: LS.TextDocumentPositionParams): LS.Hover => {
-        let result: LS.Hover = null;
+        let maybeHover: undefined | LS.Hover = undefined;
+
         const maybeDocumentSymbol: undefined | DocumentSymbol = maybeDocumentSymbolDefinitionAt(_textDocumentPosition);
         if (maybeDocumentSymbol.definition) {
             const position: LS.Position = _textDocumentPosition.position;
-            const hover: LS.Hover = LanguageServiceHelpers.LibraryDefinitionToHover(maybeDocumentSymbol.definition);
+            const hover: LS.Hover = LanguageServiceHelpers.libraryDefinitionToHover(maybeDocumentSymbol.definition);
             // fill in the range information
             hover.range = {
                 start: {
@@ -376,10 +377,10 @@ connection.onHover(
                     character: maybeDocumentSymbol.token.positionEnd,
                 },
             };
-            result = hover;
+            maybeHover = hover;
         }
 
-        return result;
+        return maybeHover;
     },
 );
 

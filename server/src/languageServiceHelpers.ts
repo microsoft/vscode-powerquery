@@ -21,7 +21,7 @@ export function libraryDefinitionToCompletionItem(definition: LibraryDefinition)
 }
 
 export function libraryDefinitionToHover(definition: LibraryDefinition): Hover {
-    let contents: MarkupContent = null;
+    let contents: MarkupContent = undefined;
 
     // TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
     if (isFunction(definition)) {
