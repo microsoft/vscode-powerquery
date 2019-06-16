@@ -311,7 +311,7 @@ function getSymbolDefinitionAt(_textDocumentPosition: LS.TextDocumentPositionPar
             maybeDefinition = pqLibrary[token.data];
         }
 
-        return new DocumentSymbol(maybeToken, maybeDefinition);
+        return new DocumentSymbol(token, maybeDefinition);
     }
 
     return undefined;
