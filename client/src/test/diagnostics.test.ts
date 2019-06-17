@@ -3,12 +3,12 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import * as vscode from "vscode";
 import * as assert from "assert";
-import { getDocUri, activate } from "./helper";
+import * as vscode from "vscode";
+import { activate, getDocUri } from "./helper";
 
 describe("Should get diagnostics", () => {
-    const docUri = getDocUri("diagnostics.pq");
+    const docUri: vscode.Uri = getDocUri("diagnostics.pq");
 
     it("Simple test", async () => {
         await testDiagnostics(docUri, [
@@ -21,21 +21,21 @@ describe("Should get diagnostics", () => {
     });
 });
 
-function toRange(sLine: number, sChar: number, eLine: number, eChar: number) {
-    const start = new vscode.Position(sLine, sChar);
-    const end = new vscode.Position(eLine, eChar);
+function toRange(sLine: number, sChar: number, eLine: number, eChar: number): vscode.Range {
+    const start: vscode.Position = new vscode.Position(sLine, sChar);
+    const end: vscode.Position = new vscode.Position(eLine, eChar);
     return new vscode.Range(start, end);
 }
 
 async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.Diagnostic[]) {
     await activate(docUri);
 
-    const actualDiagnostics = vscode.languages.getDiagnostics(docUri);
+    const actualDiagnostics: vscode.Diagnostic[] = vscode.languages.getDiagnostics(docUri);
 
     assert.equal(actualDiagnostics.length, expectedDiagnostics.length);
 
     expectedDiagnostics.forEach((expectedDiagnostic, i) => {
-        const actualDiagnostic = actualDiagnostics[i];
+        const actualDiagnostic: vscode.Diagnostic = actualDiagnostics[i];
         assert.equal(actualDiagnostic.message, expectedDiagnostic.message);
         assert.deepEqual(actualDiagnostic.range, expectedDiagnostic.range);
         assert.equal(actualDiagnostic.severity, expectedDiagnostic.severity);

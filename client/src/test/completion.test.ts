@@ -40,7 +40,7 @@ async function testCompletion(
     }
 
     expectedCompletionList.items.forEach((expectedItem, i) => {
-        const actualItem = actualCompletionList.items[i];
+        const actualItem: vscode.CompletionItem = actualCompletionList.items[i];
         assert.equal(actualItem.label, expectedItem.label);
         assert.equal(actualItem.kind, expectedItem.kind);
     });
