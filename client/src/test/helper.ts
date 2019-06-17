@@ -14,13 +14,13 @@ export let platformEol: string;
 /**
  * Activates the vscode-powerquery extension
  */
-export async function activate(docUri: vscode.Uri) {
+export async function activate(docUri: vscode.Uri): Promise<void> {
     // The extensionId is `publisher.name` from package.json
     const ext: vscode.Extension<any> = vscode.extensions.getExtension("powerquery.vscode-powerquery");
-    await ext.activate();
+    await Promise.resolve(ext.activate());
     try {
-        doc = await vscode.workspace.openTextDocument(docUri);
-        editor = await vscode.window.showTextDocument(doc);
+        doc = await Promise.resolve(vscode.workspace.openTextDocument(docUri));
+        editor = await Promise.resolve(vscode.window.showTextDocument(doc));
         await sleep(2000); // Wait for server activation
     } catch (e) {
         // tslint:disable-next-line: no-console
