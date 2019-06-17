@@ -1,7 +1,5 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
 import {
@@ -155,7 +153,7 @@ function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): u
                 const message: string = innerError.message;
                 const position: LS.Position = {
                     line: graphemePosition.lineNumber,
-                    character: graphemePosition.columnNumber,
+                    character: graphemePosition.lineCodeUnit,
                 };
 
                 // TODO: "lex" errors aren't that useful to display to end user. Should we make it more generic?
