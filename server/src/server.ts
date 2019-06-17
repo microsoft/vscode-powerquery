@@ -97,23 +97,25 @@ interface PowerQuerySettings {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: PowerQuerySettings = { maxNumberOfProblems: 1000 };
-let globalSettings: PowerQuerySettings = defaultSettings;
+// TODO jobolton: this is unused?
+// const defaultSettings: PowerQuerySettings = { maxNumberOfProblems: 1000 };
+// let globalSettings: PowerQuerySettings = defaultSettings;
 
 // Cache the settings of all open documents
 const documentSettings: Map<string, Thenable<PowerQuerySettings>> = new Map();
 
-connection.onDidChangeConfiguration(change => {
-    if (hasConfigurationCapability) {
-        // Reset all cached document settings
-        documentSettings.clear();
-    } else {
-        globalSettings = (change.settings.powerquery || defaultSettings) as PowerQuerySettings;
-    }
+// TODO jobolton: this is unused?
+// connection.onDidChangeConfiguration(change => {
+//     if (hasConfigurationCapability) {
+//         // Reset all cached document settings
+//         documentSettings.clear();
+//     } else {
+//         globalSettings = (change.settings.powerquery || defaultSettings) as PowerQuerySettings;
+//     }
 
-    // Revalidate all open text documents
-    documents.all().forEach(validateDocument);
-});
+//     // Revalidate all open text documents
+//     documents.all().forEach(validateDocument);
+// });
 
 // TODO jobolton: this is unused?
 // function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
