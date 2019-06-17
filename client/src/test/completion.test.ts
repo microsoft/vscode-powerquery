@@ -3,12 +3,12 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import * as vscode from "vscode";
 import * as assert from "assert";
-import { getDocUri, activate } from "./helper";
+import * as vscode from "vscode";
+import { activate, getDocUri } from "./helper";
 
 describe("Should do completion", () => {
-    const docUri = getDocUri("completion.pq");
+    const docUri: vscode.Uri = getDocUri("completion.pq");
 
     it("Simple completion item test", async () => {
         await testCompletion(docUri, new vscode.Position(0, 7), {
@@ -22,7 +22,7 @@ async function testCompletion(
     position: vscode.Position,
     expectedCompletionList: vscode.CompletionList,
     countShouldMatch: boolean = false,
-) {
+): Promise<void> {
     // Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
     const actualCompletionList: vscode.CompletionList = await testCompletionBase(docUri, position);
 

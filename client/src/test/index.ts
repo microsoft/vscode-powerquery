@@ -3,6 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
+// tslint:disable-next-line: no-submodule-imports
 import * as testRunner from "vscode/lib/testrunner";
 
 testRunner.configure({
