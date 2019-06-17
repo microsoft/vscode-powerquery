@@ -1,29 +1,31 @@
 {
-    "rulesDirectory": ["tslint-config-prettier", "tslint-microsoft-contrib", "tslint-plugin-prettier"],
+    "rulesDirectory": [
+        "tslint-config-prettier",
+        "tslint-microsoft-contrib",
+        "tslint-plugin-prettier"
+    ],
     "rules": {
         "no-angle-bracket-type-assertion": true,
         "no-internal-module": true,
         "no-namespace": true,
         "prettier": true,
-
-         // tslint-microsoft-contrib rules we use with some configuration
-        "comment-format": [true, "check-space"],
+        // tslint-microsoft-contrib rules we use with some configuration
+        "comment-format": [
+            true,
+            "check-space"
+        ],
         "function-name": [
             true,
             {
                 // default
                 "method-regex": "^[a-z][\\w\\d]+$",
-
-                 // default
+                // default
                 "private-method-regex": "^[a-z][\\w\\d]+$",
-
-                 // default
+                // default
                 "protected-method-regex": "^[a-z][\\w\\d]+$",
-
-                 // changed from uppercase to lowercase
+                // changed from uppercase to lowercase
                 "static-method-regex": "^[a-z][\\w\\d]+$",
-
-                 // changed from lowercase to also allow uppercase (functional components)
+                // changed from lowercase to also allow uppercase (functional components)
                 "function-regex": "^([a-z]|[A-Z])[\\w\\d]+$"
             }
         ],
@@ -55,9 +57,24 @@
                 ]
             }
         ],
-        "no-implicit-dependencies": [true, "dev"],
-        "no-import-side-effect": [true, { "ignore-module": "mocha" }],
-        "no-void-expression": [true, "ignore-arrow-function-shorthand"],
+        "no-implicit-dependencies": [
+            true,
+            [
+                "powerquery-library",
+                "powerquery-format"
+            ],
+            "dev"
+        ],
+        "no-import-side-effect": [
+            true,
+            {
+                "ignore-module": "mocha"
+            }
+        ],
+        "no-void-expression": [
+            true,
+            "ignore-arrow-function-shorthand"
+        ],
         "typedef": [
             true,
             "member-variable-declaration",
@@ -66,9 +83,14 @@
             "call-signature",
             "parameter"
         ],
-        "variable-name": [true, "ban-keywords", "check-format", "allow-pascal-case", "allow-leading-underscore"],
-
-         // tslint-microsoft-contrib rules we don't use
+        "variable-name": [
+            true,
+            "ban-keywords",
+            "check-format",
+            "allow-pascal-case",
+            "allow-leading-underscore"
+        ],
+        // tslint-microsoft-contrib rules we don't use
         "binary-expression-operand-order": false,
         "completed-docs": false,
         "cyclomatic-complexity": false,
@@ -99,8 +121,13 @@
         "type-literal-delimiter": false,
         "use-default-type-parameter": false
     },
-    "extends": ["tslint-microsoft-contrib", "tslint-config-prettier"],
+    "extends": [
+        "tslint-microsoft-contrib",
+        "tslint-config-prettier"
+    ],
     "linterOptions": {
-        "exclude": ["./node_modules/**/*"]
+        "exclude": [
+            "./node_modules/**/*"
+        ]
     }
 }
