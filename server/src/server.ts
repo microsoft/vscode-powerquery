@@ -14,7 +14,6 @@ import {
     ResultKind,
     SerializerOptions,
 } from "powerquery-format";
-import { TFormatError } from "powerquery-format/lib/format/error";
 import { AllModules, Library, LibraryDefinition } from "powerquery-library";
 import * as LS from "vscode-languageserver";
 import * as LanguageServiceHelpers from "./languageServiceHelpers";
@@ -286,7 +285,7 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
         textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
     } else {
         // TODO: should this go in the failed promise path?
-        const error: TFormatError = formatResult.error;
+        const error: FormatError.TFormatError = formatResult.error;
         let message: string;
         if (FormatError.isTFormatError(error)) {
             message = error.innerError.message;
