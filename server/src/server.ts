@@ -138,7 +138,10 @@ documents.onDidClose(e => {
 
 documents.onDidChangeContent(change => {
     // TODO: lex/parse document and store result.
-    validateDocument(change.document);
+    validateDocument(change.document).catch(err =>
+        // tslint:disable-next-line: no-console
+        console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
+    );
 });
 
 function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): undefined | LS.Diagnostic[] {
