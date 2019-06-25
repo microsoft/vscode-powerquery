@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { Export, ExportKind, Parameter, Signature } from "./jsonTypes";
+import { ExportKind, LibraryDefinition, Parameter, Signature } from "./jsonTypes";
 import * as StandardLibrary from "./standard.json";
 
-export type Library = Map<string, Export>;
-
-export type LibraryDefinition = Export;
+export type Library = Map<string, LibraryDefinition>;
 
 export const AllModules: Library = loadAllModules();
 

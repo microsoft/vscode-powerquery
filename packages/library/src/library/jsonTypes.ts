@@ -13,7 +13,7 @@ export interface Module {
     readonly version: string | undefined;
 }
 
-export interface Export {
+export interface LibraryDefinition {
     readonly label: string;
     readonly kind: ExportKind;
     readonly summary: string;

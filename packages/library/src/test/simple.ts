@@ -4,34 +4,34 @@
 import { expect } from "chai";
 import "mocha";
 import { AllModules, Library } from "../library";
-import { Export } from "../library/jsonTypes";
+import { LibraryDefinition } from "../library/jsonTypes";
 
 const PowerQueryLibrary: Library = AllModules;
 
 describe("Library export", () => {
     it("index const by name", () => {
-        const exportKey: string = "BinaryOccurrence.Required";
-        const maybeLibraryExport: undefined | Export = PowerQueryLibrary.get(exportKey);
-        if (maybeLibraryExport === undefined) {
-            throw new Error(`expected constant '${exportKey}' was not found`);
+        const definitionKey: string = "BinaryOccurrence.Required";
+        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(definitionKey);
+        if (maybeLibraryDefinition === undefined) {
+            throw new Error(`expected constant '${definitionKey}' was not found`);
         }
-        const libraryExport: Export = maybeLibraryExport;
+        const libraryDefinition: LibraryDefinition = maybeLibraryDefinition;
 
-        expect(libraryExport.label).eq(exportKey, "unexpected label");
-        expect(libraryExport.summary.length).greaterThan(0, "summary should not be empty");
+        expect(libraryDefinition.label).eq(definitionKey, "unexpected label");
+        expect(libraryDefinition.summary.length).greaterThan(0, "summary should not be empty");
     });
 
     it("index function by name", () => {
         const exportKey: string = "List.Distinct";
-        const maybeLibraryExport: undefined | Export = PowerQueryLibrary.get(exportKey);
-        if (maybeLibraryExport === undefined) {
+        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(exportKey);
+        if (maybeLibraryDefinition === undefined) {
             throw new Error(`expected constant '${exportKey}' was not found`);
         }
-        const libraryExport: Export = maybeLibraryExport;
+        const libraryDefinition: LibraryDefinition = maybeLibraryDefinition;
 
-        expect(libraryExport.label !== null);
-        expect(libraryExport.signatures !== null);
-        expect(libraryExport.signatures.length).eq(2, "expecting 2 signatures");
-        expect(libraryExport.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
+        expect(libraryDefinition.label !== null);
+        expect(libraryDefinition.signatures !== null);
+        expect(libraryDefinition.signatures.length).eq(2, "expecting 2 signatures");
+        expect(libraryDefinition.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
     });
 });
