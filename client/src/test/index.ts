@@ -3,12 +3,13 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import * as testRunner from 'vscode/lib/testrunner';
+// tslint:disable-next-line: no-submodule-imports
+import * as testRunner from "vscode/lib/testrunner";
 
 testRunner.configure({
-    ui: 'bdd',
+    ui: "bdd",
     useColors: true,
-    timeout: 100000
+    timeout: 100000,
 });
 
 module.exports = testRunner;
