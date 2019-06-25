@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { Export, ExportKind, Parameter, Signature } from "./jsonTypes";
+import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "./jsonTypes";
 import * as StandardLibrary from "./standard.json";
 
-export type Library = Map<string, Export>;
+export type Library = Map<string, LibraryDefinition>;
 
 export const AllModules: Library = loadAllModules();
 
@@ -46,7 +46,7 @@ function loadStandardLibrary(): Library {
 
             library.set(exported.export, {
                 label: exported.export,
-                kind: exported.kind as ExportKind,
+                kind: exported.kind as LibraryDefinitionKind,
                 summary: exported.summary,
                 module: {
                     name: mod.module,

@@ -59,6 +59,10 @@
         ],
         "no-implicit-dependencies": [
             true,
+            [
+                "powerquery-library",
+                "powerquery-format"
+            ],
             "dev"
         ],
         "no-import-side-effect": [
