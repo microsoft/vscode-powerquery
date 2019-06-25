@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export const enum ExportKind {
+export const enum LibraryDefinitionKind {
     Constant = "Constant",
     Constructor = "Constructor",
     Function = "Function",
@@ -15,7 +15,7 @@ export interface Module {
 
 export interface LibraryDefinition {
     readonly label: string;
-    readonly kind: ExportKind;
+    readonly kind: LibraryDefinitionKind;
     readonly summary: string;
     // tslint:disable-next-line: no-reserved-keywords
     readonly module: Module;

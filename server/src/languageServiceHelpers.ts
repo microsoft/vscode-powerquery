@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { ExportKind, LibraryDefinition, Parameter, Signature } from "powerquery-library";
+import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "powerquery-library";
 import {
     CompletionItem,
     CompletionItemKind,
@@ -30,7 +30,7 @@ export function libraryDefinitionToHover(definition: LibraryDefinition, range: R
     // TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
     if (isFunction(definition)) {
         contents = formatFunctionDefinition(definition);
-    } else if (definition.kind === ExportKind.Type) {
+    } else if (definition.kind === LibraryDefinitionKind.Type) {
         contents = formatTypeDefinition(definition);
     } else {
         contents = formatConstantDefinition(definition);
@@ -43,18 +43,18 @@ export function libraryDefinitionToHover(definition: LibraryDefinition, range: R
 }
 
 export function isFunction(definition: LibraryDefinition): boolean {
-    return definition && (definition.kind === ExportKind.Function || definition.kind === ExportKind.Constructor);
+    return definition && (definition.kind === LibraryDefinitionKind.Function || definition.kind === LibraryDefinitionKind.Constructor);
 }
 
-export function exportKindToCompletionItemKind(kind: ExportKind): CompletionItemKind {
+export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): CompletionItemKind {
     switch (kind) {
-        case ExportKind.Constant:
+        case LibraryDefinitionKind.Constant:
             return CompletionItemKind.Constant;
-        case ExportKind.Constructor:
+        case LibraryDefinitionKind.Constructor:
             return CompletionItemKind.Constructor;
-        case ExportKind.Function:
+        case LibraryDefinitionKind.Function:
             return CompletionItemKind.Function;
-        case ExportKind.Type:
+        case LibraryDefinitionKind.Type:
             // Currently the best match for type
             return CompletionItemKind.Struct;
         default:

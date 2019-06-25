@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
+import * as LS from "vscode-languageserver";
 import {
     format,
     FormatError,
@@ -11,9 +12,8 @@ import {
     Result,
     ResultKind,
     SerializerOptions,
-} from "powerquery-format";
-import { AllModules, Library, LibraryDefinition } from "powerquery-library";
-import * as LS from "vscode-languageserver";
+} from "../../packages/format";
+import { AllModules, Library, LibraryDefinition } from "../../packages/library";
 import * as LanguageServiceHelpers from "./languageServiceHelpers";
 import { DocumentSymbol } from "./symbol";
 
