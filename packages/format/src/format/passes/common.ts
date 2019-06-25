@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, NodeIdMap, Option } from "@microsoft/powerquery-parser";
 
 export function maybeGetParent(nodeIdMapCollection: NodeIdMap.Collection, nodeId: number): Option<Ast.TNode> {

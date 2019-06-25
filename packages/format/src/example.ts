@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+
 /* tslint:disable:no-console */
 import { Result, ResultKind } from "@microsoft/powerquery-parser";
 import { format, FormatRequest, IndentationLiteral, NewlineLiteral } from "./format";

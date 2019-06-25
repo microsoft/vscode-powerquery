@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+
 import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "./jsonTypes";
 import * as StandardLibrary from "./standard.json";
 
