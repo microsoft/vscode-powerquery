@@ -7,7 +7,15 @@
     "outDir": "out",
     "rootDir": "src",
     "lib": ["es6"],
-    "composite": true
+    "composite": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmitOnError": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "incremental": true,
   },
   "include": ["src"],
   "exclude": ["node_modules", ".vscode-test"]

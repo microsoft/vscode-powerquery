@@ -1,113 +1,108 @@
-import { LibraryDefinition, ExportKind, Signature, Parameter } from 'powerquery-library';
-import { CompletionItem, CompletionItemKind, MarkupContent, Hover, MarkupKind, SignatureInformation, ParameterInformation } from 'vscode-languageserver';
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "powerquery-library";
+import {
+    CompletionItem,
+    CompletionItemKind,
+    Hover,
+    MarkupContent,
+    MarkupKind,
+    ParameterInformation,
+    Range,
+    SignatureInformation,
+} from "vscode-languageserver";
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export class LanguageServiceHelpers {
-	public static LibraryDefinitionToCompletionItem(definition: LibraryDefinition): CompletionItem {
-		return {
-			label: definition.label,
-			kind: LanguageServiceHelpers.ExportKindToCompletionItemKind(definition.kind),
-			documentation: definition.summary
-		};
-	}
+export function libraryDefinitionToCompletionItem(definition: LibraryDefinition): CompletionItem {
+    return {
+        label: definition.label,
+        kind: exportKindToCompletionItemKind(definition.kind),
+        documentation: definition.summary,
+    };
+}
 
-	public static LibraryDefinitionToHover(definition: LibraryDefinition): Hover {
-		let contents: MarkupContent = null;
+export function libraryDefinitionToHover(definition: LibraryDefinition, range: Range): Hover {
+    let contents: MarkupContent;
 
-		// TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
-		if (LanguageServiceHelpers.IsFunction(definition)) {
-			contents = LanguageServiceHelpers.FormatFunctionDefinition(definition);
-		} else if (definition.kind == ExportKind.Type) {
-			contents = LanguageServiceHelpers.FormatTypeDefinition(definition);
-		} else {
-			contents = LanguageServiceHelpers.FormatConstantDefinition(definition);
-		}
+    // TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
+    if (isFunction(definition)) {
+        contents = formatFunctionDefinition(definition);
+    } else if (definition.kind === LibraryDefinitionKind.Type) {
+        contents = formatTypeDefinition(definition);
+    } else {
+        contents = formatConstantDefinition(definition);
+    }
 
-		return {
-			contents: contents
-		}
-	}
+    return {
+        contents,
+        range,
+    };
+}
 
-	public static IsFunction(definition: LibraryDefinition) {
-		return (definition &&
-			(definition.kind === ExportKind.Function || definition.kind === ExportKind.Constructor));
-	}
+export function isFunction(definition: LibraryDefinition): boolean {
+    return definition && (definition.kind === LibraryDefinitionKind.Function || definition.kind === LibraryDefinitionKind.Constructor);
+}
 
-	public static ExportKindToCompletionItemKind(kind: ExportKind): CompletionItemKind {
-		switch (kind) {
-			case ExportKind.Constant:
-				return CompletionItemKind.Constant;
-			case ExportKind.Constructor:
-				return CompletionItemKind.Constructor;
-			case ExportKind.Function:
-				return CompletionItemKind.Function;
-			case ExportKind.Type:
-				// Currently the best match for type 
-				return CompletionItemKind.Struct;
-			default:
-				throw "Unmapped ExportKind: " + ExportKind;
-		}
-	}
+export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): CompletionItemKind {
+    switch (kind) {
+        case LibraryDefinitionKind.Constant:
+            return CompletionItemKind.Constant;
+        case LibraryDefinitionKind.Constructor:
+            return CompletionItemKind.Constructor;
+        case LibraryDefinitionKind.Function:
+            return CompletionItemKind.Function;
+        case LibraryDefinitionKind.Type:
+            // Currently the best match for type
+            return CompletionItemKind.Struct;
+        default:
+            throw new Error(`Unmapped ExportKind: ${kind}`);
+    }
+}
 
-	public static SignaturesToSignatureInformation(signatures: Signature[]): SignatureInformation[] {
-		const result: SignatureInformation[] = [];
-		signatures.forEach(s => {
-			result.push({
-				label: s.label,
-				documentation: s.documentation,
-				parameters: LanguageServiceHelpers.ParametersToParameterInformation(s.parameters)
-			});
-		});
+export function signaturesToSignatureInformation(signatures: Signature[]): SignatureInformation[] {
+    return signatures.map(signature => {
+        return {
+            label: signature.label,
+            documentation: signature.documentation,
+            parameters: parametersToParameterInformation(signature.parameters),
+        };
+    });
+}
 
-		return result;
-	}
+export function parametersToParameterInformation(parameters: ReadonlyArray<Parameter>): ParameterInformation[] {
+    return parameters.map(parameter => {
+        return {
+            label: [parameter.labelOffsetStart, parameter.labelOffsetEnd],
+            documentation: parameter.documentation,
+        };
+    });
+}
 
-	public static ParametersToParameterInformation(parameters: Parameter[]): ParameterInformation[] {
-		const result: ParameterInformation[] = [];
-		parameters.forEach(p => {
-			result.push({
-				// use the range from the signature
-				label: [p.labelOffsetStart, p.labelOffsetEnd],
-				documentation: p.documentation
-			});
-		});
+function formatTypeDefinition(definition: LibraryDefinition): MarkupContent {
+    return {
+        kind: MarkupKind.Markdown,
+        value: `(type) ${definition.label}\n\n\n${definition.summary}`,
+    };
+}
 
-		return result;
-	}
+function formatConstantDefinition(definition: LibraryDefinition): MarkupContent {
+    return {
+        kind: MarkupKind.Markdown,
+        value: `(constant) ${definition.label}\n\n\n${definition.summary}`,
+    };
+}
 
-	private static FormatTypeDefinition(definition: LibraryDefinition): MarkupContent {
-		return {
-			kind: MarkupKind.Markdown,
-			value: [
-				"(type) " + definition.label,
-				'\n',
-				definition.summary
-			].join('\n')
-		}
-	}
-
-	private static FormatConstantDefinition(definition: LibraryDefinition): MarkupContent {
-		return {
-			kind: MarkupKind.Markdown,
-			value: [
-				"(constant) " + definition.label,
-				'\n',
-				definition.summary
-			].join('\n')
-		}
-	}
-
-	private static FormatFunctionDefinition(definition: LibraryDefinition): MarkupContent {
-		return {
-			kind: MarkupKind.Markdown,
-			value: [
-				'```powerquery',
-				definition.signatures[definition.signatures.length - 1].label,
-				'```',
-				definition.summary
-			].join('\n')
-		}
-	}
+function formatFunctionDefinition(definition: LibraryDefinition): MarkupContent {
+    return {
+        kind: MarkupKind.Markdown,
+        value: [
+            "```powerquery",
+            definition.signatures[definition.signatures.length - 1].label,
+            "```",
+            definition.summary,
+        ].join("\n"),
+    };
 }
