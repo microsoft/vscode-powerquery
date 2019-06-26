@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, NodeIdMap, Option, Traverse } from "@microsoft/powerquery-parser";
 import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
