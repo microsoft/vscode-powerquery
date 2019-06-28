@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, CommonError, isNever, NodeIdMap, Option, Result, ResultKind } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "./passes/comment";
 import {

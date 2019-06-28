@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, isNever, NodeIdMap, Option, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 
 export type LinearLengthMap = Map<number, number>;

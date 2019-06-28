@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, NodeIdMap, Option, TComment, Traverse } from "@microsoft/powerquery-parser";
 
 export type CommentCollectionMap = Map<number, CommentCollection>;

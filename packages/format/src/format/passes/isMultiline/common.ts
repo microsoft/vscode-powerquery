@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, CommonError, Option } from "@microsoft/powerquery-parser";
 
 export type IsMultilineMap = Map<number, boolean>;

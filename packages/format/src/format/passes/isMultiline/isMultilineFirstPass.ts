@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, CommonError, isNever, NodeIdMap, Option, StringHelpers, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "../comment";
 import { maybeGetParent } from "../common";

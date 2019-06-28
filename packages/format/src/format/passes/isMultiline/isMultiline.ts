@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Ast, NodeIdMap, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "../comment";
 import { IsMultilineMap } from "./common";

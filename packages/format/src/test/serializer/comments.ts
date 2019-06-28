@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import "mocha";
 import { compare, runFormat } from "./common";
 

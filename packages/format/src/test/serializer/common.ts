@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { Result, ResultKind } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 import "mocha";
