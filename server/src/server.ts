@@ -58,9 +58,9 @@ connection.onInitialize((params: LS.InitializeParams) => {
                 resolveProvider: false,
             },
             hoverProvider: true,
-            // signatureHelpProvider: {
-            // 	triggerCharacters: ['(', ',']
-            // }
+            signatureHelpProvider: {
+                triggerCharacters: ["(", ","],
+            },
         },
     };
 });
@@ -152,7 +152,7 @@ function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): u
         for (const errorLine of error.errorLineMap.values()) {
             const innerError: PQP.LexerError.TInnerLexerError = errorLine.error.innerError;
             if ((innerError as any).graphemePosition) {
-                const graphemePosition: PQP.StringHelpers.GraphemePosition = (innerError as any).graphemePosition;
+                const graphemePosition: PQP.StringUtils.GraphemePosition = (innerError as any).graphemePosition;
                 const message: string = innerError.message;
                 const position: LS.Position = {
                     line: graphemePosition.lineNumber,
@@ -341,7 +341,6 @@ function maybeLineTokensAt(
 
     // Get symbol at current position
     // TODO: parsing result should be cached
-    // TODO: switch to new parser interface that is line terminator agnostic.
     const position: LS.Position = textDocumentPosition.position;
     const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
     const maybeLine: undefined | PQP.Lexer.TLine = lexResult.lines[position.line];
@@ -373,7 +372,10 @@ connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): 
 
 connection.onHover(
     (textDocumentPosition: LS.TextDocumentPositionParams): LS.Hover => {
-        let hover: LS.Hover;
+        let hover: LS.Hover = {
+            range: undefined,
+            contents: [],
+        };
 
         const maybeDocumentSymbol: undefined | DocumentSymbol = maybeDocumentSymbolDefinitionAt(textDocumentPosition);
         if (maybeDocumentSymbol && maybeDocumentSymbol.definition) {
@@ -389,35 +391,91 @@ connection.onHover(
                 },
             };
             hover = LanguageServiceHelpers.libraryDefinitionToHover(maybeDocumentSymbol.definition, range);
-        } else {
-            hover = {
-                range: undefined,
-                contents: [],
-            };
         }
 
         return hover;
     },
 );
 
-// connection.onSignatureHelp(
-// 	(_textDocumentPosition: TextDocumentPositionParams): SignatureHelp => {
-// 		let result: SignatureHelp = null;
-// 		const symbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
-// 		if (symbol.definition && LanguageServiceHelpers.IsFunction(symbol.definition)) {
-// 			const signatures = LanguageServiceHelpers.SignaturesToSignatureInformation(symbol.definition.signatures);
+interface Inspectable {
+    nodeIdMapCollection: PQP.NodeIdMap.Collection;
+    leafNodeIds: ReadonlyArray<number>;
+}
 
-// 			// TODO: calculate the correct activeSignature and activeParameter
-// 			result = {
-// 				signatures: signatures,
-// 				activeSignature: signatures.length,	// use the last signature
-// 				activeParameter: null
-// 			}
-// 		}
+connection.onSignatureHelp(
+    (textDocumentPosition: LS.TextDocumentPositionParams): LS.SignatureHelp => {
+        let signatureHelp: LS.SignatureHelp = {
+            signatures: [],
+            activeParameter: null,
+            activeSignature: 0,
+        };
 
-// 		return result;
-// 	}
-// );
+        const maybeDocument: undefined | LS.TextDocument = documents.get(textDocumentPosition.textDocument.uri);
+        if (maybeDocument === undefined) {
+            return signatureHelp;
+        }
+
+        const document: LS.TextDocument = maybeDocument;
+        const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
+        const triedSnapshot: PQP.TriedLexerSnapshot = PQP.LexerSnapshot.tryFrom(lexResult);
+        if (triedSnapshot.kind === PQP.ResultKind.Ok) {
+            const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
+            let inspectableParser: Inspectable | undefined;
+            if (triedParser.kind === PQP.ResultKind.Ok) {
+                inspectableParser = triedParser.value;
+            } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
+                inspectableParser = triedParser.error.context;
+            }
+
+            if (inspectableParser) {
+                const position: PQP.Inspection.Position = {
+                    lineNumber: textDocumentPosition.position.line,
+                    lineCodeUnit: textDocumentPosition.position.character,
+                };
+
+                const triedInspection: PQP.Inspection.TriedInspect = PQP.Inspection.tryFrom(
+                    position,
+                    inspectableParser.nodeIdMapCollection,
+                    inspectableParser.leafNodeIds,
+                );
+
+                if (triedInspection.kind === PQP.ResultKind.Ok) {
+                    // TODO: not sure if taking the first node is correct
+                    if (
+                        triedInspection.value.nodes.length > 0 &&
+                        triedInspection.value.nodes[0].kind === PQP.Inspection.NodeKind.InvokeExpression
+                    ) {
+                        const invokeExpressionNode: PQP.Inspection.InvokeExpression = triedInspection.value
+                            .nodes[0] as PQP.Inspection.InvokeExpression;
+                        const functionName: string | undefined = invokeExpressionNode.maybeName;
+
+                        if (functionName) {
+                            const libraryDefinition: LibraryDefinition | undefined = pqLibrary.get(functionName);
+                            if (libraryDefinition) {
+                                let argumentOrdinal: number | undefined;
+                                if (invokeExpressionNode.maybeArguments) {
+                                    argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
+                                }
+
+                                const signatures: LS.SignatureInformation[] = LanguageServiceHelpers.signaturesToSignatureInformation(
+                                    libraryDefinition.signatures,
+                                );
+
+                                signatureHelp = {
+                                    signatures: signatures,
+                                    activeParameter: argumentOrdinal ? argumentOrdinal : null,
+                                    activeSignature: signatures.length - 1,
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return signatureHelp;
+    },
+);
 
 /*
 connection.onDidOpenTextDocument((params) => {
