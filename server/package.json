@@ -20,7 +20,7 @@
     },
     "scripts": {},
     "dependencies": {
-        "@microsoft/powerquery-parser": "0.1.13",
+        "@microsoft/powerquery-parser": "0.1.14",
         "vscode-languageserver": "^5.2.1"
     },
     "devDependencies": {
@@ -29,6 +29,7 @@
         "tslint": "^5.17.0",
         "tslint-config-prettier": "^1.18.0",
         "tslint-microsoft-contrib": "^6.2.0",
-        "tslint-plugin-prettier": "^2.0.1"
+        "tslint-plugin-prettier": "^2.0.1",
+        "typescript": "^3.5.1"
     }
 }
