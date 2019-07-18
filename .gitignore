@@ -64,3 +64,4 @@ out/
 scratch/
 .vscode-test/
 **/tsconfig.tsbuildinfo
+client/lib/
