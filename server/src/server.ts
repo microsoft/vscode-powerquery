@@ -18,7 +18,6 @@ import * as LanguageServiceHelpers from "./languageServiceHelpers";
 import { DocumentSymbol } from "./symbol";
 import * as WorkspaceCache from "./workspaceCache";
 
-
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
@@ -282,9 +281,44 @@ function maybeTokenAt(textDocumentPosition: LS.TextDocumentPositionParams): unde
     return undefined;
 }
 
-// TODO: make completion requests context sensitive
-connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): LS.CompletionItem[] => {
-    return defaultCompletionItems;
+function cloneCompletionItemsWithRange(completionItems: LS.CompletionItem[], range: LS.Range): LS.CompletionItem[] {
+    const result: LS.CompletionItem[] = [];
+    completionItems.forEach(item => {
+        result.push({
+            ...item,
+            textEdit: {
+                range: range,
+                newText: item.label,
+            },
+        });
+    });
+
+    return result;
+}
+
+connection.onCompletion((textDocumentPosition: LS.TextDocumentPositionParams): LS.CompletionItem[] => {
+    let completionItems: LS.CompletionItem[] = defaultCompletionItems;
+
+    // Determine the range of the current token using our parser as it is more accurate than
+    // the grammar based tokenizer.
+    const maybeToken: undefined | PQP.LineToken = maybeTokenAt(textDocumentPosition);
+    if (maybeToken !== undefined) {
+        const position: LS.Position = textDocumentPosition.position;
+        const range: LS.Range = {
+            start: {
+                line: position.line,
+                character: maybeToken.positionStart,
+            },
+            end: {
+                line: position.line,
+                character: maybeToken.positionEnd,
+            },
+        };
+
+        completionItems = cloneCompletionItemsWithRange(defaultCompletionItems, range);
+    }
+
+    return completionItems;
 });
 
 connection.onHover(
