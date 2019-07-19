@@ -16,14 +16,14 @@ import {
 import { AllModules, Library, LibraryDefinition } from "../../packages/library";
 import * as LanguageServiceHelpers from "./languageServiceHelpers";
 import { DocumentSymbol } from "./symbol";
+import * as WorkspaceCache from "./workspaceCache";
+
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 
 const documents: LS.TextDocuments = new LS.TextDocuments(LS.TextDocumentSyncKind.Incremental);
-
-const lexAndParseCache: Map<string, PQP.TriedLexAndParse> = new Map();
 
 let pqLibrary: Library;
 let defaultCompletionItems: LS.CompletionItem[];
@@ -60,31 +60,19 @@ function initializeLibrary(): void {
 }
 
 documents.onDidClose(event => {
-    removeDocumentFromLexAndParseCache(event.document);
+    WorkspaceCache.close(event.document);
 });
 
 // TODO: Support incremental lexing.
 // TextDocuments uses the connection's onDidChangeTextDocument, and I can't see a way to provide a second
 // one to intercept incremental changes. TextDocuments.OnDidChangeContent only provides the full document.
 documents.onDidChangeContent(event => {
-    // clear previous lexer state
-    removeDocumentFromLexAndParseCache(event.document);
+    WorkspaceCache.reset(event.document);
 
     validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
-
-function removeDocumentFromLexAndParseCache(document: LS.TextDocument): void {
-    lexAndParseCache.delete(document.uri);
-}
-
-function lexAndCacheDocument(document: LS.TextDocument): PQP.TriedLexAndParse {
-    const text: string = document.getText();
-    const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
-    lexAndParseCache.set(document.uri, triedLexAndParse);
-    return triedLexAndParse;
-}
 
 function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): undefined | LS.Diagnostic[] {
     const diagnostics: LS.Diagnostic[] = [];
@@ -155,17 +143,8 @@ function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError):
     };
 }
 
-function retrieveLexAndParseResultFromCache(textDocument: LS.TextDocument): PQP.TriedLexAndParse {
-    let triedLexAndParse: PQP.TriedLexAndParse | undefined = lexAndParseCache.get(textDocument.uri);
-    if (triedLexAndParse === undefined) {
-        triedLexAndParse = lexAndCacheDocument(textDocument);
-    }
-
-    return triedLexAndParse;
-}
-
-async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
-    const triedLexAndParse: PQP.TriedLexAndParse = retrieveLexAndParseResultFromCache(textDocument);
+async function validateDocument(document: LS.TextDocument): Promise<void> {
+    const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
     let diagnostics: LS.Diagnostic[] = [];
 
     if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
@@ -188,7 +167,7 @@ async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
 
     // Send the computed diagnostics to VSCode.
     connection.sendDiagnostics({
-        uri: textDocument.uri,
+        uri: document.uri,
         diagnostics,
     });
 }
@@ -280,7 +259,7 @@ function maybeLineTokensAt(
     // Get symbol at current position
     // TODO: parsing result should be cached
     const position: LS.Position = textDocumentPosition.position;
-    const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
+    const lexResult: PQP.Lexer.State = WorkspaceCache.getLexerState(document);
     const maybeLine: undefined | PQP.Lexer.TLine = lexResult.lines[position.line];
 
     return maybeLine !== undefined ? maybeLine.tokens : undefined;
@@ -355,8 +334,11 @@ connection.onSignatureHelp(
         }
 
         const document: LS.TextDocument = maybeDocument;
-        const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
-        const triedSnapshot: PQP.TriedLexerSnapshot = PQP.LexerSnapshot.tryFrom(lexResult);
+
+        // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
+        // We have to retrieve the snapshot and reparse ourselves.
+        const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(document);
+
         if (triedSnapshot.kind === PQP.ResultKind.Ok) {
             const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
             let inspectableParser: Inspectable | undefined;
