@@ -21,9 +21,9 @@ import { DocumentSymbol } from "./symbol";
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 
-// Create a simple text document manager. The text document manager
-// supports full document sync only
 const documents: LS.TextDocuments = new LS.TextDocuments(LS.TextDocumentSyncKind.Incremental);
+
+const lexAndParseCache: Map<string, PQP.TriedLexAndParse> = new Map();
 
 let pqLibrary: Library;
 let defaultCompletionItems: LS.CompletionItem[];
@@ -59,12 +59,32 @@ function initializeLibrary(): void {
     }
 }
 
-documents.onDidChangeContent(change => {
-    // TODO: lex/parse document and store result.
-    validateDocument(change.document).catch(err =>
+documents.onDidClose(event => {
+    removeDocumentFromLexAndParseCache(event.document);
+});
+
+// TODO: Support incremental lexing.
+// TextDocuments uses the connection's onDidChangeTextDocument, and I can't see a way to provide a second
+// one to intercept incremental changes. TextDocuments.OnDidChangeContent only provides the full document.
+documents.onDidChangeContent(event => {
+    // clear previous lexer state
+    removeDocumentFromLexAndParseCache(event.document);
+
+    validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
+
+function removeDocumentFromLexAndParseCache(document: LS.TextDocument): void {
+    lexAndParseCache.delete(document.uri);
+}
+
+function lexAndCacheDocument(document: LS.TextDocument): PQP.TriedLexAndParse {
+    const text: string = document.getText();
+    const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
+    lexAndParseCache.set(document.uri, triedLexAndParse);
+    return triedLexAndParse;
+}
 
 function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): undefined | LS.Diagnostic[] {
     const diagnostics: LS.Diagnostic[] = [];
@@ -135,17 +155,19 @@ function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError):
     };
 }
 
-async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
-    // In this simple example we get the settings for every validate run.
-    // let settings = await getDocumentSettings(textDocument.uri);
+function retrieveLexAndParseResultFromCache(textDocument: LS.TextDocument): PQP.TriedLexAndParse {
+    let triedLexAndParse: PQP.TriedLexAndParse | undefined = lexAndParseCache.get(textDocument.uri);
+    if (triedLexAndParse === undefined) {
+        triedLexAndParse = lexAndCacheDocument(textDocument);
+    }
 
-    // TODO: our document store needs to nornalize line terminators.
-    // TODO: parser result should be calculated as result of changed and stored in TextDocument.
-    const text: string = textDocument.getText();
+    return triedLexAndParse;
+}
+
+async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
+    const triedLexAndParse: PQP.TriedLexAndParse = retrieveLexAndParseResultFromCache(textDocument);
     let diagnostics: LS.Diagnostic[] = [];
 
-    // TODO: switch to new parser interface that is line terminator agnostic.
-    const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
     if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
         const lexAndParseErr: PQP.LexAndParseErr = triedLexAndParse.error;
         const innerError: PQP.LexerError.TInnerLexerError | PQP.ParserError.TInnerParserError =
@@ -394,32 +416,6 @@ connection.onSignatureHelp(
         return signatureHelp;
     },
 );
-
-/*
-connection.onDidOpenTextDocument((params) => {
-	// A text document got opened in VSCode.
-	// params.uri uniquely identifies the document. For documents store on disk this is a file URI.
-	// params.text the initial full content of the document.
-	connection.console.log(`${params.textDocument.uri} opened.`);
-});
-connection.onDidChangeTextDocument((params) => {
-	// The content of a text document did change in VSCode.
-	// params.uri uniquely identifies the document.
-	// params.contentChanges describe the content changes to the document.
-	connection.console.log(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-});
-connection.onDidCloseTextDocument((params) => {
-	// A text document got closed in VSCode.
-	// params.uri uniquely identifies the document.
-	connection.console.log(`${params.textDocument.uri} closed.`);
-});
-
-connection.onDidChangeWatchedFiles(_change => {
-    // Monitored files have change in VSCode
-    connection.console.log("We received an file change event");
-});
-
-*/
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
