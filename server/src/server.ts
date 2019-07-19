@@ -23,7 +23,7 @@ const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
-const documents: LS.TextDocuments = new LS.TextDocuments();
+const documents: LS.TextDocuments = new LS.TextDocuments(LS.TextDocumentSyncKind.Incremental);
 
 let pqLibrary: Library;
 let defaultCompletionItems: LS.CompletionItem[];
@@ -58,10 +58,6 @@ function initializeLibrary(): void {
         defaultCompletionItems.push(completionItem);
     }
 }
-
-// TODO: We'll want this handler when we have our workspace document manager
-// documents.onDidClose(e => {
-// });
 
 documents.onDidChangeContent(change => {
     // TODO: lex/parse document and store result.
