@@ -25,30 +25,10 @@ const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 // supports full document sync only
 const documents: LS.TextDocuments = new LS.TextDocuments();
 
-let hasConfigurationCapability: boolean = false;
-let hasWorkspaceFolderCapability: boolean = false;
-// TODO jobolton: this is unused?
-// let hasDiagnosticRelatedInformationCapability: boolean = false;
-
 let pqLibrary: Library;
 let defaultCompletionItems: LS.CompletionItem[];
 
-connection.onInitialize((params: LS.InitializeParams) => {
-    const capabilities: LS.ClientCapabilities = params.capabilities;
-
-    // Does the client support the `workspace/configuration` request?
-    // If not, we will fall back using global settings
-    hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
-    hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
-    // TODO jobolton: this is unused?
-    // hasDiagnosticRelatedInformationCapability = !!(
-    //     capabilities.textDocument &&
-    //     capabilities.textDocument.publishDiagnostics &&
-    //     capabilities.textDocument.publishDiagnostics.relatedInformation
-    // );
-
-    initializeLibrary();
-
+connection.onInitialize(() => {
     return {
         capabilities: {
             textDocumentSync: documents.syncKind,
@@ -66,15 +46,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
 });
 
 connection.onInitialized(() => {
-    if (hasConfigurationCapability) {
-        // Register for all configuration changes.
-        connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
-    }
-    if (hasWorkspaceFolderCapability) {
-        connection.workspace.onDidChangeWorkspaceFolders(_event => {
-            connection.console.log("Workspace folder change event received.");
-        });
-    }
+    initializeLibrary();
 });
 
 function initializeLibrary(): void {
@@ -87,60 +59,14 @@ function initializeLibrary(): void {
     }
 }
 
-// The example settings
-interface PowerQuerySettings {
-    maxNumberOfProblems: number;
-}
-
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-// TODO jobolton: this is unused?
-// const defaultSettings: PowerQuerySettings = { maxNumberOfProblems: 1000 };
-// let globalSettings: PowerQuerySettings = defaultSettings;
-
-// Cache the settings of all open documents
-const documentSettings: Map<string, Thenable<PowerQuerySettings>> = new Map();
-
-// TODO jobolton: this is unused?
-// connection.onDidChangeConfiguration(change => {
-//     if (hasConfigurationCapability) {
-//         // Reset all cached document settings
-//         documentSettings.clear();
-//     } else {
-//         globalSettings = (change.settings.powerquery || defaultSettings) as PowerQuerySettings;
-//     }
-
-//     // Revalidate all open text documents
-//     documents.all().forEach(validateDocument);
+// TODO: We'll want this handler when we have our workspace document manager
+// documents.onDidClose(e => {
 // });
-
-// TODO jobolton: this is unused?
-// function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
-//     if (!hasConfigurationCapability) {
-//         return Promise.resolve(globalSettings);
-//     }
-//     let result: Thenable<PowerQuerySettings> = documentSettings.get(resource);
-//     if (!result) {
-//         result = connection.workspace.getConfiguration({
-//             scopeUri: resource,
-//             section: "powerquery",
-//         });
-//         documentSettings.set(resource, result);
-//     }
-//     return result;
-// }
-
-// Only keep settings for open documents
-documents.onDidClose(e => {
-    documentSettings.delete(e.document.uri);
-});
 
 documents.onDidChangeContent(change => {
     // TODO: lex/parse document and store result.
     validateDocument(change.document).catch(err =>
-        // tslint:disable-next-line: no-console
-        console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
+        connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
 
@@ -249,12 +175,6 @@ async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
     });
 }
 
-connection.onDidChangeWatchedFiles(_change => {
-    // Monitored files have change in VSCode
-    connection.console.log("We received an file change event");
-});
-
-// TODO: Update formatter to use @microsoft/powerquery-parser
 connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
     const maybeDocument: undefined | LS.TextDocument = documents.get(documentfomattingParams.textDocument.uri);
     if (maybeDocument === undefined) {
@@ -406,6 +326,7 @@ connection.onSignatureHelp(
     (textDocumentPosition: LS.TextDocumentPositionParams): LS.SignatureHelp => {
         let signatureHelp: LS.SignatureHelp = {
             signatures: [],
+            // tslint:disable-next-line: no-null-keyword
             activeParameter: null,
             activeSignature: 0,
         };
@@ -463,6 +384,7 @@ connection.onSignatureHelp(
 
                                 signatureHelp = {
                                     signatures: signatures,
+                                    // tslint:disable-next-line: no-null-keyword
                                     activeParameter: argumentOrdinal ? argumentOrdinal : null,
                                     activeSignature: signatures.length - 1,
                                 };
@@ -495,6 +417,12 @@ connection.onDidCloseTextDocument((params) => {
 	// params.uri uniquely identifies the document.
 	connection.console.log(`${params.textDocument.uri} closed.`);
 });
+
+connection.onDidChangeWatchedFiles(_change => {
+    // Monitored files have change in VSCode
+    connection.console.log("We received an file change event");
+});
+
 */
 
 // Make the text document manager listen on the connection
