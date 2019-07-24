@@ -246,18 +246,7 @@ function maybeDocumentSymbolDefinitionAt(
     return new DocumentSymbol(token, maybeDefinition);
 }
 
-function maybeLineTokensAt(
-    textDocumentPosition: LS.TextDocumentPositionParams,
-): undefined | ReadonlyArray<PQP.LineToken> {
-    const maybeDocument: undefined | LS.TextDocument = documents.get(textDocumentPosition.textDocument.uri);
-    if (maybeDocument === undefined) {
-        return undefined;
-    }
-    const document: LS.TextDocument = maybeDocument;
-
-    // Get symbol at current position
-    // TODO: parsing result should be cached
-    const position: LS.Position = textDocumentPosition.position;
+function maybeLineTokensAt(document: LS.TextDocument, position: LS.Position): undefined | ReadonlyArray<PQP.LineToken> {
     const lexResult: PQP.Lexer.State = WorkspaceCache.getLexerState(document);
     const maybeLine: undefined | PQP.Lexer.TLine = lexResult.lines[position.line];
 
@@ -265,7 +254,17 @@ function maybeLineTokensAt(
 }
 
 function maybeTokenAt(textDocumentPosition: LS.TextDocumentPositionParams): undefined | PQP.LineToken {
-    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeLineTokensAt(textDocumentPosition);
+    const maybeDocument: undefined | LS.TextDocument = documents.get(textDocumentPosition.textDocument.uri);
+    if (maybeDocument === undefined) {
+        return undefined;
+    }
+
+    const document: LS.TextDocument = maybeDocument;
+
+    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeLineTokensAt(
+        document,
+        textDocumentPosition.position,
+    );
     if (maybeLineTokens === undefined) {
         return undefined;
     }
@@ -275,6 +274,31 @@ function maybeTokenAt(textDocumentPosition: LS.TextDocumentPositionParams): unde
     for (const token of lineTokens) {
         if (token.positionStart <= position.character && token.positionEnd >= position.character) {
             return token;
+        }
+    }
+
+    // Token wasn't found - check for special case where current position is a trailing "." on an identifier
+    const currentRange: LS.Range = {
+        start: {
+            line: position.line,
+            character: position.character - 1,
+        },
+        end: position,
+    };
+
+    if (document.getText(currentRange) === ".") {
+        for (const token of lineTokens) {
+            if (token.positionStart <= position.character - 1 && token.positionEnd >= position.character - 1) {
+                if (token.kind === PQP.LineTokenKind.Identifier) {
+                    // Use this token with an adjusted position
+                    return {
+                        data: `${token.data}.`,
+                        kind: token.kind,
+                        positionStart: token.positionStart,
+                        positionEnd: token.positionEnd + 1,
+                    };
+                }
+            }
         }
     }
 

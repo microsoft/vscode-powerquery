@@ -5,6 +5,9 @@ import * as assert from "assert";
 import * as vscode from "vscode";
 import { activate, getDocUri } from "./helper";
 
+// TODO: Add test mechanism that uses | notation and doesn't require use of files.
+// TODO: Add test case for identifier with trailing. ex - "Access.|"
+
 describe("Should do completion", () => {
     const docUri: vscode.Uri = getDocUri("completion.pq");
 
