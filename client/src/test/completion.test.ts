@@ -9,9 +9,14 @@ describe("Should do completion", () => {
     const docUri: vscode.Uri = getDocUri("completion.pq");
 
     it("Simple completion item test", async () => {
-        await testCompletion(docUri, new vscode.Position(0, 7), {
-            items: [{ label: "Access.Database", kind: vscode.CompletionItemKind.Function }],
-        });
+        await testCompletion(
+            docUri,
+            new vscode.Position(0, 7),
+            {
+                items: [{ label: "Access.Database", kind: vscode.CompletionItemKind.Function }],
+            },
+            true,
+        );
     });
 });
 
