@@ -975,6 +975,9 @@ function getWrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): Serialize
     if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
         maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
     }
+    if (maybeParent && maybeParent.kind === Ast.NodeKind.ArrayWrapper) {
+        maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
+    }
 
     if (!maybeParent) {
         return SerializerWriteKind.Indented;
