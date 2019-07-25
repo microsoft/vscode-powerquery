@@ -222,14 +222,19 @@ function visitNode(node: Ast.TNode, state: State): void {
 
         case Ast.NodeKind.BinOpExpressionHelper: {
             const workspace: Workspace = getWorkspace(node, state);
-            let constantWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
-            if (workspace.maybeWriteKind !== SerializerWriteKind.Indented) {
-                constantWriteKind = SerializerWriteKind.PaddedLeft;
-            }
             setWorkspace(node.node, state, {
                 maybeWriteKind: SerializerWriteKind.PaddedLeft,
             });
             maybeSetIndentationChange(node, state, workspace.maybeIndentationChange);
+
+            let constantWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
+            const operator: Ast.TBinOpExpressionOperator = node.operator;
+
+            if (operator === Ast.ConstantKind.As || operator === Ast.ConstantKind.Is) {
+                constantWriteKind = SerializerWriteKind.PaddedLeft;
+            } else if (workspace.maybeWriteKind !== SerializerWriteKind.Indented) {
+                constantWriteKind = SerializerWriteKind.PaddedLeft;
+            }
             setWorkspace(node.operatorConstant, state, {
                 maybeWriteKind: constantWriteKind,
             });
@@ -883,24 +888,6 @@ function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
     }
     setWorkspace(node.value, state, valueWorkspace);
 }
-
-// function visitArray(csvs: Ast.TArrayWrapper, state: State, isMultiline: boolean): void {
-//     let maybeCsvWriteKind: Option<SerializerWriteKind>;
-//     let maybeCsvIndentationChange: Option<IndentationChange>;
-//     if (isMultiline) {
-//         maybeCsvWriteKind = SerializerWriteKind.Indented;
-//         maybeCsvIndentationChange = 1;
-//     } else {
-//         maybeCsvWriteKind = SerializerWriteKind.Any;
-//     }
-
-//     for (const csv of csvs.elements) {
-//         setWorkspace(csv, state, {
-//             maybeWriteKind: maybeCsvWriteKind,
-//             maybeIndentationChange: maybeCsvIndentationChange,
-//         });
-//     }
-// }
 
 function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
     const isMultiline: boolean = expectGetIsMultiline(wrapped, state.isMultilineMap);

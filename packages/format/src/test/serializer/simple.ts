@@ -1011,9 +1011,7 @@ meta
 {
     1,
     2
-}
-as
-list`;
+} as list`;
             const actual: string = runFormat(`{1, 2} as list`);
             compare(expected, actual);
         });
