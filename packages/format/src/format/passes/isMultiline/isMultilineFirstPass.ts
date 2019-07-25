@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, CommonError, isNever, NodeIdMap, Option, StringHelpers, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, CommonError, isNever, NodeIdMap, Option, StringUtils, Traverse } from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "../comment";
 import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
@@ -51,11 +51,16 @@ function visitNode(node: Ast.TNode, state: State): void {
     let isMultiline: boolean = false;
 
     switch (node.kind) {
+        case Ast.NodeKind.ArrayWrapper:
+            isMultiline = isAnyMultiline(isMultilineMap, ...node.elements);
+            break;
+
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:
         case Ast.NodeKind.AsType:
         case Ast.NodeKind.EachExpression:
         case Ast.NodeKind.ErrorRaisingExpression:
+        case Ast.NodeKind.IsNullablePrimitiveType:
         case Ast.NodeKind.NullablePrimitiveType:
         case Ast.NodeKind.NullableType:
         case Ast.NodeKind.OtherwiseExpression:
@@ -64,6 +69,8 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         // TBinOpExpression
+        case Ast.NodeKind.IsExpression:
+        case Ast.NodeKind.AsExpression:
         case Ast.NodeKind.ArithmeticExpression:
         case Ast.NodeKind.EqualityExpression:
         case Ast.NodeKind.LogicalExpression:
@@ -77,20 +84,11 @@ function visitNode(node: Ast.TNode, state: State): void {
                 if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                     isMultiline = true;
                 } else {
-                    isMultiline =
-                        isAnyMultilineUnaryHelper(isMultilineMap, node.rest) ||
-                        expectGetIsMultiline(node.first, isMultilineMap);
+                    isMultiline = isAnyMultiline(isMultilineMap, node.head, ...node.rest.elements);
                 }
             }
             break;
         }
-
-        // TBinOpKeyword
-        case Ast.NodeKind.IsExpression:
-        case Ast.NodeKind.AsExpression:
-        case Ast.NodeKind.MetadataExpression:
-            isMultiline = isAnyMultiline(isMultilineMap, node.left, node.constant, node.right);
-            break;
 
         // TKeyValuePair
         case Ast.NodeKind.GeneralizedIdentifierPairedAnyLiteral:
@@ -100,23 +98,27 @@ function visitNode(node: Ast.TNode, state: State): void {
             isMultiline = isAnyMultiline(isMultilineMap, node.key, node.equalConstant, node.value);
             break;
 
+        case Ast.NodeKind.BinOpExpressionHelper:
+            isMultiline = isAnyMultiline(isMultilineMap, node.operatorConstant, node.node);
+            break;
+
         case Ast.NodeKind.ListExpression:
         case Ast.NodeKind.ListLiteral:
         case Ast.NodeKind.RecordExpression:
         case Ast.NodeKind.RecordLiteral: {
-            if (node.content.length > 1) {
+            if (node.content.elements.length > 1) {
                 isMultiline = true;
             } else {
                 const isAnyChildMultiline: boolean = isAnyMultiline(
                     isMultilineMap,
                     node.openWrapperConstant,
                     node.closeWrapperConstant,
-                    ...node.content,
+                    ...node.content.elements,
                 );
                 if (isAnyChildMultiline) {
                     isMultiline = true;
                 } else {
-                    const csvs: ReadonlyArray<Ast.TCsv> = node.content;
+                    const csvs: ReadonlyArray<Ast.TCsv> = node.content.elements;
                     const csvNodes: ReadonlyArray<Ast.TNode> = csvs.map((csv: Ast.TCsv) => csv.node);
                     isMultiline = isAnyListOrRecord(csvNodes);
                 }
@@ -144,7 +146,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 node.openWrapperConstant,
                 node.closeWrapperConstant,
                 node.maybeOptionalConstant,
-                ...node.content,
+                ...node.content.elements,
             );
             break;
 
@@ -168,7 +170,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.FieldSpecificationList: {
-            const fields: ReadonlyArray<Ast.ICsv<Ast.FieldSpecification>> = node.content;
+            const fields: ReadonlyArray<Ast.ICsv<Ast.FieldSpecification>> = node.content.elements;
             if (fields.length > 1) {
                 isMultiline = true;
             } else if (fields.length === 1 && node.maybeOpenRecordMarkerConstant) {
@@ -195,7 +197,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.InvokeExpression: {
-            const args: ReadonlyArray<Ast.ICsv<Ast.TExpression>> = node.content;
+            const args: ReadonlyArray<Ast.ICsv<Ast.TExpression>> = node.content.elements;
 
             if (args.length > 1) {
                 const linearLengthMap: LinearLengthMap = state.linearLengthMap;
@@ -222,18 +224,13 @@ function visitNode(node: Ast.TNode, state: State): void {
                 // if it's beyond the threshold check if it's a long literal
                 // ex. `#datetimezone(2013,02,26, 09,15,00, 09,00)`
                 if (compositeLinearLength > InvokeExpressionLinearLengthThreshold) {
-                    const maybeInvokeIdentifier: Option<Ast.IdentifierExpression> = maybeGetInvokeExpressionIdentifier(
-                        node,
-                        state,
+                    const maybeName: Option<string> = NodeIdMap.maybeInvokeExpressionName(
+                        state.nodeIdMapCollection,
+                        node.id,
                     );
-                    if (maybeInvokeIdentifier) {
-                        if (maybeInvokeIdentifier.maybeInclusiveConstant) {
-                            isMultiline = true;
-                        } else {
-                            const identifierLiteral: string = maybeInvokeIdentifier.identifier.literal;
-                            isMultiline =
-                                InvokeExpressionIdentifierLinearLengthExclusions.indexOf(identifierLiteral) === -1;
-                        }
+                    if (maybeName) {
+                        const name: string = maybeName;
+                        isMultiline = InvokeExpressionIdentifierLinearLengthExclusions.indexOf(name) === -1;
                     }
                 } else {
                     isMultiline = isAnyMultiline(
@@ -285,6 +282,10 @@ function visitNode(node: Ast.TNode, state: State): void {
             );
             break;
 
+        case Ast.NodeKind.MetadataExpression:
+            isMultiline = isAnyMultiline(isMultilineMap, node.left, node.constant, node.right);
+            break;
+
         case Ast.NodeKind.ParenthesizedExpression:
             isMultiline = isAnyMultiline(
                 isMultilineMap,
@@ -303,11 +304,11 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.RecursivePrimaryExpression:
-            isMultiline = isAnyMultiline(isMultilineMap, node.head, ...node.recursiveExpressions);
+            isMultiline = isAnyMultiline(isMultilineMap, node.head, ...node.recursiveExpressions.elements);
             break;
 
         case Ast.NodeKind.Section:
-            if (node.sectionMembers.length) {
+            if (node.sectionMembers.elements.length) {
                 isMultiline = true;
             } else {
                 isMultiline = isAnyMultiline(
@@ -316,7 +317,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                     node.sectionConstant,
                     node.maybeName,
                     node.semicolonConstant,
-                    ...node.sectionMembers,
+                    ...node.sectionMembers.elements,
                 );
             }
             break;
@@ -336,11 +337,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.UnaryExpression:
-            isMultiline = isAnyMultilineUnaryHelper(isMultilineMap, node.expressions);
-            break;
-
-        case Ast.NodeKind.UnaryExpressionHelper:
-            isMultiline = isAnyMultiline(isMultilineMap, node.operatorConstant, node.node);
+            isMultiline = isAnyMultiline(isMultilineMap, ...node.operators.elements);
             break;
 
         // no-op nodes
@@ -354,7 +351,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         default:
-            isNever(node);
+            throw isNever(node);
     }
 
     setIsMultilineWithCommentCheck(node, state, isMultiline);
@@ -387,13 +384,6 @@ function isAnyMultiline(isMultilineMap: IsMultilineMap, ...maybeNodes: Option<As
     return false;
 }
 
-function isAnyMultilineUnaryHelper(
-    isMultilineMap: IsMultilineMap,
-    unaryExpressions: ReadonlyArray<Ast.TUnaryExpressionHelper>,
-): boolean {
-    return isAnyMultiline(isMultilineMap, ...unaryExpressions);
-}
-
 function setIsMultilineWithCommentCheck(node: Ast.TNode, state: State, isMultiline: boolean): void {
     if (precededByMultilineComment(node, state)) {
         isMultiline = true;
@@ -411,45 +401,10 @@ function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
     }
 }
 
-// InvokeExpression can be preceeded by an identifier, ex. '#datetimezone(...)'
-function maybeGetInvokeExpressionIdentifier(
-    node: Ast.InvokeExpression,
-    state: State,
-): Option<Ast.IdentifierExpression> {
-    const maybeRecursivePrimaryExpression: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
-    if (
-        !maybeRecursivePrimaryExpression ||
-        maybeRecursivePrimaryExpression.kind !== Ast.NodeKind.RecursivePrimaryExpression
-    ) {
-        const details: {} = {
-            node,
-            parent,
-        };
-        throw new CommonError.InvariantError(
-            "InvokeExpression should always have a RecursivePrimaryExpression as a parent",
-            details,
-        );
-    }
-    const recursivePrimaryExpression: Ast.RecursivePrimaryExpression = maybeRecursivePrimaryExpression;
-
-    const recursiveExpressions: Option<ReadonlyArray<Ast.TRecursivePrimaryExpression>> =
-        recursivePrimaryExpression.recursiveExpressions;
-    if (recursiveExpressions.length !== 1) {
-        return undefined;
-    } else {
-        const head: Ast.TPrimaryExpression = recursivePrimaryExpression.head;
-        if (head.kind !== Ast.NodeKind.IdentifierExpression) {
-            return undefined;
-        } else {
-            return head;
-        }
-    }
-}
-
 function numTBinOpExpressions(node: Ast.TNode): number {
     if (Ast.isTBinOpExpression(node)) {
-        let numberOfChildArgs: number = numTBinOpExpressions(node.first);
-        for (const child of node.rest) {
+        let numberOfChildArgs: number = numTBinOpExpressions(node.head);
+        for (const child of node.rest.elements) {
             numberOfChildArgs += numTBinOpExpressions(child);
         }
 
@@ -463,7 +418,7 @@ function containsNewline(text: string): boolean {
     const textLength: number = text.length;
 
     for (let index: number = 0; index < textLength; index += 1) {
-        if (StringHelpers.maybeNewlineKindAt(text, index)) {
+        if (StringUtils.maybeNewlineKindAt(text, index)) {
             return true;
         }
     }
