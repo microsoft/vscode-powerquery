@@ -636,20 +636,6 @@ function visitNode(node: Ast.TNode, state: State): void {
                 });
             }
 
-            // let maybePreviousSectionMember: Option<Ast.SectionMember>;
-            // for (const member of node.sectionMembers.elements) {
-            //     let memberWriteKind: SerializerWriteKind = SerializerWriteKind.DoubleNewline;
-
-            //     if (maybePreviousSectionMember && isSectionMemeberSimilarScope(member, maybePreviousSectionMember)) {
-            //         memberWriteKind = SerializerWriteKind.Indented;
-            //     }
-
-            //     setWorkspace(member, state, {
-            //         maybeWriteKind: memberWriteKind,
-            //     });
-
-            //     maybePreviousSectionMember = member;
-            // }
             break;
         }
 
@@ -732,9 +718,9 @@ function visitNode(node: Ast.TNode, state: State): void {
             propagateWriteKind(node, node.operators.elements[0], state);
             break;
 
-        // terminal nodes.
-        // if a parent gave the terminal node a workspace it assigns writeKind.
-        // indentationType may get overwritten if the terminal node has a comment attached.
+        // Leaf nodes.
+        // If a parent gave the leaf node a workspace it assigns indentationChange,
+        // while writeType can be overwritten if the leaf node has a multiline comment attached.
         case Ast.NodeKind.Constant:
         case Ast.NodeKind.GeneralizedIdentifier:
         case Ast.NodeKind.Identifier:
