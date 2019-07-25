@@ -43,7 +43,10 @@ export function libraryDefinitionToHover(definition: LibraryDefinition, range: R
 }
 
 export function isFunction(definition: LibraryDefinition): boolean {
-    return definition && (definition.kind === LibraryDefinitionKind.Function || definition.kind === LibraryDefinitionKind.Constructor);
+    return (
+        definition &&
+        (definition.kind === LibraryDefinitionKind.Function || definition.kind === LibraryDefinitionKind.Constructor)
+    );
 }
 
 export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): CompletionItemKind {
@@ -62,7 +65,7 @@ export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): Com
     }
 }
 
-export function signaturesToSignatureInformation(signatures: Signature[]): SignatureInformation[] {
+export function signaturesToSignatureInformation(signatures: ReadonlyArray<Signature>): SignatureInformation[] {
     return signatures.map(signature => {
         return {
             label: signature.label,

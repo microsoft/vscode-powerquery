@@ -16,39 +16,18 @@ import {
 import { AllModules, Library, LibraryDefinition } from "../../packages/library";
 import * as LanguageServiceHelpers from "./languageServiceHelpers";
 import { DocumentSymbol } from "./symbol";
+import * as WorkspaceCache from "./workspaceCache";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 
-// Create a simple text document manager. The text document manager
-// supports full document sync only
-const documents: LS.TextDocuments = new LS.TextDocuments();
-
-let hasConfigurationCapability: boolean = false;
-let hasWorkspaceFolderCapability: boolean = false;
-// TODO jobolton: this is unused?
-// let hasDiagnosticRelatedInformationCapability: boolean = false;
+const documents: LS.TextDocuments = new LS.TextDocuments(LS.TextDocumentSyncKind.Incremental);
 
 let pqLibrary: Library;
 let defaultCompletionItems: LS.CompletionItem[];
 
-connection.onInitialize((params: LS.InitializeParams) => {
-    const capabilities: LS.ClientCapabilities = params.capabilities;
-
-    // Does the client support the `workspace/configuration` request?
-    // If not, we will fall back using global settings
-    hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
-    hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
-    // TODO jobolton: this is unused?
-    // hasDiagnosticRelatedInformationCapability = !!(
-    //     capabilities.textDocument &&
-    //     capabilities.textDocument.publishDiagnostics &&
-    //     capabilities.textDocument.publishDiagnostics.relatedInformation
-    // );
-
-    initializeLibrary();
-
+connection.onInitialize(() => {
     return {
         capabilities: {
             textDocumentSync: documents.syncKind,
@@ -58,23 +37,15 @@ connection.onInitialize((params: LS.InitializeParams) => {
                 resolveProvider: false,
             },
             hoverProvider: true,
-            // signatureHelpProvider: {
-            // 	triggerCharacters: ['(', ',']
-            // }
+            signatureHelpProvider: {
+                triggerCharacters: ["(", ","],
+            },
         },
     };
 });
 
 connection.onInitialized(() => {
-    if (hasConfigurationCapability) {
-        // Register for all configuration changes.
-        connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
-    }
-    if (hasWorkspaceFolderCapability) {
-        connection.workspace.onDidChangeWorkspaceFolders(_event => {
-            connection.console.log("Workspace folder change event received.");
-        });
-    }
+    initializeLibrary();
 });
 
 function initializeLibrary(): void {
@@ -87,60 +58,18 @@ function initializeLibrary(): void {
     }
 }
 
-// The example settings
-interface PowerQuerySettings {
-    maxNumberOfProblems: number;
-}
-
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-// TODO jobolton: this is unused?
-// const defaultSettings: PowerQuerySettings = { maxNumberOfProblems: 1000 };
-// let globalSettings: PowerQuerySettings = defaultSettings;
-
-// Cache the settings of all open documents
-const documentSettings: Map<string, Thenable<PowerQuerySettings>> = new Map();
-
-// TODO jobolton: this is unused?
-// connection.onDidChangeConfiguration(change => {
-//     if (hasConfigurationCapability) {
-//         // Reset all cached document settings
-//         documentSettings.clear();
-//     } else {
-//         globalSettings = (change.settings.powerquery || defaultSettings) as PowerQuerySettings;
-//     }
-
-//     // Revalidate all open text documents
-//     documents.all().forEach(validateDocument);
-// });
-
-// TODO jobolton: this is unused?
-// function getDocumentSettings(resource: string): Thenable<PowerQuerySettings> {
-//     if (!hasConfigurationCapability) {
-//         return Promise.resolve(globalSettings);
-//     }
-//     let result: Thenable<PowerQuerySettings> = documentSettings.get(resource);
-//     if (!result) {
-//         result = connection.workspace.getConfiguration({
-//             scopeUri: resource,
-//             section: "powerquery",
-//         });
-//         documentSettings.set(resource, result);
-//     }
-//     return result;
-// }
-
-// Only keep settings for open documents
-documents.onDidClose(e => {
-    documentSettings.delete(e.document.uri);
+documents.onDidClose(event => {
+    WorkspaceCache.close(event.document);
 });
 
-documents.onDidChangeContent(change => {
-    // TODO: lex/parse document and store result.
-    validateDocument(change.document).catch(err =>
-        // tslint:disable-next-line: no-console
-        console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
+// TODO: Support incremental lexing.
+// TextDocuments uses the connection's onDidChangeTextDocument, and I can't see a way to provide a second
+// one to intercept incremental changes. TextDocuments.OnDidChangeContent only provides the full document.
+documents.onDidChangeContent(event => {
+    WorkspaceCache.reset(event.document);
+
+    validateDocument(event.document).catch(err =>
+        connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
 
@@ -152,7 +81,7 @@ function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): u
         for (const errorLine of error.errorLineMap.values()) {
             const innerError: PQP.LexerError.TInnerLexerError = errorLine.error.innerError;
             if ((innerError as any).graphemePosition) {
-                const graphemePosition: PQP.StringHelpers.GraphemePosition = (innerError as any).graphemePosition;
+                const graphemePosition: PQP.StringUtils.GraphemePosition = (innerError as any).graphemePosition;
                 const message: string = innerError.message;
                 const position: LS.Position = {
                     line: graphemePosition.lineNumber,
@@ -213,17 +142,10 @@ function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError):
     };
 }
 
-async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
-    // In this simple example we get the settings for every validate run.
-    // let settings = await getDocumentSettings(textDocument.uri);
-
-    // TODO: our document store needs to nornalize line terminators.
-    // TODO: parser result should be calculated as result of changed and stored in TextDocument.
-    const text: string = textDocument.getText();
+async function validateDocument(document: LS.TextDocument): Promise<void> {
+    const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
     let diagnostics: LS.Diagnostic[] = [];
 
-    // TODO: switch to new parser interface that is line terminator agnostic.
-    const triedLexAndParse: PQP.TriedLexAndParse = PQP.tryLexAndParse(text);
     if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
         const lexAndParseErr: PQP.LexAndParseErr = triedLexAndParse.error;
         const innerError: PQP.LexerError.TInnerLexerError | PQP.ParserError.TInnerParserError =
@@ -244,17 +166,11 @@ async function validateDocument(textDocument: LS.TextDocument): Promise<void> {
 
     // Send the computed diagnostics to VSCode.
     connection.sendDiagnostics({
-        uri: textDocument.uri,
+        uri: document.uri,
         diagnostics,
     });
 }
 
-connection.onDidChangeWatchedFiles(_change => {
-    // Monitored files have change in VSCode
-    connection.console.log("We received an file change event");
-});
-
-// TODO: Update formatter to use @microsoft/powerquery-parser
 connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
     const maybeDocument: undefined | LS.TextDocument = documents.get(documentfomattingParams.textDocument.uri);
     if (maybeDocument === undefined) {
@@ -330,27 +246,25 @@ function maybeDocumentSymbolDefinitionAt(
     return new DocumentSymbol(token, maybeDefinition);
 }
 
-function maybeLineTokensAt(
-    textDocumentPosition: LS.TextDocumentPositionParams,
-): undefined | ReadonlyArray<PQP.LineToken> {
-    const maybeDocument: undefined | LS.TextDocument = documents.get(textDocumentPosition.textDocument.uri);
-    if (maybeDocument === undefined) {
-        return undefined;
-    }
-    const document: LS.TextDocument = maybeDocument;
-
-    // Get symbol at current position
-    // TODO: parsing result should be cached
-    // TODO: switch to new parser interface that is line terminator agnostic.
-    const position: LS.Position = textDocumentPosition.position;
-    const lexResult: PQP.Lexer.State = PQP.Lexer.stateFrom(document.getText());
+function maybeLineTokensAt(document: LS.TextDocument, position: LS.Position): undefined | ReadonlyArray<PQP.LineToken> {
+    const lexResult: PQP.Lexer.State = WorkspaceCache.getLexerState(document);
     const maybeLine: undefined | PQP.Lexer.TLine = lexResult.lines[position.line];
 
     return maybeLine !== undefined ? maybeLine.tokens : undefined;
 }
 
 function maybeTokenAt(textDocumentPosition: LS.TextDocumentPositionParams): undefined | PQP.LineToken {
-    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeLineTokensAt(textDocumentPosition);
+    const maybeDocument: undefined | LS.TextDocument = documents.get(textDocumentPosition.textDocument.uri);
+    if (maybeDocument === undefined) {
+        return undefined;
+    }
+
+    const document: LS.TextDocument = maybeDocument;
+
+    const maybeLineTokens: undefined | ReadonlyArray<PQP.LineToken> = maybeLineTokensAt(
+        document,
+        textDocumentPosition.position,
+    );
     if (maybeLineTokens === undefined) {
         return undefined;
     }
@@ -363,17 +277,80 @@ function maybeTokenAt(textDocumentPosition: LS.TextDocumentPositionParams): unde
         }
     }
 
+    // Token wasn't found - check for special case where current position is a trailing "." on an identifier
+    const currentRange: LS.Range = {
+        start: {
+            line: position.line,
+            character: position.character - 1,
+        },
+        end: position,
+    };
+
+    if (document.getText(currentRange) === ".") {
+        for (const token of lineTokens) {
+            if (token.positionStart <= position.character - 1 && token.positionEnd >= position.character - 1) {
+                if (token.kind === PQP.LineTokenKind.Identifier) {
+                    // Use this token with an adjusted position
+                    return {
+                        data: `${token.data}.`,
+                        kind: token.kind,
+                        positionStart: token.positionStart,
+                        positionEnd: token.positionEnd + 1,
+                    };
+                }
+            }
+        }
+    }
+
     return undefined;
 }
 
-// TODO: make completion requests context sensitive
-connection.onCompletion((_textDocumentPosition: LS.TextDocumentPositionParams): LS.CompletionItem[] => {
-    return defaultCompletionItems;
+function cloneCompletionItemsWithRange(completionItems: LS.CompletionItem[], range: LS.Range): LS.CompletionItem[] {
+    const result: LS.CompletionItem[] = [];
+    completionItems.forEach(item => {
+        result.push({
+            ...item,
+            textEdit: {
+                range: range,
+                newText: item.label,
+            },
+        });
+    });
+
+    return result;
+}
+
+connection.onCompletion((textDocumentPosition: LS.TextDocumentPositionParams): LS.CompletionItem[] => {
+    let completionItems: LS.CompletionItem[] = defaultCompletionItems;
+
+    // Determine the range of the current token using our parser as it is more accurate than
+    // the grammar based tokenizer.
+    const maybeToken: undefined | PQP.LineToken = maybeTokenAt(textDocumentPosition);
+    if (maybeToken !== undefined) {
+        const position: LS.Position = textDocumentPosition.position;
+        const range: LS.Range = {
+            start: {
+                line: position.line,
+                character: maybeToken.positionStart,
+            },
+            end: {
+                line: position.line,
+                character: maybeToken.positionEnd,
+            },
+        };
+
+        completionItems = cloneCompletionItemsWithRange(defaultCompletionItems, range);
+    }
+
+    return completionItems;
 });
 
 connection.onHover(
     (textDocumentPosition: LS.TextDocumentPositionParams): LS.Hover => {
-        let hover: LS.Hover;
+        let hover: LS.Hover = {
+            range: undefined,
+            contents: [],
+        };
 
         const maybeDocumentSymbol: undefined | DocumentSymbol = maybeDocumentSymbolDefinitionAt(textDocumentPosition);
         if (maybeDocumentSymbol && maybeDocumentSymbol.definition) {
@@ -389,55 +366,96 @@ connection.onHover(
                 },
             };
             hover = LanguageServiceHelpers.libraryDefinitionToHover(maybeDocumentSymbol.definition, range);
-        } else {
-            hover = {
-                range: undefined,
-                contents: [],
-            };
         }
 
         return hover;
     },
 );
 
-// connection.onSignatureHelp(
-// 	(_textDocumentPosition: TextDocumentPositionParams): SignatureHelp => {
-// 		let result: SignatureHelp = null;
-// 		const symbol: DocumentSymbol = getSymbolDefinitionAt(_textDocumentPosition);
-// 		if (symbol.definition && LanguageServiceHelpers.IsFunction(symbol.definition)) {
-// 			const signatures = LanguageServiceHelpers.SignaturesToSignatureInformation(symbol.definition.signatures);
+interface Inspectable {
+    nodeIdMapCollection: PQP.NodeIdMap.Collection;
+    leafNodeIds: ReadonlyArray<number>;
+}
 
-// 			// TODO: calculate the correct activeSignature and activeParameter
-// 			result = {
-// 				signatures: signatures,
-// 				activeSignature: signatures.length,	// use the last signature
-// 				activeParameter: null
-// 			}
-// 		}
+connection.onSignatureHelp(
+    (textDocumentPosition: LS.TextDocumentPositionParams): LS.SignatureHelp => {
+        let signatureHelp: LS.SignatureHelp = {
+            signatures: [],
+            // tslint:disable-next-line: no-null-keyword
+            activeParameter: null,
+            activeSignature: 0,
+        };
 
-// 		return result;
-// 	}
-// );
+        const maybeDocument: undefined | LS.TextDocument = documents.get(textDocumentPosition.textDocument.uri);
+        if (maybeDocument === undefined) {
+            return signatureHelp;
+        }
 
-/*
-connection.onDidOpenTextDocument((params) => {
-	// A text document got opened in VSCode.
-	// params.uri uniquely identifies the document. For documents store on disk this is a file URI.
-	// params.text the initial full content of the document.
-	connection.console.log(`${params.textDocument.uri} opened.`);
-});
-connection.onDidChangeTextDocument((params) => {
-	// The content of a text document did change in VSCode.
-	// params.uri uniquely identifies the document.
-	// params.contentChanges describe the content changes to the document.
-	connection.console.log(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-});
-connection.onDidCloseTextDocument((params) => {
-	// A text document got closed in VSCode.
-	// params.uri uniquely identifies the document.
-	connection.console.log(`${params.textDocument.uri} closed.`);
-});
-*/
+        const document: LS.TextDocument = maybeDocument;
+
+        // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
+        // We have to retrieve the snapshot and reparse ourselves.
+        const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(document);
+
+        if (triedSnapshot.kind === PQP.ResultKind.Ok) {
+            const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
+            let inspectableParser: Inspectable | undefined;
+            if (triedParser.kind === PQP.ResultKind.Ok) {
+                inspectableParser = triedParser.value;
+            } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
+                inspectableParser = triedParser.error.context;
+            }
+
+            if (inspectableParser) {
+                const position: PQP.Inspection.Position = {
+                    lineNumber: textDocumentPosition.position.line,
+                    lineCodeUnit: textDocumentPosition.position.character,
+                };
+
+                const triedInspection: PQP.Inspection.TriedInspect = PQP.Inspection.tryFrom(
+                    position,
+                    inspectableParser.nodeIdMapCollection,
+                    inspectableParser.leafNodeIds,
+                );
+
+                if (triedInspection.kind === PQP.ResultKind.Ok) {
+                    // TODO: not sure if taking the first node is correct
+                    if (
+                        triedInspection.value.nodes.length > 0 &&
+                        triedInspection.value.nodes[0].kind === PQP.Inspection.NodeKind.InvokeExpression
+                    ) {
+                        const invokeExpressionNode: PQP.Inspection.InvokeExpression = triedInspection.value
+                            .nodes[0] as PQP.Inspection.InvokeExpression;
+                        const functionName: string | undefined = invokeExpressionNode.maybeName;
+
+                        if (functionName) {
+                            const libraryDefinition: LibraryDefinition | undefined = pqLibrary.get(functionName);
+                            if (libraryDefinition) {
+                                let argumentOrdinal: number | undefined;
+                                if (invokeExpressionNode.maybeArguments) {
+                                    argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
+                                }
+
+                                const signatures: LS.SignatureInformation[] = LanguageServiceHelpers.signaturesToSignatureInformation(
+                                    libraryDefinition.signatures,
+                                );
+
+                                signatureHelp = {
+                                    signatures: signatures,
+                                    // tslint:disable-next-line: no-null-keyword
+                                    activeParameter: argumentOrdinal ? argumentOrdinal : null,
+                                    activeSignature: signatures.length - 1,
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return signatureHelp;
+    },
+);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

@@ -25,7 +25,7 @@
         "postinstall": "vscode-install"
     },
     "dependencies": {
-        "vscode-languageclient": "^5.2.1"
+        "vscode-languageclient": "next"
     },
     "devDependencies": {
         "prettier": "^1.18.2",
