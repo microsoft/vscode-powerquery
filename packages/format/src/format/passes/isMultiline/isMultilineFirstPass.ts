@@ -52,8 +52,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper:
-            isMultiline = isAnyMultiline(isMultilineMap, ...node.elements);
-            break;
+            throw new CommonError.InvariantError(`ArrayWrapper shouldn't be visited directly`);
 
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:

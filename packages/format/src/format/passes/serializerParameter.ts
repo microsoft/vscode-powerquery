@@ -94,6 +94,9 @@ const DefaultWorkspace: Workspace = {
 
 function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
+        case Ast.NodeKind.ArrayWrapper:
+            throw new CommonError.InvariantError(`ArrayWrapper shouldn't be visited directly`);
+
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:
         case Ast.NodeKind.AsType:
@@ -167,9 +170,6 @@ function visitNode(node: Ast.TNode, state: State): void {
             visitCsvArray(node.content, state, isMultiline);
             break;
         }
-
-        case Ast.NodeKind.ArrayWrapper:
-            throw new CommonError.InvariantError(`ArrayWrapper shouldn't be visited directly`);
 
         case Ast.NodeKind.BinOpExpressionHelper: {
             const workspace: Workspace = getWorkspace(node, state);
