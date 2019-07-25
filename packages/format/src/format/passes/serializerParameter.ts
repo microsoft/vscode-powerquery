@@ -95,9 +95,6 @@ const DefaultWorkspace: Workspace = {
 function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper:
-            if (node.elements.length) {
-                propagateWriteKind(node, node.elements[0], state);
-            }
             break;
 
         // TPairedConstant
@@ -135,9 +132,18 @@ function visitNode(node: Ast.TNode, state: State): void {
             const rest: ReadonlyArray<Ast.TNode> = node.rest.elements;
             propagateWriteKind(node, node.head, state);
 
+            // For most TBinOpExression we want multiline formatted as
+            //  fooBar()
+            //      + 3
+            //      * 2
+            //
+            // However, we don't want this for EqualityExpression / RelationalExpression as it'd look weird, eg.
+            //  foo
+            //      <> bar
+            //      <> spam
             let restWriteKind: SerializerWriteKind;
             let restMaybeIndentationChange: Option<IndentationChange>;
-            if (isMultiline && node.kind !== Ast.NodeKind.EqualityExpression) {
+            if (isMultiline && node.kind !== Ast.NodeKind.EqualityExpression && Ast.NodeKind.RelationalExpression) {
                 restWriteKind = SerializerWriteKind.Indented;
                 restMaybeIndentationChange = 1;
             } else if (rest.length === 1) {
@@ -170,7 +176,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.RecordLiteral: {
             const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             visitWrapped(node, state);
-            visitCsvArray(node.content, state, isMultiline);
+            visitArray(node.content, state, isMultiline);
             break;
         }
 
@@ -269,7 +275,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.FieldProjection: {
             const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             visitWrapped(node, state);
-            visitCsvArray(node.content, state, isMultiline);
+            visitArray(node.content, state, isMultiline);
             break;
         }
 
@@ -311,7 +317,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             const fieldsArray: Ast.IArrayWrapper<Ast.ICsv<Ast.FieldSpecification>> = node.content;
             visitWrapped(node, state);
-            visitCsvArray(fieldsArray, state, isMultiline);
+            visitArray(fieldsArray, state, isMultiline);
 
             if (node.maybeOpenRecordMarkerConstant) {
                 let workspace: Workspace;
@@ -414,7 +420,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.InvokeExpression: {
             const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             visitWrapped(node, state);
-            visitCsvArray(node.content, state, isMultiline);
+            visitArray(node.content, state, isMultiline);
             break;
         }
 
@@ -466,7 +472,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 maybeIndentationChange: 1,
                 maybeWriteKind: SerializerWriteKind.Indented,
             });
-            visitCsvArray(node.variableList, state, true);
+            visitArray(node.variableList, state, true);
             break;
         }
 
@@ -859,7 +865,7 @@ function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
     setWorkspace(node.value, state, valueWorkspace);
 }
 
-function visitCsvArray(csvs: Ast.TCsvArray, state: State, isMultiline: boolean): void {
+function visitArray(csvs: Ast.TArrayWrapper, state: State, isMultiline: boolean): void {
     let maybeCsvWriteKind: Option<SerializerWriteKind>;
     let maybeCsvIndentationChange: Option<IndentationChange>;
     if (isMultiline) {
