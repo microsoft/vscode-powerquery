@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, NodeIdMap, Option, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, CommonError, NodeIdMap, Option, Traverse } from "@microsoft/powerquery-parser";
 import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 
@@ -33,6 +33,20 @@ interface State extends Traverse.IState<IsMultilineMap> {
 // then by default it should be considered multiline if it has one or more values
 function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
+        case Ast.NodeKind.ArrayWrapper: {
+            const maybeParent: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
+            if (maybeParent === undefined) {
+                const details: {} = { nodeId: node.id };
+                throw new CommonError.InvariantError(`ArrayWrapper must have a parent`, details);
+            }
+            const isMultilineMap: IsMultilineMap = state.result;
+            const parent: Ast.TNode = maybeParent;
+            const isParentMultiline: boolean = expectGetIsMultiline(parent, isMultilineMap);
+
+            setIsMultiline(node, isMultilineMap, isParentMultiline);
+            break;
+        }
+
         // TBinOpExpression
         case Ast.NodeKind.ArithmeticExpression:
         case Ast.NodeKind.AsExpression:

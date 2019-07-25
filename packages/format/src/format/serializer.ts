@@ -172,10 +172,15 @@ export class Serializer {
             }
 
             default:
-                const children: ReadonlyArray<Ast.TNode> = NodeIdMap.expectAstChildren(
+                const maybeChildren: Option<ReadonlyArray<Ast.TNode>> = NodeIdMap.maybeAstChildren(
                     this.nodeIdMapCollection,
                     node.id,
                 );
+                if (maybeChildren === undefined) {
+                    break;
+                }
+                const children: ReadonlyArray<Ast.TNode> = maybeChildren;
+
                 for (const child of children) {
                     this.visitNode(child);
                 }

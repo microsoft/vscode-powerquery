@@ -94,8 +94,29 @@ const DefaultWorkspace: Workspace = {
 
 function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
-        case Ast.NodeKind.ArrayWrapper:
+        case Ast.NodeKind.ArrayWrapper: {
+            const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
+            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+
+            let maybeWriteKind: Option<SerializerWriteKind>;
+            let maybeIndentationChange: Option<IndentationChange>;
+            if (parent.kind === Ast.NodeKind.Section) {
+                maybeWriteKind = SerializerWriteKind.DoubleNewline;
+            } else if (isMultiline) {
+                maybeWriteKind = SerializerWriteKind.Indented;
+                maybeIndentationChange = 1;
+            } else {
+                maybeWriteKind = SerializerWriteKind.Any;
+            }
+
+            for (const element of node.elements) {
+                setWorkspace(element, state, {
+                    maybeWriteKind,
+                    maybeIndentationChange,
+                });
+            }
             break;
+        }
 
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:
@@ -173,12 +194,9 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.ListLiteral:
         case Ast.NodeKind.ListExpression:
         case Ast.NodeKind.RecordExpression:
-        case Ast.NodeKind.RecordLiteral: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+        case Ast.NodeKind.RecordLiteral:
             visitWrapped(node, state);
-            visitArray(node.content, state, isMultiline);
             break;
-        }
 
         case Ast.NodeKind.BinOpExpressionHelper: {
             const workspace: Workspace = getWorkspace(node, state);
@@ -272,12 +290,9 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
         }
 
-        case Ast.NodeKind.FieldProjection: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+        case Ast.NodeKind.FieldProjection:
             visitWrapped(node, state);
-            visitArray(node.content, state, isMultiline);
             break;
-        }
 
         case Ast.NodeKind.FieldSelector:
             propagateWriteKind(node, node.openWrapperConstant, state);
@@ -317,10 +332,11 @@ function visitNode(node: Ast.TNode, state: State): void {
             const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             const fieldsArray: Ast.IArrayWrapper<Ast.ICsv<Ast.FieldSpecification>> = node.content;
             visitWrapped(node, state);
-            visitArray(fieldsArray, state, isMultiline);
 
             if (node.maybeOpenRecordMarkerConstant) {
+                const openRecordMarkerConstant: Ast.Constant = node.maybeOpenRecordMarkerConstant;
                 let workspace: Workspace;
+
                 if (isMultiline) {
                     workspace = {
                         maybeIndentationChange: 1,
@@ -335,7 +351,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                         maybeWriteKind: SerializerWriteKind.Any,
                     };
                 }
-                setWorkspace(node.maybeOpenRecordMarkerConstant, state, workspace);
+                setWorkspace(openRecordMarkerConstant, state, workspace);
             }
 
             break;
@@ -417,12 +433,9 @@ function visitNode(node: Ast.TNode, state: State): void {
             visitIfExpression(node, state);
             break;
 
-        case Ast.NodeKind.InvokeExpression: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+        case Ast.NodeKind.InvokeExpression:
             visitWrapped(node, state);
-            visitArray(node.content, state, isMultiline);
             break;
-        }
 
         case Ast.NodeKind.ItemAccessExpression: {
             const isMultilineMap: IsMultilineMap = state.isMultilineMap;
@@ -463,7 +476,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
         }
 
-        case Ast.NodeKind.LetExpression: {
+        case Ast.NodeKind.LetExpression:
             propagateWriteKind(node, node.letConstant, state);
             setWorkspace(node.inConstant, state, {
                 maybeWriteKind: SerializerWriteKind.Indented,
@@ -472,9 +485,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 maybeIndentationChange: 1,
                 maybeWriteKind: SerializerWriteKind.Indented,
             });
-            visitArray(node.variableList, state, true);
             break;
-        }
 
         case Ast.NodeKind.ListType: {
             const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
@@ -865,23 +876,23 @@ function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
     setWorkspace(node.value, state, valueWorkspace);
 }
 
-function visitArray(csvs: Ast.TArrayWrapper, state: State, isMultiline: boolean): void {
-    let maybeCsvWriteKind: Option<SerializerWriteKind>;
-    let maybeCsvIndentationChange: Option<IndentationChange>;
-    if (isMultiline) {
-        maybeCsvWriteKind = SerializerWriteKind.Indented;
-        maybeCsvIndentationChange = 1;
-    } else {
-        maybeCsvWriteKind = SerializerWriteKind.Any;
-    }
+// function visitArray(csvs: Ast.TArrayWrapper, state: State, isMultiline: boolean): void {
+//     let maybeCsvWriteKind: Option<SerializerWriteKind>;
+//     let maybeCsvIndentationChange: Option<IndentationChange>;
+//     if (isMultiline) {
+//         maybeCsvWriteKind = SerializerWriteKind.Indented;
+//         maybeCsvIndentationChange = 1;
+//     } else {
+//         maybeCsvWriteKind = SerializerWriteKind.Any;
+//     }
 
-    for (const csv of csvs.elements) {
-        setWorkspace(csv, state, {
-            maybeWriteKind: maybeCsvWriteKind,
-            maybeIndentationChange: maybeCsvIndentationChange,
-        });
-    }
-}
+//     for (const csv of csvs.elements) {
+//         setWorkspace(csv, state, {
+//             maybeWriteKind: maybeCsvWriteKind,
+//             maybeIndentationChange: maybeCsvIndentationChange,
+//         });
+//     }
+// }
 
 function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
     const isMultiline: boolean = expectGetIsMultiline(wrapped, state.isMultilineMap);
