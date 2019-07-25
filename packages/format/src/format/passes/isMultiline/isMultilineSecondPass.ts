@@ -35,7 +35,9 @@ function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         // TBinOpExpression
         case Ast.NodeKind.ArithmeticExpression:
+        case Ast.NodeKind.AsExpression:
         case Ast.NodeKind.EqualityExpression:
+        case Ast.NodeKind.IsExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
             const isMultilineMap: IsMultilineMap = state.result;
@@ -54,7 +56,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.ListLiteral:
         case Ast.NodeKind.RecordExpression:
         case Ast.NodeKind.RecordLiteral:
-            if (node.content.length) {
+            if (node.content.elements.length) {
                 const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
 
                 let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
