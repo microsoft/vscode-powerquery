@@ -95,7 +95,10 @@ const DefaultWorkspace: Workspace = {
 function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper:
-            throw new CommonError.InvariantError(`ArrayWrapper shouldn't be visited directly`);
+            if (node.elements.length) {
+                propagateWriteKind(node, node.elements[0], state);
+            }
+            break;
 
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, CommonError, isNever, NodeIdMap, Option, ResultKind, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, isNever, NodeIdMap, Option, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 
 export type LinearLengthMap = Map<number, number>;
 
@@ -62,9 +62,6 @@ function visitNode(node: Ast.TNode, state: State): void {
     let linearLength: number;
 
     switch (node.kind) {
-        case Ast.NodeKind.ArrayWrapper:
-            throw new CommonError.InvariantError(`ArrayWrapper shouldn't be visited directly`);
-
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:
         case Ast.NodeKind.AsType:
@@ -116,6 +113,10 @@ function visitNode(node: Ast.TNode, state: State): void {
             );
             break;
         }
+
+        case Ast.NodeKind.ArrayWrapper:
+            linearLength = sumLinearLengths(0, state, ...node.elements);
+            break;
 
         case Ast.NodeKind.BinOpExpressionHelper:
             linearLength = sumLinearLengths(1, state, node.operatorConstant, node.node);

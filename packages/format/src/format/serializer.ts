@@ -172,7 +172,7 @@ export class Serializer {
             }
 
             default:
-                const children: ReadonlyArray<Ast.TNode> = NodeIdMap.expectAstChildNodes(
+                const children: ReadonlyArray<Ast.TNode> = NodeIdMap.expectAstChildren(
                     this.nodeIdMapCollection,
                     node.id,
                 );

@@ -51,9 +51,6 @@ function visitNode(node: Ast.TNode, state: State): void {
     let isMultiline: boolean = false;
 
     switch (node.kind) {
-        case Ast.NodeKind.ArrayWrapper:
-            throw new CommonError.InvariantError(`ArrayWrapper shouldn't be visited directly`);
-
         // TPairedConstant
         case Ast.NodeKind.AsNullablePrimitiveType:
         case Ast.NodeKind.AsType:
@@ -95,6 +92,10 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.IdentifierExpressionPairedExpression:
         case Ast.NodeKind.IdentifierPairedExpression:
             isMultiline = isAnyMultiline(isMultilineMap, node.key, node.equalConstant, node.value);
+            break;
+
+        case Ast.NodeKind.ArrayWrapper:
+            isMultiline = isAnyMultiline(isMultilineMap, ...node.elements);
             break;
 
         case Ast.NodeKind.BinOpExpressionHelper:
@@ -196,26 +197,36 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.InvokeExpression: {
+            const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
             const args: ReadonlyArray<Ast.ICsv<Ast.TExpression>> = node.content.elements;
 
             if (args.length > 1) {
                 const linearLengthMap: LinearLengthMap = state.linearLengthMap;
-                const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, linearLengthMap);
-                const maybeParent: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
-                if (maybeParent === undefined || maybeParent.kind !== Ast.NodeKind.RecursivePrimaryExpression) {
-                    const details: {} = {
-                        node,
-                        maybeParent,
-                    };
+                const linearLength: number = getLinearLength(node, nodeIdMapCollection, linearLengthMap);
+
+                const maybeArrayWrapper: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
+                if (maybeArrayWrapper === undefined || maybeArrayWrapper.kind !== Ast.NodeKind.ArrayWrapper) {
+                    throw new CommonError.InvariantError("InvokeExpression must have ArrayWrapper as a parent");
+                }
+                const arrayWrapper: Ast.IArrayWrapper<Ast.TNode> = maybeArrayWrapper;
+
+                const maybeRecursivePrimaryExpression: Option<Ast.TNode> = maybeGetParent(
+                    nodeIdMapCollection,
+                    arrayWrapper.id,
+                );
+                if (
+                    maybeRecursivePrimaryExpression === undefined ||
+                    maybeRecursivePrimaryExpression.kind !== Ast.NodeKind.RecursivePrimaryExpression
+                ) {
                     throw new CommonError.InvariantError(
-                        "InvokeExpression must have RecursivePrimaryExpression as a parent",
-                        details,
+                        "ArrayWrapper must have RecursivePrimaryExpression as a parent",
                     );
                 }
+                const recursivePrimaryExpression: Ast.RecursivePrimaryExpression = maybeRecursivePrimaryExpression;
 
                 const headLinearLength: number = getLinearLength(
-                    maybeParent.head,
-                    state.nodeIdMapCollection,
+                    recursivePrimaryExpression.head,
+                    nodeIdMapCollection,
                     linearLengthMap,
                 );
                 const compositeLinearLength: number = linearLength + headLinearLength;
@@ -223,10 +234,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 // if it's beyond the threshold check if it's a long literal
                 // ex. `#datetimezone(2013,02,26, 09,15,00, 09,00)`
                 if (compositeLinearLength > InvokeExpressionLinearLengthThreshold) {
-                    const maybeName: Option<string> = NodeIdMap.maybeInvokeExpressionName(
-                        state.nodeIdMapCollection,
-                        node.id,
-                    );
+                    const maybeName: Option<string> = NodeIdMap.maybeInvokeExpressionName(nodeIdMapCollection, node.id);
                     if (maybeName) {
                         const name: string = maybeName;
                         isMultiline = InvokeExpressionIdentifierLinearLengthExclusions.indexOf(name) === -1;
