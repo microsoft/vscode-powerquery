@@ -96,25 +96,49 @@ function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper: {
             const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
-
-            let maybeWriteKind: Option<SerializerWriteKind>;
-            let maybeIndentationChange: Option<IndentationChange>;
             if (parent.kind === Ast.NodeKind.Section) {
-                maybeWriteKind = SerializerWriteKind.DoubleNewline;
-            } else if (isMultiline) {
-                maybeWriteKind = SerializerWriteKind.Indented;
-                maybeIndentationChange = 1;
+                let maybePreviousSectionMember: Option<Ast.SectionMember>;
+                for (const member of node.elements) {
+                    if (member.kind !== Ast.NodeKind.SectionMember) {
+                        const details: {} = { nodeKind: member.kind };
+                        throw new CommonError.InvariantError(`expected sectionMember`, details);
+                    }
+
+                    let memberWriteKind: SerializerWriteKind = SerializerWriteKind.DoubleNewline;
+
+                    if (
+                        maybePreviousSectionMember &&
+                        isSectionMemeberSimilarScope(member, maybePreviousSectionMember)
+                    ) {
+                        memberWriteKind = SerializerWriteKind.Indented;
+                    }
+
+                    setWorkspace(member, state, {
+                        maybeWriteKind: memberWriteKind,
+                    });
+
+                    maybePreviousSectionMember = member;
+                }
             } else {
-                maybeWriteKind = SerializerWriteKind.Any;
+                const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+
+                let maybeWriteKind: Option<SerializerWriteKind>;
+                let maybeIndentationChange: Option<IndentationChange>;
+                if (isMultiline) {
+                    maybeWriteKind = SerializerWriteKind.Indented;
+                    maybeIndentationChange = 1;
+                } else {
+                    maybeWriteKind = SerializerWriteKind.Any;
+                }
+
+                for (const element of node.elements) {
+                    setWorkspace(element, state, {
+                        maybeWriteKind,
+                        maybeIndentationChange,
+                    });
+                }
             }
 
-            for (const element of node.elements) {
-                setWorkspace(element, state, {
-                    maybeWriteKind,
-                    maybeIndentationChange,
-                });
-            }
             break;
         }
 
@@ -173,12 +197,10 @@ function visitNode(node: Ast.TNode, state: State): void {
                 restWriteKind = SerializerWriteKind.Any;
             }
 
-            for (const unaryExpression of node.rest.elements) {
-                setWorkspace(unaryExpression, state, {
-                    maybeIndentationChange: restMaybeIndentationChange,
-                    maybeWriteKind: restWriteKind,
-                });
-            }
+            setWorkspace(node.rest, state, {
+                maybeIndentationChange: restMaybeIndentationChange,
+                maybeWriteKind: restWriteKind,
+            });
 
             break;
         }
@@ -614,20 +636,20 @@ function visitNode(node: Ast.TNode, state: State): void {
                 });
             }
 
-            let maybeLastMember: Option<Ast.SectionMember>;
-            for (const member of node.sectionMembers.elements) {
-                let memberWriteKind: SerializerWriteKind = SerializerWriteKind.DoubleNewline;
+            // let maybePreviousSectionMember: Option<Ast.SectionMember>;
+            // for (const member of node.sectionMembers.elements) {
+            //     let memberWriteKind: SerializerWriteKind = SerializerWriteKind.DoubleNewline;
 
-                if (maybeLastMember && isSectionMemeberSimilarScope(member, maybeLastMember)) {
-                    memberWriteKind = SerializerWriteKind.Indented;
-                }
+            //     if (maybePreviousSectionMember && isSectionMemeberSimilarScope(member, maybePreviousSectionMember)) {
+            //         memberWriteKind = SerializerWriteKind.Indented;
+            //     }
 
-                setWorkspace(member, state, {
-                    maybeWriteKind: memberWriteKind,
-                });
+            //     setWorkspace(member, state, {
+            //         maybeWriteKind: memberWriteKind,
+            //     });
 
-                maybeLastMember = member;
-            }
+            //     maybePreviousSectionMember = member;
+            // }
             break;
         }
 
