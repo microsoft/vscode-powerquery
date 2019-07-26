@@ -75,8 +75,13 @@ function visitNode(node: Ast.TNode, state: State): void {
 
                 let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
                 let maybeCsv: Option<Ast.TCsv>;
+                let maybeArrayWrapper: Option<Ast.TArrayWrapper>;
                 if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
                     maybeCsv = maybeParent;
+                    maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
+                }
+                if (maybeParent && maybeParent.kind === Ast.NodeKind.ArrayWrapper) {
+                    maybeArrayWrapper = maybeParent;
                     maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
                 }
 
@@ -93,6 +98,9 @@ function visitNode(node: Ast.TNode, state: State): void {
                             setIsMultiline(maybeParent, state.result, true);
                             if (maybeCsv) {
                                 setIsMultiline(maybeCsv, state.result, true);
+                            }
+                            if (maybeArrayWrapper) {
+                                setIsMultiline(maybeArrayWrapper, state.result, true);
                             }
                             setIsMultiline(node, state.result, true);
                     }
