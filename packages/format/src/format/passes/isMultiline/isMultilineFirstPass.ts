@@ -229,7 +229,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                     nodeIdMapCollection,
                     linearLengthMap,
                 );
-                const compositeLinearLength: number = linearLength + headLinearLength;
+                const compositeLinearLength: number = headLinearLength + linearLength;
 
                 // if it's beyond the threshold check if it's a long literal
                 // ex. `#datetimezone(2013,02,26, 09,15,00, 09,00)`
