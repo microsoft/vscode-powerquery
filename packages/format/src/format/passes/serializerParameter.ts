@@ -970,6 +970,15 @@ function getWrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): Serialize
         return SerializerWriteKind.Indented;
     }
 
+    switch (wrapped.kind) {
+        case Ast.NodeKind.InvokeExpression:
+        case Ast.NodeKind.ItemAccessExpression:
+            return SerializerWriteKind.Any;
+
+        default:
+            break;
+    }
+
     const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
     let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, wrapped.id);
     if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
