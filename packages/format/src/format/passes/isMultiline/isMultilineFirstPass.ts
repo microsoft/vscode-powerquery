@@ -94,6 +94,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             isMultiline = isAnyMultiline(isMultilineMap, node.key, node.equalConstant, node.value);
             break;
 
+        // Possible for a parent to assign an isMultiline override.
         case Ast.NodeKind.ArrayWrapper:
             isMultiline = isAnyMultiline(isMultilineMap, ...node.elements);
             break;
@@ -124,6 +125,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 }
             }
 
+            setIsMultiline(node.content, isMultilineMap, isMultiline);
             break;
         }
 
@@ -170,12 +172,14 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.FieldSpecificationList: {
-            const fields: ReadonlyArray<Ast.ICsv<Ast.FieldSpecification>> = node.content.elements;
+            const fieldArray: Ast.ICsvArray<Ast.FieldSpecification> = node.content;
+            const fields: ReadonlyArray<Ast.ICsv<Ast.FieldSpecification>> = fieldArray.elements;
             if (fields.length > 1) {
                 isMultiline = true;
             } else if (fields.length === 1 && node.maybeOpenRecordMarkerConstant) {
                 isMultiline = true;
             }
+            setIsMultiline(fieldArray, isMultilineMap, isMultiline);
             break;
         }
 
@@ -239,6 +243,8 @@ function visitNode(node: Ast.TNode, state: State): void {
                         const name: string = maybeName;
                         isMultiline = InvokeExpressionIdentifierLinearLengthExclusions.indexOf(name) === -1;
                     }
+
+                    setIsMultiline(node.content, isMultilineMap, isMultiline);
                 } else {
                     isMultiline = isAnyMultiline(
                         isMultilineMap,
@@ -272,6 +278,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
         case Ast.NodeKind.LetExpression:
             isMultiline = true;
+            setIsMultiline(node.variableList, isMultilineMap, true);
             break;
 
         case Ast.NodeKind.LiteralExpression:
