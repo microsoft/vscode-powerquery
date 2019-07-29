@@ -416,6 +416,8 @@ function numTBinOpExpressions(node: Ast.TNode): number {
         }
 
         return numberOfChildArgs;
+    } else if (node.kind === Ast.NodeKind.BinOpExpressionHelper) {
+        return numTBinOpExpressions(node.node);
     } else {
         return 1;
     }
