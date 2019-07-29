@@ -29,8 +29,6 @@ interface State extends Traverse.IState<IsMultilineMap> {
     readonly nodeIdMapCollection: NodeIdMap.Collection;
 }
 
-// if a list or record is a child node,
-// then by default it should be considered multiline if it has one or more values
 function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper: {
@@ -66,6 +64,8 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
         }
 
+        // If a list or record is a child node,
+        // Then by default it should be considered multiline if it has one or more values
         case Ast.NodeKind.ListExpression:
         case Ast.NodeKind.ListLiteral:
         case Ast.NodeKind.RecordExpression:
