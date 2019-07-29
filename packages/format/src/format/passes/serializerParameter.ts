@@ -97,46 +97,9 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.ArrayWrapper: {
             const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
             if (parent.kind === Ast.NodeKind.Section) {
-                let maybePreviousSectionMember: Option<Ast.SectionMember>;
-                for (const member of node.elements) {
-                    if (member.kind !== Ast.NodeKind.SectionMember) {
-                        const details: {} = { nodeKind: member.kind };
-                        throw new CommonError.InvariantError(`expected sectionMember`, details);
-                    }
-
-                    let memberWriteKind: SerializerWriteKind = SerializerWriteKind.DoubleNewline;
-
-                    if (
-                        maybePreviousSectionMember &&
-                        isSectionMemeberSimilarScope(member, maybePreviousSectionMember)
-                    ) {
-                        memberWriteKind = SerializerWriteKind.Indented;
-                    }
-
-                    setWorkspace(member, state, {
-                        maybeWriteKind: memberWriteKind,
-                    });
-
-                    maybePreviousSectionMember = member;
-                }
+                visitArrayWrapperForSectionMembers(node as Ast.IArrayWrapper<Ast.SectionMember>, state);
             } else {
-                const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
-
-                let maybeWriteKind: Option<SerializerWriteKind>;
-                let maybeIndentationChange: Option<IndentationChange>;
-                if (isMultiline) {
-                    maybeWriteKind = SerializerWriteKind.Indented;
-                    maybeIndentationChange = 1;
-                } else {
-                    maybeWriteKind = SerializerWriteKind.Any;
-                }
-
-                for (const element of node.elements) {
-                    setWorkspace(element, state, {
-                        maybeWriteKind,
-                        maybeIndentationChange,
-                    });
-                }
+                visitArrayWrapper(node, state);
             }
 
             break;
@@ -180,12 +143,12 @@ function visitNode(node: Ast.TNode, state: State): void {
             // For most TBinOpExression we want multiline formatted as
             //  fooBar()
             //      + 3
-            //      * 2
+            //      and 2
             //
             // However, we don't want this for EqualityExpression / RelationalExpression as it'd look weird, eg.
-            //  foo
-            //      <> bar
-            //      <> spam
+            //  fooBar()
+            //      < bar
+            //      = spam
             let restWriteKind: SerializerWriteKind;
             let restMaybeIndentationChange: Option<IndentationChange>;
             if (isMultiline && node.kind !== Ast.NodeKind.EqualityExpression && Ast.NodeKind.RelationalExpression) {
@@ -889,29 +852,45 @@ function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
     setWorkspace(node.value, state, valueWorkspace);
 }
 
-function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
-    const isMultiline: boolean = expectGetIsMultiline(wrapped, state.isMultilineMap);
-    // not const as it's conditionally overwritten if SerializerWriteKind.Indented
-    let workspace: Workspace = getWorkspace(wrapped, state);
+function visitArrayWrapper(node: Ast.TArrayWrapper, state: State): void {
+    const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
 
-    if (workspace.maybeWriteKind === SerializerWriteKind.Indented) {
-        const writeKind: SerializerWriteKind = getWrapperOpenWriteKind(wrapped, state);
-
-        if (writeKind !== SerializerWriteKind.Indented) {
-            workspace = {
-                maybeIndentationChange: undefined,
-                maybeWriteKind: writeKind,
-            };
-        }
+    let maybeWriteKind: Option<SerializerWriteKind>;
+    let maybeIndentationChange: Option<IndentationChange>;
+    if (isMultiline) {
+        maybeWriteKind = SerializerWriteKind.Indented;
+        maybeIndentationChange = 1;
+    } else {
+        maybeWriteKind = SerializerWriteKind.Any;
     }
 
-    setWorkspace(wrapped, state, workspace);
-    propagateWriteKind(wrapped, wrapped.openWrapperConstant, state);
-
-    if (isMultiline) {
-        setWorkspace(wrapped.closeWrapperConstant, state, {
-            maybeWriteKind: SerializerWriteKind.Indented,
+    for (const element of node.elements) {
+        setWorkspace(element, state, {
+            maybeWriteKind,
+            maybeIndentationChange,
         });
+    }
+}
+
+function visitArrayWrapperForSectionMembers(node: Ast.IArrayWrapper<Ast.SectionMember>, state: State): void {
+    let maybePreviousSectionMember: Option<Ast.SectionMember>;
+    for (const member of node.elements) {
+        if (member.kind !== Ast.NodeKind.SectionMember) {
+            const details: {} = { nodeKind: member.kind };
+            throw new CommonError.InvariantError(`expected sectionMember`, details);
+        }
+
+        let memberWriteKind: SerializerWriteKind = SerializerWriteKind.DoubleNewline;
+
+        if (maybePreviousSectionMember && isSectionMemeberSimilarScope(member, maybePreviousSectionMember)) {
+            memberWriteKind = SerializerWriteKind.Indented;
+        }
+
+        setWorkspace(member, state, {
+            maybeWriteKind: memberWriteKind,
+        });
+
+        maybePreviousSectionMember = member;
     }
 }
 
@@ -961,6 +940,32 @@ function visitIfExpression(node: Ast.IfExpression, state: State): void {
         maybeWriteKind: SerializerWriteKind.Indented,
     });
     setWorkspace(falseExpression, state, falseExpressionWorkspace);
+}
+
+function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
+    const isMultiline: boolean = expectGetIsMultiline(wrapped, state.isMultilineMap);
+    // not const as it's conditionally overwritten if SerializerWriteKind.Indented
+    let workspace: Workspace = getWorkspace(wrapped, state);
+
+    if (workspace.maybeWriteKind === SerializerWriteKind.Indented) {
+        const writeKind: SerializerWriteKind = getWrapperOpenWriteKind(wrapped, state);
+
+        if (writeKind !== SerializerWriteKind.Indented) {
+            workspace = {
+                maybeIndentationChange: undefined,
+                maybeWriteKind: writeKind,
+            };
+        }
+    }
+
+    setWorkspace(wrapped, state, workspace);
+    propagateWriteKind(wrapped, wrapped.openWrapperConstant, state);
+
+    if (isMultiline) {
+        setWorkspace(wrapped.closeWrapperConstant, state, {
+            maybeWriteKind: SerializerWriteKind.Indented,
+        });
+    }
 }
 
 function getWrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): SerializerWriteKind {
