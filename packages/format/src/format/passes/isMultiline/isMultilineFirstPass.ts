@@ -75,14 +75,17 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             if (numExpressions > TBinOpExpressionExpressionNumberThreshold) {
                 isMultiline = true;
+                setIsMultiline(node.rest, isMultilineMap, true);
             } else {
                 const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
                 if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                     isMultiline = true;
+                    setIsMultiline(node.rest, isMultilineMap, true);
                 } else {
                     isMultiline = isAnyMultiline(isMultilineMap, node.head, ...node.rest.elements);
                 }
             }
+
             break;
         }
 

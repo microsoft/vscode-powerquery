@@ -96,8 +96,12 @@ function visitNode(node: Ast.TNode, state: State): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper: {
             const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
+
+            if (Ast.isTBinOpExpression(parent)) {
+                visitArrayWrapperForTBinOpExpressionRest(parent, parent.rest, state);
+            }
             if (parent.kind === Ast.NodeKind.Section) {
-                visitArrayWrapperForSectionMembers(node as Ast.IArrayWrapper<Ast.SectionMember>, state);
+                visitArrayWrapperForSectionMembers(parent.sectionMembers, state);
             } else {
                 visitArrayWrapper(node, state);
             }
@@ -853,6 +857,35 @@ function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
 }
 
 function visitArrayWrapper(node: Ast.TArrayWrapper, state: State): void {
+    const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+
+    let maybeWriteKind: Option<SerializerWriteKind>;
+    let maybeIndentationChange: Option<IndentationChange>;
+    if (isMultiline) {
+        maybeWriteKind = SerializerWriteKind.Indented;
+        maybeIndentationChange = 1;
+    } else {
+        maybeWriteKind = SerializerWriteKind.Any;
+    }
+
+    for (const element of node.elements) {
+        setWorkspace(element, state, {
+            maybeWriteKind,
+            maybeIndentationChange,
+        });
+    }
+}
+
+function visitArrayWrapperForTBinOpExpressionRest(
+    parent: Ast.TBinOpExpression,
+    node: Ast.IArrayWrapper<Ast.TBinOpExpressionHelper>,
+    state: State,
+): void {
+    const maybeParentParent: Option<Ast.TNode> = NodeIdMap.maybeParentAstNode(state.nodeIdMapCollection, parent.id);
+    if (((maybeParentParent as unknown) as number) === 1) {
+        throw 1;
+    }
+
     const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
 
     let maybeWriteKind: Option<SerializerWriteKind>;
