@@ -98,9 +98,8 @@ function visitNode(node: Ast.TNode, state: State): void {
             const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
 
             if (Ast.isTBinOpExpression(parent)) {
-                visitArrayWrapperForTBinOpExpressionRest(parent, parent.rest, state);
-            }
-            if (parent.kind === Ast.NodeKind.Section) {
+                visitArrayWrapperForTBinOpExpressionRest(parent.rest, state);
+            } else if (parent.kind === Ast.NodeKind.Section) {
                 visitArrayWrapperForSectionMembers(parent.sectionMembers, state);
             } else {
                 visitArrayWrapper(node, state);
@@ -140,32 +139,18 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.IsExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+            // const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             const rest: ReadonlyArray<Ast.TNode> = node.rest.elements;
             propagateWriteKind(node, node.head, state);
 
-            // For most TBinOpExression we want multiline formatted as
-            //  fooBar()
-            //      + 3
-            //      and 2
-            //
-            // However, we don't want this for EqualityExpression / RelationalExpression as it'd look weird, eg.
-            //  fooBar()
-            //      < bar
-            //      = spam
             let restWriteKind: SerializerWriteKind;
-            let restMaybeIndentationChange: Option<IndentationChange>;
-            if (isMultiline && node.kind !== Ast.NodeKind.EqualityExpression && Ast.NodeKind.RelationalExpression) {
-                restWriteKind = SerializerWriteKind.Indented;
-                restMaybeIndentationChange = 1;
-            } else if (rest.length === 1) {
+            if (rest.length === 1) {
                 restWriteKind = SerializerWriteKind.PaddedLeft;
             } else {
                 restWriteKind = SerializerWriteKind.Any;
             }
 
             setWorkspace(node.rest, state, {
-                maybeIndentationChange: restMaybeIndentationChange,
                 maybeWriteKind: restWriteKind,
             });
 
@@ -189,22 +174,20 @@ function visitNode(node: Ast.TNode, state: State): void {
 
         case Ast.NodeKind.BinOpExpressionHelper: {
             const workspace: Workspace = getWorkspace(node, state);
-            setWorkspace(node.node, state, {
-                maybeWriteKind: SerializerWriteKind.PaddedLeft,
-            });
-            maybeSetIndentationChange(node, state, workspace.maybeIndentationChange);
+            propagateWriteKind(node, node.node, state);
 
             let constantWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
-            const operator: Ast.TBinOpExpressionOperator = node.operator;
-
-            if (operator === Ast.ConstantKind.As || operator === Ast.ConstantKind.Is) {
-                constantWriteKind = SerializerWriteKind.PaddedLeft;
-            } else if (workspace.maybeWriteKind !== SerializerWriteKind.Indented) {
+            if (workspace.maybeWriteKind !== SerializerWriteKind.Indented) {
                 constantWriteKind = SerializerWriteKind.PaddedLeft;
             }
             setWorkspace(node.operatorConstant, state, {
                 maybeWriteKind: constantWriteKind,
             });
+
+            setWorkspace(node.node, state, {
+                maybeWriteKind: SerializerWriteKind.PaddedLeft,
+            });
+            maybeSetIndentationChange(node, state, workspace.maybeIndentationChange);
             break;
         }
 
@@ -877,15 +860,9 @@ function visitArrayWrapper(node: Ast.TArrayWrapper, state: State): void {
 }
 
 function visitArrayWrapperForTBinOpExpressionRest(
-    parent: Ast.TBinOpExpression,
     node: Ast.IArrayWrapper<Ast.TBinOpExpressionHelper>,
     state: State,
 ): void {
-    const maybeParentParent: Option<Ast.TNode> = NodeIdMap.maybeParentAstNode(state.nodeIdMapCollection, parent.id);
-    if (((maybeParentParent as unknown) as number) === 1) {
-        throw 1;
-    }
-
     const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
 
     let maybeWriteKind: Option<SerializerWriteKind>;
