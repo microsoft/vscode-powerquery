@@ -72,7 +72,8 @@ function visitNode(node: Ast.TNode, state: State): void {
                 }
 
                 if (maybeParent) {
-                    switch (maybeParent.kind) {
+                    const parent: Ast.TNode = maybeParent;
+                    switch (parent.kind) {
                         case Ast.NodeKind.ItemAccessExpression:
                         case Ast.NodeKind.InvokeExpression:
                         case Ast.NodeKind.FunctionExpression:
@@ -80,15 +81,18 @@ function visitNode(node: Ast.TNode, state: State): void {
                         case Ast.NodeKind.SectionMember:
                             break;
 
-                        default:
-                            setIsMultiline(maybeParent, state.result, true);
+                        default: {
+                            const isMultilineMap: IsMultilineMap = state.result;
+                            setIsMultiline(parent, isMultilineMap, true);
                             if (maybeCsv) {
-                                setIsMultiline(maybeCsv, state.result, true);
+                                setIsMultiline(maybeCsv, isMultilineMap, true);
                             }
                             if (maybeArrayWrapper) {
-                                setIsMultiline(maybeArrayWrapper, state.result, true);
+                                setIsMultiline(maybeArrayWrapper, isMultilineMap, true);
                             }
-                            setIsMultiline(node, state.result, true);
+                            setIsMultiline(node, isMultilineMap, true);
+                            setIsMultiline(node.content, isMultilineMap, true);
+                        }
                     }
                 }
             }
