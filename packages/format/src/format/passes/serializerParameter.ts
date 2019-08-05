@@ -139,7 +139,6 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.IsExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
-            // const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
             const rest: ReadonlyArray<Ast.TNode> = node.rest.elements;
             propagateWriteKind(node, node.head, state);
 
