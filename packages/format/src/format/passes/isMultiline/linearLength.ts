@@ -82,8 +82,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.IsExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
-            const restElements: ReadonlyArray<Ast.TNode> = node.rest.elements;
-            linearLength = sumLinearLengths(restElements.length - 1, state, node.head, ...restElements);
+            linearLength = sumLinearLengths(2, state, node.left, node.operatorConstant, node.right);
             break;
         }
 
@@ -116,10 +115,6 @@ function visitNode(node: Ast.TNode, state: State): void {
 
         case Ast.NodeKind.ArrayWrapper:
             linearLength = sumLinearLengths(0, state, ...node.elements);
-            break;
-
-        case Ast.NodeKind.BinOpExpressionHelper:
-            linearLength = sumLinearLengths(1, state, node.operatorConstant, node.node);
             break;
 
         case Ast.NodeKind.Constant:
