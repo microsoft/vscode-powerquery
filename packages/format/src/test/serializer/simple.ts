@@ -947,11 +947,7 @@ type table [
         // chained TBinOpExpressions are multiline after X expressions
         // and should count all expressions, not just (1 + node.rest.length) on like NodeKind.
         it(`1 + 2 + 3 and 4`, () => {
-            const expected: string = `
-1
-    + 2
-    + 3
-    and 4`;
+            const expected: string = `1 + 2 + 3 and 4`;
             const actual: string = runFormat(`1 + 2 + 3 and 4`);
             compare(expected, actual);
         });
