@@ -75,14 +75,12 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             if (numExpressions > TBinOpExpressionExpressionNumberThreshold) {
                 isMultiline = true;
-                setIsMultiline(node.rest, isMultilineMap, true);
             } else {
                 const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
                 if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                     isMultiline = true;
-                    setIsMultiline(node.rest, isMultilineMap, true);
                 } else {
-                    isMultiline = isAnyMultiline(isMultilineMap, node.head, ...node.rest.elements);
+                    isMultiline = isAnyMultiline(isMultilineMap, node.left, node.operatorConstant, node.right);
                 }
             }
 
@@ -100,10 +98,6 @@ function visitNode(node: Ast.TNode, state: State): void {
         // Possible for a parent to assign an isMultiline override.
         case Ast.NodeKind.ArrayWrapper:
             isMultiline = isAnyMultiline(isMultilineMap, ...node.elements);
-            break;
-
-        case Ast.NodeKind.BinOpExpressionHelper:
-            isMultiline = isAnyMultiline(isMultilineMap, node.operatorConstant, node.node);
             break;
 
         case Ast.NodeKind.ListExpression:
@@ -420,14 +414,7 @@ function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
 
 function numTBinOpExpressions(node: Ast.TNode): number {
     if (Ast.isTBinOpExpression(node)) {
-        let numberOfChildArgs: number = numTBinOpExpressions(node.head);
-        for (const child of node.rest.elements) {
-            numberOfChildArgs += numTBinOpExpressions(child);
-        }
-
-        return numberOfChildArgs;
-    } else if (node.kind === Ast.NodeKind.BinOpExpressionHelper) {
-        return numTBinOpExpressions(node.node);
+        return 1 + numTBinOpExpressions(node.right);
     } else {
         return 1;
     }
