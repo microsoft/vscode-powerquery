@@ -8,7 +8,7 @@ export type IsMultilineMap = Map<number, boolean>;
 export function expectGetIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilineMap): boolean {
     const maybeIsMultiline: Option<boolean> = isMultilineMap.get(node.id);
     if (maybeIsMultiline === undefined) {
-        const details: {} = { node };
+        const details: {} = { nodeId: node.id };
         throw new CommonError.InvariantError(`isMultiline is missing an expected nodeId`, details);
     }
 
