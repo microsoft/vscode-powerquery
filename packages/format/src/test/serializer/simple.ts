@@ -682,6 +682,12 @@ in
             const actual: string = runFormat(`let x = Foo(1, {2}) in x`);
             compare(expected, actual);
         });
+
+        it(`{0..1}`, () => {
+            const expected: string = `{0..1}`;
+            const actual: string = runFormat(`{0..1}`);
+            compare(expected, actual);
+        });
     });
 
     // ------------------------------

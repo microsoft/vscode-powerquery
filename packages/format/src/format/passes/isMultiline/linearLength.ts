@@ -288,6 +288,10 @@ function visitNode(node: Ast.TNode, state: State): void {
             linearLength = getLinearLength(node.primitiveType, state.nodeIdMapCollection, state.linearLengthMap);
             break;
 
+        case Ast.NodeKind.RangeExpression:
+            linearLength = sumLinearLengths(0, state, node.left, node.rangeConstant, node.right);
+            break;
+
         case Ast.NodeKind.RecordType:
             linearLength = sumLinearLengths(0, state, node.fields);
             break;

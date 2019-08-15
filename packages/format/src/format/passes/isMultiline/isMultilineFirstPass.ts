@@ -310,6 +310,10 @@ function visitNode(node: Ast.TNode, state: State): void {
             isMultiline = expectGetIsMultiline(node.primitiveType, isMultilineMap);
             break;
 
+        case Ast.NodeKind.RangeExpression:
+            isMultiline = isAnyMultiline(isMultilineMap, node.left, node.rangeConstant, node.right);
+            break;
+
         case Ast.NodeKind.RecordType:
             isMultiline = expectGetIsMultiline(node.fields, isMultilineMap);
             break;
