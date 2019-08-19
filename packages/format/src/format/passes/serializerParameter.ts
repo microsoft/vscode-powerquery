@@ -138,46 +138,33 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
             propagateWriteKind(node, node.left, state);
-            const workspace: Workspace = getWorkspace(node, state);
-            const maybeParent: Option<Ast.TNode> = NodeIdMap.maybeParentAstNode(state.nodeIdMapCollection, node.id);
 
-            if (maybeParent && Ast.isTBinOpExpression(maybeParent)) {
+            // A continuation of multiline TBinOpExpression
+            if (isInMultilineTBinOpExpression(state, node)) {
                 propagateWriteKind(node, node.left, state);
-                // The Root TBinOpExpression parent was multiline.
-                // Propegate the indentation format.
-                // eg for TBinOpExpression `2 + 3` in the following:
-                // 1
-                //  + 2
-                //  + 3
-                const parent: Ast.TBinOpExpression = maybeParent;
-                const isParentOperatorIndented: boolean =
-                    state.result.writeKind.get(parent.operatorConstant.id)! === SerializerWriteKind.Indented;
-
-                if (isParentOperatorIndented) {
-                    setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.Indented });
-                    setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-                } else {
-                    setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-                    setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-                }
+                setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.Indented });
+                setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
+            }
+            // The head of multiline TBinOpExpression
+            else if (expectGetIsMultiline(node, state.isMultilineMap)) {
+                setWorkspace(node.left, state, {
+                    ...getWorkspace(node, state),
+                    maybeIndentationChange: 1,
+                });
+                setWorkspace(node.operatorConstant, state, {
+                    maybeIndentationChange: 1,
+                    maybeWriteKind: SerializerWriteKind.Indented,
+                });
+                setWorkspace(node.right, state, {
+                    maybeIndentationChange: 1,
+                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
+                });
             } else {
                 propagateWriteKind(node, node.left, state);
-
-                const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
-                if (isMultiline) {
-                    setWorkspace(node.operatorConstant, state, {
-                        maybeIndentationChange: 1,
-                        maybeWriteKind: SerializerWriteKind.Indented,
-                    });
-                    setWorkspace(node.right, state, {
-                        maybeIndentationChange: 1,
-                        maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                    });
-                } else {
-                    setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-                    setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-                }
+                setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
+                setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
+
             break;
         }
 
@@ -1030,8 +1017,8 @@ function skipPrimaryTypeIndentation(node: Ast.TPrimaryType): boolean {
     return false;
 }
 
-// by default sections are two newlines apart from one another.
-// like named sections (ex. Foo.Alpha, Foo.Bravo) should be placed one newline apart.
+// By default SectionMembers are two newlines apart from one another.
+// Like-named sections (ex. Foo.Alpha, Foo.Bravo) should be placed one newline apart.
 function isSectionMemeberSimilarScope(left: Ast.SectionMember, right: Ast.SectionMember): boolean {
     const leftName: Ast.Identifier = left.namePairedExpression.key;
     const leftScope: ReadonlyArray<string> = leftName.literal.split(".");
@@ -1039,4 +1026,19 @@ function isSectionMemeberSimilarScope(left: Ast.SectionMember, right: Ast.Sectio
     const rightScope: ReadonlyArray<string> = rightName.literal.split(".");
 
     return leftScope[0] === rightScope[0];
+}
+
+function isInMultilineTBinOpExpression(state: State, node: Ast.TBinOpExpression): boolean {
+    const maybeParent: Option<Ast.TNode> = NodeIdMap.maybeParentAstNode(state.nodeIdMapCollection, node.id);
+    if (maybeParent === undefined) {
+        return false;
+    }
+    const parent: Ast.TNode = maybeParent;
+
+    if (!Ast.isTBinOpExpression(parent)) {
+        return false;
+    }
+
+    const parentOperatorWorkspace: Workspace = getWorkspace(parent.operatorConstant, state);
+    return parentOperatorWorkspace.maybeWriteKind === SerializerWriteKind.Indented;
 }
