@@ -536,8 +536,19 @@ function visitNode(node: Ast.TNode, state: State): void {
             propagateWriteKind(node, node.primitiveType, state);
             break;
 
-        case Ast.NodeKind.RangeExpression:
-            throw new Error(`todo`);
+        // Assumes the parent must be a CsvArray owned by a ListExpression,
+        // meaning the Workspace can only get set in visitCsvArray.
+        case Ast.NodeKind.RangeExpression: {
+            const workspace: Workspace = getWorkspace(node, state);
+            propagateWriteKind(node, node.left, state);
+
+            if (workspace.maybeWriteKind === SerializerWriteKind.Indented) {
+                setWorkspace(node.rangeConstant, state, { maybeWriteKind: SerializerWriteKind.Indented });
+                setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.Indented });
+            }
+
+            break;
+        }
 
         case Ast.NodeKind.RecordType: {
             const workspace: Workspace = getWorkspace(node, state);

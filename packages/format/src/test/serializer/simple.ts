@@ -688,6 +688,20 @@ in
             const actual: string = runFormat(`{0..1}`);
             compare(expected, actual);
         });
+
+        it(`{if 1 then 2 else 3..4}`, () => {
+            const expected: string = `
+{
+    if 1 then
+        2
+    else
+        3
+    ..
+    4
+}`;
+            const actual: string = runFormat(`{if 1 then 2 else 3..4}`);
+            compare(expected, actual);
+        });
     });
 
     // ------------------------------
