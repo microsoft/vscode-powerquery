@@ -97,12 +97,15 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.ArrayWrapper: {
             const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
 
-            if (parent.kind === Ast.NodeKind.Section) {
-                visitArrayWrapperForSectionMembers(parent.sectionMembers, state);
-            } else {
-                visitArrayWrapper(node, state);
-            }
+            switch (parent.kind) {
+                case Ast.NodeKind.Section:
+                    visitArrayWrapperForSectionMembers(parent.sectionMembers, state);
+                    break;
 
+                default:
+                    visitArrayWrapper(node, state);
+                    break;
+            }
             break;
         }
 
