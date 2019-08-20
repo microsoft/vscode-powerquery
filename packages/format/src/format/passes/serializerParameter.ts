@@ -159,7 +159,10 @@ function visitNode(node: Ast.TNode, state: State): void {
                     maybeIndentationChange: 1,
                     maybeWriteKind: SerializerWriteKind.PaddedLeft,
                 });
-            } else {
+            }
+            // Either the head of a non-multiline TBinOpExpression,
+            // or a continuation of a non-multiline TBinOpExpression.
+            else {
                 propagateWriteKind(node, node.left, state);
                 setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
                 setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
