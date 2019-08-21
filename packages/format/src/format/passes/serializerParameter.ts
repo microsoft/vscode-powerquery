@@ -142,31 +142,13 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.RelationalExpression: {
             propagateWriteKind(node, node.left, state);
 
-            // A continuation of multiline TBinOpExpression
-            if (isInMultilineTBinOpExpression(state, node)) {
-                propagateWriteKind(node, node.left, state);
+            if (expectGetIsMultiline(node, state.isMultilineMap)) {
                 setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.Indented });
                 setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-            }
-            // The head of multiline TBinOpExpression
-            else if (expectGetIsMultiline(node, state.isMultilineMap)) {
-                setWorkspace(node.left, state, {
-                    ...getWorkspace(node, state),
-                    maybeIndentationChange: 1,
-                });
-                setWorkspace(node.operatorConstant, state, {
-                    maybeIndentationChange: 1,
-                    maybeWriteKind: SerializerWriteKind.Indented,
-                });
-                setWorkspace(node.right, state, {
-                    maybeIndentationChange: 1,
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                });
-            }
-            // Either the head of a non-multiline TBinOpExpression,
-            // or a continuation of a non-multiline TBinOpExpression.
-            else {
-                propagateWriteKind(node, node.left, state);
+            } else if (node.kind === Ast.NodeKind.LogicalExpression) {
+                setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
+                setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.Indented });
+            } else {
                 setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
                 setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
@@ -692,7 +674,6 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.GeneralizedIdentifier:
         case Ast.NodeKind.Identifier:
         case Ast.NodeKind.LiteralExpression: {
-            const cacheKey: number = node.id;
             const workspace: Workspace = getWorkspace(node, state);
             maybeSetIndentationChange(node, state, workspace.maybeIndentationChange);
 
@@ -706,7 +687,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 throw new CommonError.InvariantError("maybeWriteKind should be truthy", details);
             }
 
-            state.result.writeKind.set(cacheKey, maybeWriteKind);
+            state.result.writeKind.set(node.id, maybeWriteKind);
             break;
         }
 
@@ -947,7 +928,7 @@ function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
     let workspace: Workspace = getWorkspace(wrapped, state);
 
     if (workspace.maybeWriteKind === SerializerWriteKind.Indented) {
-        const writeKind: SerializerWriteKind = getWrapperOpenWriteKind(wrapped, state);
+        const writeKind: SerializerWriteKind = wrapperOpenWriteKind(wrapped, state);
 
         if (writeKind !== SerializerWriteKind.Indented) {
             workspace = {
@@ -967,7 +948,7 @@ function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
     }
 }
 
-function getWrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): SerializerWriteKind {
+function wrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): SerializerWriteKind {
     // an open constant is multiline iff it is has a multiline comment
     const openIsMultiline: boolean = expectGetIsMultiline(wrapped.openWrapperConstant, state.isMultilineMap);
     if (openIsMultiline) {

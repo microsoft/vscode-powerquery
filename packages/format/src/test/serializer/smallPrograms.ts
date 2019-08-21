@@ -35,8 +35,7 @@ let
             else if isEven(p) then
                 @fastPow(x * x, p / 2)
             else
-                x
-                    * @fastPow(x * x, (p - 1) / 2)
+                x * @fastPow(x * x, (p - 1) / 2)
 in
     fastPow(2, 8)`;
         const actual: string = runFormat(`
@@ -68,8 +67,7 @@ let
             else if isEven(p) then
                 @fastPow(x * x, p / 2)
             else
-                x
-                    * @fastPow(x * x, (p - 1) / 2)
+                x * @fastPow(x * x, (p - 1) / 2)
 in
     fastPow(2, 8)`);
         compare(expected, actual);

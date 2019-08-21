@@ -42,9 +42,8 @@ const InvokeExpressionIdentifierLinearLengthExclusions: ReadonlyArray<string> = 
     "#duration",
     "#time",
 ];
-const TBinOpExpressionLinearLengthThreshold: number = 30;
-const TBinOpExpressionExpressionNumberThreshold: number = 3;
-const InvokeExpressionLinearLengthThreshold: number = 30;
+const TBinOpExpressionLinearLengthThreshold: number = 40;
+const InvokeExpressionLinearLengthThreshold: number = 40;
 
 function visitNode(node: Ast.TNode, state: State): void {
     const isMultilineMap: IsMultilineMap = state.result;
@@ -71,17 +70,11 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.EqualityExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
-            const numExpressions: number = numTBinOpExpressions(node);
-
-            if (numExpressions > TBinOpExpressionExpressionNumberThreshold) {
+            const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
+            if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                 isMultiline = true;
             } else {
-                const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
-                if (linearLength > TBinOpExpressionLinearLengthThreshold) {
-                    isMultiline = true;
-                } else {
-                    isMultiline = isAnyMultiline(isMultilineMap, node.left, node.operatorConstant, node.right);
-                }
+                isMultiline = isAnyMultiline(isMultilineMap, node.left, node.operatorConstant, node.right);
             }
 
             break;
@@ -413,14 +406,6 @@ function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
         return maybeCommentCollection.prefixedCommentsContainsNewline;
     } else {
         return false;
-    }
-}
-
-function numTBinOpExpressions(node: Ast.TNode): number {
-    if (Ast.isTBinOpExpression(node)) {
-        return 1 + numTBinOpExpressions(node.right);
-    } else {
-        return 1;
     }
 }
 
