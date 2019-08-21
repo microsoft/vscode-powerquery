@@ -1025,18 +1025,3 @@ function isSectionMemeberSimilarScope(left: Ast.SectionMember, right: Ast.Sectio
 
     return leftScope[0] === rightScope[0];
 }
-
-function isInMultilineTBinOpExpression(state: State, node: Ast.TBinOpExpression): boolean {
-    const maybeParent: Option<Ast.TNode> = NodeIdMap.maybeParentAstNode(state.nodeIdMapCollection, node.id);
-    if (maybeParent === undefined) {
-        return false;
-    }
-    const parent: Ast.TNode = maybeParent;
-
-    if (!Ast.isTBinOpExpression(parent)) {
-        return false;
-    }
-
-    const parentOperatorWorkspace: Workspace = getWorkspace(parent.operatorConstant, state);
-    return parentOperatorWorkspace.maybeWriteKind === SerializerWriteKind.Indented;
-}

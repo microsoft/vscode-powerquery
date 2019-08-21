@@ -20,7 +20,7 @@
     },
     "scripts": {},
     "dependencies": {
-        "@microsoft/powerquery-parser": "0.1.15",
+        "@microsoft/powerquery-parser": "0.1.18",
         "vscode-languageserver": "next"
     },
     "devDependencies": {

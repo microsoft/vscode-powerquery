@@ -5,12 +5,11 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "dependencies": {
-        "@microsoft/powerquery-parser": "0.1.15"
+        "@microsoft/powerquery-parser": "0.1.18"
     },
     "devDependencies": {
         "@types/chai": "^4.1.7",
         "@types/mocha": "^5.2.5",
-        "@microsoft/powerquery-parser": "0.1.15",
         "chai": "^4.2.0",
         "mocha": "^6.1.4",
         "prettier": "^1.17.1",
