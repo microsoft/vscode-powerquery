@@ -51,9 +51,9 @@ export function tryTraverse(
         workspaceMap: new Map(),
     };
     return Traverse.tryTraverseAst(
-        ast,
-        nodeIdMapCollection,
         state,
+        nodeIdMapCollection,
+        ast,
         Traverse.VisitNodeStrategy.BreadthFirst,
         visitNode,
         Traverse.expectExpandAllAstChildren,
@@ -92,18 +92,18 @@ const DefaultWorkspace: Workspace = {
     maybeIndentationChange: undefined,
 };
 
-function visitNode(node: Ast.TNode, state: State): void {
+function visitNode(state: State, node: Ast.TNode): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper: {
             const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
 
             switch (parent.kind) {
                 case Ast.NodeKind.Section:
-                    visitArrayWrapperForSectionMembers(parent.sectionMembers, state);
+                    visitArrayWrapperForSectionMembers(state, parent.sectionMembers);
                     break;
 
                 default:
-                    visitArrayWrapper(node, state);
+                    visitArrayWrapper(state, node);
                     break;
             }
             break;
@@ -119,7 +119,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.OtherwiseExpression: {
             propagateWriteKind(node, node.constant, state);
 
-            const isPairedMultiline: boolean = expectGetIsMultiline(node.paired, state.isMultilineMap);
+            const isPairedMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node.paired);
             if (isPairedMultiline) {
                 setWorkspace(node.paired, state, {
                     maybeIndentationChange: 1,
@@ -142,7 +142,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.RelationalExpression: {
             propagateWriteKind(node, node.left, state);
 
-            if (expectGetIsMultiline(node, state.isMultilineMap)) {
+            if (expectGetIsMultiline(state.isMultilineMap, node)) {
                 setWorkspace(node.operatorConstant, state, { maybeWriteKind: SerializerWriteKind.Indented });
                 setWorkspace(node.right, state, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             } else if (node.kind === Ast.NodeKind.LogicalExpression) {
@@ -185,10 +185,10 @@ function visitNode(node: Ast.TNode, state: State): void {
         }
 
         case Ast.NodeKind.ErrorHandlingExpression: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+            const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
             propagateWriteKind(node, node.tryConstant, state);
 
-            const protectedIsMultiline: boolean = expectGetIsMultiline(node.protectedExpression, state.isMultilineMap);
+            const protectedIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node.protectedExpression);
             if (protectedIsMultiline) {
                 setWorkspace(node.protectedExpression, state, {
                     maybeIndentationChange: 1,
@@ -230,7 +230,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                     break;
 
                 default:
-                    const pairedIsMultiline: boolean = expectGetIsMultiline(node.paired, state.isMultilineMap);
+                    const pairedIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node.paired);
                     if (pairedIsMultiline) {
                         pairedWorkspace = {
                             maybeIndentationChange: 1,
@@ -267,7 +267,8 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             const maybeFieldTypeSpeification: Option<Ast.FieldTypeSpecification> = node.maybeFieldTypeSpeification;
             if (maybeFieldTypeSpeification) {
-                const isMultiline: boolean = expectGetIsMultiline(maybeFieldTypeSpeification, state.isMultilineMap);
+                const fieldTypeSpecification: Ast.FieldTypeSpecification = maybeFieldTypeSpeification;
+                const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, fieldTypeSpecification);
                 let typeWorkspace: Workspace;
 
                 if (isMultiline) {
@@ -280,13 +281,13 @@ function visitNode(node: Ast.TNode, state: State): void {
                         maybeWriteKind: SerializerWriteKind.PaddedLeft,
                     };
                 }
-                setWorkspace(maybeFieldTypeSpeification, state, typeWorkspace);
+                setWorkspace(fieldTypeSpecification, state, typeWorkspace);
             }
             break;
         }
 
         case Ast.NodeKind.FieldSpecificationList: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+            const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
             const fieldsArray: Ast.IArrayWrapper<Ast.ICsv<Ast.FieldSpecification>> = node.content;
             visitWrapped(node, state);
 
@@ -350,7 +351,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 maybeWriteKind: SerializerWriteKind.PaddedLeft,
             });
 
-            const expressionIsMultiline: boolean = expectGetIsMultiline(node.expression, state.isMultilineMap);
+            const expressionIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node.expression);
             let expressionWorkspace: Workspace;
             if (expressionIsMultiline) {
                 expressionWorkspace = {
@@ -396,9 +397,9 @@ function visitNode(node: Ast.TNode, state: State): void {
 
         case Ast.NodeKind.ItemAccessExpression: {
             const isMultilineMap: IsMultilineMap = state.isMultilineMap;
-            const isMultiline: boolean = expectGetIsMultiline(node, isMultilineMap);
+            const isMultiline: boolean = expectGetIsMultiline(isMultilineMap, node);
             const itemSelector: Ast.TExpression = node.content;
-            const itemSelectorIsMultiline: boolean = expectGetIsMultiline(itemSelector, isMultilineMap);
+            const itemSelectorIsMultiline: boolean = expectGetIsMultiline(isMultilineMap, itemSelector);
             visitWrapped(node, state);
 
             if (isMultiline) {
@@ -445,7 +446,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.ListType: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+            const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
             visitWrapped(node, state);
 
             if (isMultiline) {
@@ -458,7 +459,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         }
 
         case Ast.NodeKind.MetadataExpression: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+            const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
             propagateWriteKind(node, node.left, state);
 
             let otherWorkspace: Workspace;
@@ -502,7 +503,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.ParenthesizedExpression: {
-            const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+            const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
             visitWrapped(node, state);
 
             if (isMultiline) {
@@ -545,7 +546,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.TableType: {
             propagateWriteKind(node, node.tableConstant, state);
             const rowType: Ast.FieldSpecificationList | Ast.TPrimaryExpression = node.rowType;
-            const rowTypeIsMultiline: boolean = expectGetIsMultiline(rowType, state.isMultilineMap);
+            const rowTypeIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, rowType);
 
             let rowTypeWorkspace: Workspace;
             if (rowTypeIsMultiline) {
@@ -568,7 +569,8 @@ function visitNode(node: Ast.TNode, state: State): void {
             let sectionConstantWriteKind: SerializerWriteKind = SerializerWriteKind.Any;
             const maybeLiteralAttributes: Option<Ast.RecordLiteral> = node.maybeLiteralAttributes;
             if (maybeLiteralAttributes) {
-                if (expectGetIsMultiline(maybeLiteralAttributes, isMultilineMap)) {
+                const literalAttributes: Ast.RecordLiteral = maybeLiteralAttributes;
+                if (expectGetIsMultiline(isMultilineMap, literalAttributes)) {
                     sectionConstantWriteKind = SerializerWriteKind.Indented;
                 } else {
                     sectionConstantWriteKind = SerializerWriteKind.PaddedLeft;
@@ -594,8 +596,9 @@ function visitNode(node: Ast.TNode, state: State): void {
             let isNameExpressionPairWorkspaceSet: boolean = false;
 
             if (node.maybeLiteralAttributes) {
-                propagateWriteKind(node, node.maybeLiteralAttributes, state);
-                if (expectGetIsMultiline(node.maybeLiteralAttributes, isMultilineMap)) {
+                const literalAttributes: Ast.RecordLiteral = node.maybeLiteralAttributes;
+                propagateWriteKind(node, literalAttributes, state);
+                if (expectGetIsMultiline(isMultilineMap, literalAttributes)) {
                     maybeSharedConstantWriteKind = SerializerWriteKind.Indented;
                 } else {
                     maybeSharedConstantWriteKind = SerializerWriteKind.PaddedLeft;
@@ -616,11 +619,13 @@ function visitNode(node: Ast.TNode, state: State): void {
             if (!isNameExpressionPairWorkspaceSet) {
                 let isNameExpressionPairIndented: boolean = false;
                 if (node.maybeSharedConstant) {
-                    if (expectGetIsMultiline(node.maybeSharedConstant, isMultilineMap)) {
+                    const sharedConstant: Ast.Constant = node.maybeSharedConstant;
+                    if (expectGetIsMultiline(isMultilineMap, sharedConstant)) {
                         isNameExpressionPairIndented = true;
                     }
                 } else if (node.maybeLiteralAttributes) {
-                    if (expectGetIsMultiline(node.maybeLiteralAttributes, isMultilineMap)) {
+                    const literalAttributes: Ast.RecordLiteral = node.maybeLiteralAttributes;
+                    if (expectGetIsMultiline(isMultilineMap, literalAttributes)) {
                         isNameExpressionPairIndented = true;
                     }
                 }
@@ -643,7 +648,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             propagateWriteKind(node, node.constant, state);
 
             const paired: Ast.TPrimaryType = node.paired;
-            const pairedIsMultiline: boolean = expectGetIsMultiline(paired, state.isMultilineMap);
+            const pairedIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, paired);
             let pairedWorkspace: Workspace;
             if (skipPrimaryTypeIndentation(paired)) {
                 pairedWorkspace = {
@@ -806,8 +811,8 @@ function visitComments(
 
 function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
     const isMultilineMap: IsMultilineMap = state.isMultilineMap;
-    const equalConstantIsMultiline: boolean = expectGetIsMultiline(node.equalConstant, isMultilineMap);
-    const valueIsMultiline: boolean = expectGetIsMultiline(node.value, isMultilineMap);
+    const equalConstantIsMultiline: boolean = expectGetIsMultiline(isMultilineMap, node.equalConstant);
+    const valueIsMultiline: boolean = expectGetIsMultiline(isMultilineMap, node.value);
     propagateWriteKind(node, node.key, state);
 
     let equalWorkspace: Workspace;
@@ -832,8 +837,8 @@ function visitKeyValuePair(node: Ast.TKeyValuePair, state: State): void {
     setWorkspace(node.value, state, valueWorkspace);
 }
 
-function visitArrayWrapper(node: Ast.TArrayWrapper, state: State): void {
-    const isMultiline: boolean = expectGetIsMultiline(node, state.isMultilineMap);
+function visitArrayWrapper(state: State, node: Ast.TArrayWrapper): void {
+    const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
 
     let maybeWriteKind: Option<SerializerWriteKind>;
     let maybeIndentationChange: Option<IndentationChange>;
@@ -852,7 +857,7 @@ function visitArrayWrapper(node: Ast.TArrayWrapper, state: State): void {
     }
 }
 
-function visitArrayWrapperForSectionMembers(node: Ast.IArrayWrapper<Ast.SectionMember>, state: State): void {
+function visitArrayWrapperForSectionMembers(state: State, node: Ast.IArrayWrapper<Ast.SectionMember>): void {
     let maybePreviousSectionMember: Option<Ast.SectionMember>;
     for (const member of node.elements) {
         if (member.kind !== Ast.NodeKind.SectionMember) {
@@ -877,7 +882,7 @@ function visitArrayWrapperForSectionMembers(node: Ast.IArrayWrapper<Ast.SectionM
 function visitIfExpression(node: Ast.IfExpression, state: State): void {
     propagateWriteKind(node, node.ifConstant, state);
 
-    const conditionIsMultiline: boolean = expectGetIsMultiline(node.condition, state.isMultilineMap);
+    const conditionIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node.condition);
 
     let conditionWorkspace: Workspace;
     let thenConstantWorkspace: Workspace;
@@ -923,7 +928,7 @@ function visitIfExpression(node: Ast.IfExpression, state: State): void {
 }
 
 function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
-    const isMultiline: boolean = expectGetIsMultiline(wrapped, state.isMultilineMap);
+    const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, wrapped);
     // not const as it's conditionally overwritten if SerializerWriteKind.Indented
     let workspace: Workspace = getWorkspace(wrapped, state);
 
@@ -950,7 +955,7 @@ function visitWrapped(wrapped: Ast.TWrapped, state: State): void {
 
 function wrapperOpenWriteKind(wrapped: Ast.TWrapped, state: State): SerializerWriteKind {
     // an open constant is multiline iff it is has a multiline comment
-    const openIsMultiline: boolean = expectGetIsMultiline(wrapped.openWrapperConstant, state.isMultilineMap);
+    const openIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, wrapped.openWrapperConstant);
     if (openIsMultiline) {
         return SerializerWriteKind.Indented;
     }
