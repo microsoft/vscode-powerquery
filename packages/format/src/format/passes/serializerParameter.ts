@@ -176,7 +176,6 @@ function visitNode(state: State, node: Ast.TNode): void {
 
             if (node.maybeCommaConstant && maybeWriteKind !== SerializerWriteKind.Indented) {
                 const commaConstant: Ast.Constant = node.maybeCommaConstant;
-
                 setWorkspace(state, commaConstant, { maybeWriteKind: SerializerWriteKind.PaddedRight });
             }
             break;
@@ -232,9 +231,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                             maybeWriteKind: SerializerWriteKind.Indented,
                         };
                     } else {
-                        pairedWorkspace = {
-                            maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                        };
+                        pairedWorkspace = { maybeWriteKind: SerializerWriteKind.PaddedLeft };
                     }
                     break;
             }
@@ -271,9 +268,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                         maybeWriteKind: SerializerWriteKind.Indented,
                     };
                 } else {
-                    typeWorkspace = {
-                        maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                    };
+                    typeWorkspace = { maybeWriteKind: SerializerWriteKind.PaddedLeft };
                 }
                 setWorkspace(state, fieldTypeSpecification, typeWorkspace);
             }
@@ -295,13 +290,9 @@ function visitNode(state: State, node: Ast.TNode): void {
                         maybeWriteKind: SerializerWriteKind.Indented,
                     };
                 } else if (fieldsArray.elements.length) {
-                    workspace = {
-                        maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                    };
+                    workspace = { maybeWriteKind: SerializerWriteKind.PaddedLeft };
                 } else {
-                    workspace = {
-                        maybeWriteKind: SerializerWriteKind.Any,
-                    };
+                    workspace = { maybeWriteKind: SerializerWriteKind.Any };
                 }
                 setWorkspace(state, openRecordMarkerConstant, workspace);
             }
@@ -636,9 +627,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                     maybeWriteKind: SerializerWriteKind.Indented,
                 };
             } else {
-                pairedWorkspace = {
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                };
+                pairedWorkspace = { maybeWriteKind: SerializerWriteKind.PaddedLeft };
             }
             setWorkspace(state, paired, pairedWorkspace);
             break;
@@ -805,9 +794,7 @@ function visitKeyValuePair(state: State, node: Ast.TKeyValuePair): void {
             maybeWriteKind: SerializerWriteKind.Indented,
         };
     } else {
-        valueWorkspace = {
-            maybeWriteKind: SerializerWriteKind.PaddedLeft,
-        };
+        valueWorkspace = { maybeWriteKind: SerializerWriteKind.PaddedLeft };
     }
     setWorkspace(state, node.value, valueWorkspace);
 }
