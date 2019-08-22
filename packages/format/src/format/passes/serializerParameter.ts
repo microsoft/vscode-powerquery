@@ -8,9 +8,9 @@ import { expectGetIsMultiline, IsMultilineMap } from "./isMultiline/common";
 
 // TNodes (in general) have two responsibilities:
 // * if given a Workspace, then propagate the SerializerWriteKind to their first child,
-//   this is done using propagateWorkspace(parentNode, childstate, node)
+//   this is done using propagateWriteKind(state, parentNode, childNode)
 // * suggest an indentation change and SerializerWriteKind for their children,
-//   this is done using setWorkspace(childstate, node, workspace)
+//   this is done using setWorkspace(state, childNode, workspace)
 
 export type IndentationChange = -1 | 1;
 
