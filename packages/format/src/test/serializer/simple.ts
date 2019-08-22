@@ -14,36 +14,6 @@ describe(`basic serializer`, () => {
             const actual: string = runFormat(`1 + 2`);
             compare(expected, actual);
         });
-
-        it(`1 + 2 + 3 + 4 + 5`, () => {
-            const expected: string = `
-1
-    + 2
-    + 3
-    + 4
-    + 5`;
-            const actual: string = runFormat(`1 + 2 + 3 + 4 + 5`);
-            compare(expected, actual);
-        });
-
-        it(`1 + foo(if true then 1 else 0) + bar (if true then 1 else 0)`, () => {
-            const expected: string = `
-1
-    + foo(
-        if true then
-            1
-        else
-            0
-    )
-    + bar(
-        if true then
-            1
-        else
-            0
-    )`;
-            const actual: string = runFormat(`1 + foo(if true then 1 else 0) + bar (if true then 1 else 0)`);
-            compare(expected, actual);
-        });
     });
 
     // ----------------------------------
@@ -682,6 +652,26 @@ in
             const actual: string = runFormat(`let x = Foo(1, {2}) in x`);
             compare(expected, actual);
         });
+
+        it(`{0..1}`, () => {
+            const expected: string = `{0..1}`;
+            const actual: string = runFormat(`{0..1}`);
+            compare(expected, actual);
+        });
+
+        it(`{if 1 then 2 else 3..4}`, () => {
+            const expected: string = `
+{
+    if 1 then
+        2
+    else
+        3
+    ..
+    4
+}`;
+            const actual: string = runFormat(`{if 1 then 2 else 3..4}`);
+            compare(expected, actual);
+        });
     });
 
     // ------------------------------
@@ -944,33 +934,56 @@ type table [
     // ---------- TBinOpExpression ----------
     // --------------------------------------
     describe(`TBinOpExpression`, () => {
-        // chained TBinOpExpressions are multiline after X expressions
-        // and should count all expressions, not just (1 + node.rest.length) on like NodeKind.
-        it(`1 + 2 + 3 and 4`, () => {
+        it(`1 + 2 + 3 + 4 + 5`, () => {
+            const expected: string = `1 + 2 + 3 + 4 + 5`;
+            const actual: string = runFormat(`1 + 2 + 3 + 4 + 5`);
+            compare(expected, actual);
+        });
+
+        it(`aReallyReallyReallyReallyLongIdentifier * aReallyReallyReallyReallyLongIdentifier`, () => {
+            const expected: string = `
+aReallyReallyReallyReallyLongIdentifier
+* aReallyReallyReallyReallyLongIdentifier`;
+            const actual: string = runFormat(
+                `aReallyReallyReallyReallyLongIdentifier * aReallyReallyReallyReallyLongIdentifier`,
+            );
+            compare(expected, actual);
+        });
+
+        it(`1 + foo(if true then 1 else 0) + bar (if true then 1 else 0)`, () => {
             const expected: string = `
 1
-    + 2
-    + 3
-    and 4`;
-            const actual: string = runFormat(`1 + 2 + 3 and 4`);
++ foo(
+    if true then
+        1
+    else
+        0
+)
++ bar(
+    if true then
+        1
+    else
+        0
+)`;
+            const actual: string = runFormat(`1 + foo(if true then 1 else 0) + bar (if true then 1 else 0)`);
             compare(expected, actual);
         });
 
         it(`true or false and true or true`, () => {
             const expected: string = `
-true
-    or false
-    and true
-    or true`;
+true or
+false and
+true or
+true`;
             const actual: string = runFormat(`true or false and true or true`);
             compare(expected, actual);
         });
 
         it(`a = true and b = true and c = true`, () => {
             const expected: string = `
-a = true
-    and b = true
-    and c = true`;
+a = true and
+b = true and
+c = true`;
             const actual: string = runFormat(`a = true and b = true and c = true`);
             compare(expected, actual);
         });
@@ -1012,8 +1025,7 @@ meta
     1,
     2
 }
-as
-list`;
+as list`;
             const actual: string = runFormat(`{1, 2} as list`);
             compare(expected, actual);
         });
