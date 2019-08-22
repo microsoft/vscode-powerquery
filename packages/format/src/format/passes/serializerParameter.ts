@@ -177,9 +177,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             if (node.maybeCommaConstant && maybeWriteKind !== SerializerWriteKind.Indented) {
                 const commaConstant: Ast.Constant = node.maybeCommaConstant;
 
-                setWorkspace(state, commaConstant, {
-                    maybeWriteKind: SerializerWriteKind.PaddedRight,
-                });
+                setWorkspace(state, commaConstant, { maybeWriteKind: SerializerWriteKind.PaddedRight });
             }
             break;
         }
@@ -195,9 +193,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                     maybeWriteKind: SerializerWriteKind.Indented,
                 });
             } else {
-                setWorkspace(state, node.protectedExpression, {
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                });
+                setWorkspace(state, node.protectedExpression, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
 
             if (node.maybeOtherwiseExpression) {
@@ -258,9 +254,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             const maybeOptionalConstant: Option<Ast.Constant> = node.maybeOptionalConstant;
 
             if (maybePropagateWriteKind(state, node, maybeOptionalConstant)) {
-                setWorkspace(state, node.name, {
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                });
+                setWorkspace(state, node.name, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             } else {
                 propagateWriteKind(state, node, node.name);
             }
@@ -329,9 +323,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                 });
             } else {
                 propagateWriteKind(state, node, node.equalConstant);
-                setWorkspace(state, node.fieldType, {
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                });
+                setWorkspace(state, node.fieldType, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
             break;
         }
@@ -341,15 +333,10 @@ function visitNode(state: State, node: Ast.TNode): void {
 
             if (node.maybeFunctionReturnType) {
                 const functionReturnType: Ast.AsNullablePrimitiveType = node.maybeFunctionReturnType;
-
-                setWorkspace(state, functionReturnType, {
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                });
+                setWorkspace(state, functionReturnType, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
 
-            setWorkspace(state, node.fatArrowConstant, {
-                maybeWriteKind: SerializerWriteKind.PaddedLeft,
-            });
+            setWorkspace(state, node.fatArrowConstant, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
 
             const expressionIsMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node.expression);
             let expressionWorkspace: Workspace;
@@ -359,9 +346,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                     maybeWriteKind: SerializerWriteKind.Indented,
                 };
             } else {
-                expressionWorkspace = {
-                    maybeWriteKind: SerializerWriteKind.PaddedLeft,
-                };
+                expressionWorkspace = { maybeWriteKind: SerializerWriteKind.PaddedLeft };
             }
             setWorkspace(state, node.expression, expressionWorkspace);
 
@@ -714,9 +699,7 @@ function propagateWriteKind(state: State, parent: Ast.TNode, firstChild: Ast.TNo
 
     const maybeWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
     if (maybeWriteKind) {
-        setWorkspace(state, firstChild, {
-            maybeWriteKind: maybeWriteKind,
-        });
+        setWorkspace(state, firstChild, { maybeWriteKind: maybeWriteKind });
     }
 }
 
@@ -863,9 +846,7 @@ function visitArrayWrapperForSectionMembers(state: State, node: Ast.IArrayWrappe
             memberWriteKind = SerializerWriteKind.Indented;
         }
 
-        setWorkspace(state, member, {
-            maybeWriteKind: memberWriteKind,
-        });
+        setWorkspace(state, member, { maybeWriteKind: memberWriteKind });
 
         maybePreviousSectionMember = member;
     }
