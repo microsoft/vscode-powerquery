@@ -20,9 +20,9 @@ export function tryTraverse(
     };
 
     return Traverse.tryTraverseAst<State, IsMultilineMap>(
-        ast,
-        nodeIdMapCollection,
         state,
+        nodeIdMapCollection,
+        ast,
         Traverse.VisitNodeStrategy.DepthFirst,
         visitNode,
         Traverse.expectExpandAllAstChildren,
@@ -45,7 +45,7 @@ const InvokeExpressionIdentifierLinearLengthExclusions: ReadonlyArray<string> = 
 const TBinOpExpressionLinearLengthThreshold: number = 40;
 const InvokeExpressionLinearLengthThreshold: number = 40;
 
-function visitNode(node: Ast.TNode, state: State): void {
+function visitNode(state: State, node: Ast.TNode): void {
     const isMultilineMap: IsMultilineMap = state.result;
     let isMultiline: boolean = false;
 
@@ -70,7 +70,7 @@ function visitNode(node: Ast.TNode, state: State): void {
         case Ast.NodeKind.EqualityExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
-            const linearLength: number = getLinearLength(node, state.nodeIdMapCollection, state.linearLengthMap);
+            const linearLength: number = getLinearLength(state.linearLengthMap, state.nodeIdMapCollection, node);
             if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                 isMultiline = true;
             } else {
@@ -115,7 +115,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 }
             }
 
-            setIsMultiline(node.content, isMultilineMap, isMultiline);
+            setIsMultiline(isMultilineMap, node.content, isMultiline);
             break;
         }
 
@@ -169,7 +169,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             } else if (fields.length === 1 && node.maybeOpenRecordMarkerConstant) {
                 isMultiline = true;
             }
-            setIsMultiline(fieldArray, isMultilineMap, isMultiline);
+            setIsMultiline(isMultilineMap, fieldArray, isMultiline);
             break;
         }
 
@@ -178,7 +178,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.FunctionExpression:
-            isMultiline = expectGetIsMultiline(node.expression, isMultilineMap);
+            isMultiline = expectGetIsMultiline(isMultilineMap, node.expression);
             break;
 
         case Ast.NodeKind.IdentifierExpression: {
@@ -196,7 +196,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
             if (args.length > 1) {
                 const linearLengthMap: LinearLengthMap = state.linearLengthMap;
-                const linearLength: number = getLinearLength(node, nodeIdMapCollection, linearLengthMap);
+                const linearLength: number = getLinearLength(linearLengthMap, nodeIdMapCollection, node);
 
                 const maybeArrayWrapper: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
                 if (maybeArrayWrapper === undefined || maybeArrayWrapper.kind !== Ast.NodeKind.ArrayWrapper) {
@@ -219,9 +219,9 @@ function visitNode(node: Ast.TNode, state: State): void {
                 const recursivePrimaryExpression: Ast.RecursivePrimaryExpression = maybeRecursivePrimaryExpression;
 
                 const headLinearLength: number = getLinearLength(
-                    recursivePrimaryExpression.head,
-                    nodeIdMapCollection,
                     linearLengthMap,
+                    nodeIdMapCollection,
+                    recursivePrimaryExpression.head,
                 );
                 const compositeLinearLength: number = headLinearLength + linearLength;
 
@@ -234,7 +234,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                         isMultiline = InvokeExpressionIdentifierLinearLengthExclusions.indexOf(name) === -1;
                     }
 
-                    setIsMultiline(node.content, isMultilineMap, isMultiline);
+                    setIsMultiline(isMultilineMap, node.content, isMultiline);
                 } else {
                     isMultiline = isAnyMultiline(
                         isMultilineMap,
@@ -268,7 +268,7 @@ function visitNode(node: Ast.TNode, state: State): void {
 
         case Ast.NodeKind.LetExpression:
             isMultiline = true;
-            setIsMultiline(node.variableList, isMultilineMap, true);
+            setIsMultiline(isMultilineMap, node.variableList, true);
             break;
 
         case Ast.NodeKind.LiteralExpression:
@@ -300,7 +300,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.PrimitiveType:
-            isMultiline = expectGetIsMultiline(node.primitiveType, isMultilineMap);
+            isMultiline = expectGetIsMultiline(isMultilineMap, node.primitiveType);
             break;
 
         case Ast.NodeKind.RangeExpression:
@@ -308,7 +308,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             break;
 
         case Ast.NodeKind.RecordType:
-            isMultiline = expectGetIsMultiline(node.fields, isMultilineMap);
+            isMultiline = expectGetIsMultiline(isMultilineMap, node.fields);
             break;
 
         case Ast.NodeKind.RecursivePrimaryExpression:
@@ -362,7 +362,7 @@ function visitNode(node: Ast.TNode, state: State): void {
             throw isNever(node);
     }
 
-    setIsMultilineWithCommentCheck(node, state, isMultiline);
+    setIsMultilineWithCommentCheck(state, node, isMultiline);
 }
 
 function isAnyListOrRecord(nodes: ReadonlyArray<Ast.TNode>): boolean {
@@ -384,7 +384,7 @@ function isAnyListOrRecord(nodes: ReadonlyArray<Ast.TNode>): boolean {
 
 function isAnyMultiline(isMultilineMap: IsMultilineMap, ...maybeNodes: Option<Ast.TNode>[]): boolean {
     for (const maybeNode of maybeNodes) {
-        if (maybeNode && expectGetIsMultiline(maybeNode, isMultilineMap)) {
+        if (maybeNode && expectGetIsMultiline(isMultilineMap, maybeNode)) {
             return true;
         }
     }
@@ -392,15 +392,15 @@ function isAnyMultiline(isMultilineMap: IsMultilineMap, ...maybeNodes: Option<As
     return false;
 }
 
-function setIsMultilineWithCommentCheck(node: Ast.TNode, state: State, isMultiline: boolean): void {
-    if (precededByMultilineComment(node, state)) {
+function setIsMultilineWithCommentCheck(state: State, node: Ast.TNode, isMultiline: boolean): void {
+    if (precededByMultilineComment(state, node)) {
         isMultiline = true;
     }
 
-    setIsMultiline(node, state.result, isMultiline);
+    setIsMultiline(state.result, node, isMultiline);
 }
 
-function precededByMultilineComment(node: Ast.TNode, state: State): boolean {
+function precededByMultilineComment(state: State, node: Ast.TNode): boolean {
     const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(node.id);
     if (maybeCommentCollection) {
         return maybeCommentCollection.prefixedCommentsContainsNewline;

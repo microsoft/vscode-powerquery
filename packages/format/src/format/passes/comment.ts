@@ -23,9 +23,9 @@ export function tryTraverse(
     };
 
     return Traverse.tryTraverseAst<State, CommentCollectionMap>(
-        root,
-        nodeIdMapCollection,
         state,
+        nodeIdMapCollection,
+        root,
         Traverse.VisitNodeStrategy.DepthFirst,
         visitNode,
         Traverse.expectExpandAllAstChildren,
@@ -39,7 +39,7 @@ interface State extends Traverse.IState<CommentCollectionMap> {
     maybeCurrentComment: Option<TComment>;
 }
 
-function earlyExit(node: Ast.TNode, state: State): boolean {
+function earlyExit(state: State, node: Ast.TNode): boolean {
     const maybeCurrentComment: Option<TComment> = state.maybeCurrentComment;
     if (maybeCurrentComment === undefined) {
         return true;
@@ -50,7 +50,7 @@ function earlyExit(node: Ast.TNode, state: State): boolean {
     }
 }
 
-function visitNode(node: Ast.TNode, state: State): void {
+function visitNode(state: State, node: Ast.TNode): void {
     if (!node.isLeaf) {
         return;
     }
@@ -59,8 +59,8 @@ function visitNode(node: Ast.TNode, state: State): void {
     while (maybeCurrentComment && maybeCurrentComment.positionStart.codeUnit < node.tokenRange.positionStart.codeUnit) {
         const currentComment: TComment = maybeCurrentComment;
         const commentMap: CommentCollectionMap = state.result;
-        const cacheKey: number = node.id;
-        const maybeCommentCollection: Option<CommentCollection> = commentMap.get(cacheKey);
+        const nodeId: number = node.id;
+        const maybeCommentCollection: Option<CommentCollection> = commentMap.get(nodeId);
 
         // It's the first comment for the TNode
         if (maybeCommentCollection === undefined) {
@@ -68,7 +68,7 @@ function visitNode(node: Ast.TNode, state: State): void {
                 prefixedComments: [currentComment],
                 prefixedCommentsContainsNewline: currentComment.containsNewline,
             };
-            commentMap.set(cacheKey, commentCollection);
+            commentMap.set(nodeId, commentCollection);
         }
         // At least one comment already attached to the TNode
         else {

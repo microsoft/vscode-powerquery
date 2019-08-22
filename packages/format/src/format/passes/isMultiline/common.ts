@@ -5,7 +5,7 @@ import { Ast, CommonError, Option } from "@microsoft/powerquery-parser";
 
 export type IsMultilineMap = Map<number, boolean>;
 
-export function expectGetIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilineMap): boolean {
+export function expectGetIsMultiline(isMultilineMap: IsMultilineMap, node: Ast.TNode): boolean {
     const maybeIsMultiline: Option<boolean> = isMultilineMap.get(node.id);
     if (maybeIsMultiline === undefined) {
         const details: {} = { nodeId: node.id };
@@ -15,6 +15,6 @@ export function expectGetIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilin
     return maybeIsMultiline;
 }
 
-export function setIsMultiline(node: Ast.TNode, isMultilineMap: IsMultilineMap, isMultiline: boolean): void {
+export function setIsMultiline(isMultilineMap: IsMultilineMap, node: Ast.TNode, isMultiline: boolean): void {
     isMultilineMap.set(node.id, isMultiline);
 }

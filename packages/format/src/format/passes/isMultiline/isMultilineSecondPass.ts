@@ -14,10 +14,11 @@ export function tryTraverse(
         result: isMultilineMap,
         nodeIdMapCollection,
     };
+
     return Traverse.tryTraverseAst(
-        ast,
-        nodeIdMapCollection,
         state,
+        nodeIdMapCollection,
+        ast,
         Traverse.VisitNodeStrategy.BreadthFirst,
         visitNode,
         Traverse.expectExpandAllAstChildren,
@@ -29,7 +30,7 @@ interface State extends Traverse.IState<IsMultilineMap> {
     readonly nodeIdMapCollection: NodeIdMap.Collection;
 }
 
-function visitNode(node: Ast.TNode, state: State): void {
+function visitNode(state: State, node: Ast.TNode): void {
     switch (node.kind) {
         // TBinOpExpression
         case Ast.NodeKind.ArithmeticExpression:
@@ -43,9 +44,9 @@ function visitNode(node: Ast.TNode, state: State): void {
             if (
                 maybeParent &&
                 Ast.isTBinOpExpression(maybeParent) &&
-                expectGetIsMultiline(maybeParent, isMultilineMap)
+                expectGetIsMultiline(isMultilineMap, maybeParent)
             ) {
-                setIsMultiline(node, isMultilineMap, true);
+                setIsMultiline(isMultilineMap, node, true);
             }
             break;
         }
@@ -83,15 +84,15 @@ function visitNode(node: Ast.TNode, state: State): void {
 
                         default: {
                             const isMultilineMap: IsMultilineMap = state.result;
-                            setIsMultiline(parent, isMultilineMap, true);
+                            setIsMultiline(isMultilineMap, parent, true);
                             if (maybeCsv) {
-                                setIsMultiline(maybeCsv, isMultilineMap, true);
+                                setIsMultiline(isMultilineMap, maybeCsv, true);
                             }
                             if (maybeArrayWrapper) {
-                                setIsMultiline(maybeArrayWrapper, isMultilineMap, true);
+                                setIsMultiline(isMultilineMap, maybeArrayWrapper, true);
                             }
-                            setIsMultiline(node, isMultilineMap, true);
-                            setIsMultiline(node.content, isMultilineMap, true);
+                            setIsMultiline(isMultilineMap, node, true);
+                            setIsMultiline(isMultilineMap, node.content, true);
                         }
                     }
                 }
