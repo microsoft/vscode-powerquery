@@ -13,12 +13,12 @@ export function getLinearLength(
     nodeIdMapCollection: NodeIdMap.Collection,
     node: Ast.TNode,
 ): number {
-    const cacheKey: number = node.id;
-    const maybeLinearLength: Option<number> = linearLengthMap.get(cacheKey);
+    const nodeId: number = node.id;
+    const maybeLinearLength: Option<number> = linearLengthMap.get(nodeId);
 
     if (maybeLinearLength === undefined) {
         const linearLength: number = calculateLinearLength(node, nodeIdMapCollection, linearLengthMap);
-        linearLengthMap.set(cacheKey, linearLength);
+        linearLengthMap.set(nodeId, linearLength);
         return linearLength;
     } else {
         return maybeLinearLength;
@@ -364,8 +364,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             throw isNever(node);
     }
 
-    const cacheKey: number = node.id;
-    state.linearLengthMap.set(cacheKey, linearLength);
+    state.linearLengthMap.set(node.id, linearLength);
     state.result = linearLength;
 }
 

@@ -726,8 +726,8 @@ function visitComments(
     node: Ast.TNode,
     maybeWriteKind: Option<SerializerWriteKind>,
 ): Option<SerializerWriteKind> {
-    const cacheKey: number = node.id;
-    const maybeComments: Option<CommentCollection> = state.commentCollectionMap.get(cacheKey);
+    const nodeId: number = node.id;
+    const maybeComments: Option<CommentCollection> = state.commentCollectionMap.get(nodeId);
     if (!maybeComments) {
         return maybeWriteKind;
     }
@@ -761,7 +761,7 @@ function visitComments(
         });
     }
 
-    state.result.comments.set(cacheKey, commentParameters);
+    state.result.comments.set(nodeId, commentParameters);
 
     const lastComment: TComment = comments[comments.length - 1];
     if (lastComment.containsNewline) {

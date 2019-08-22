@@ -125,10 +125,10 @@ export class Serializer {
     }
 
     private visitNode(node: Ast.TNode): void {
-        const cacheKey: number = node.id;
+        const nodeId: number = node.id;
         const maybeIndentationChange: Option<
             IndentationChange
-        > = this.passthroughMaps.serializerParameterMap.indentationChange.get(cacheKey);
+        > = this.passthroughMaps.serializerParameterMap.indentationChange.get(nodeId);
         if (maybeIndentationChange) {
             this.indentationLevel += 1;
         }
@@ -136,7 +136,7 @@ export class Serializer {
         if (node.isLeaf) {
             const maybeComments: Option<
                 ReadonlyArray<SerializeCommentParameter>
-            > = this.passthroughMaps.serializerParameterMap.comments.get(cacheKey);
+            > = this.passthroughMaps.serializerParameterMap.comments.get(nodeId);
             if (maybeComments) {
                 this.visitComments(maybeComments);
             }
