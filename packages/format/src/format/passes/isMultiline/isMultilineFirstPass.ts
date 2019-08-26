@@ -70,11 +70,20 @@ function visitNode(state: State, node: Ast.TNode): void {
         case Ast.NodeKind.EqualityExpression:
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
+            const left: Ast.TNode = node.left;
+            const right: Ast.TNode = node.right;
+
+            if (
+                (Ast.isTBinOpExpression(left) && containsLogicalExpression(left)) ||
+                (Ast.isTBinOpExpression(right) && containsLogicalExpression(right))
+            ) {
+                isMultiline = true;
+            }
             const linearLength: number = getLinearLength(state.linearLengthMap, state.nodeIdMapCollection, node);
             if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                 isMultiline = true;
             } else {
-                isMultiline = isAnyMultiline(isMultilineMap, node.left, node.operatorConstant, node.right);
+                isMultiline = isAnyMultiline(isMultilineMap, left, node.operatorConstant, right);
             }
 
             break;
@@ -418,4 +427,18 @@ function containsNewline(text: string): boolean {
         }
     }
     return false;
+}
+
+function containsLogicalExpression(node: Ast.TBinOpExpression): boolean {
+    if (!Ast.isTBinOpExpression(node)) {
+        return false;
+    }
+    const left: Ast.TNode = node.left;
+    const right: Ast.TNode = node.right;
+
+    return (
+        node.kind === Ast.NodeKind.LogicalExpression ||
+        (Ast.isTBinOpExpression(left) && containsLogicalExpression(left)) ||
+        (Ast.isTBinOpExpression(right) && containsLogicalExpression(right))
+    );
 }
