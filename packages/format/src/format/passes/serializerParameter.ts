@@ -139,11 +139,12 @@ function visitNode(state: State, node: Ast.TNode): void {
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
             propagateWriteKind(state, node, node.left);
+            const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
 
-            if (expectGetIsMultiline(state.isMultilineMap, node)) {
+            if (isMultiline) {
                 setWorkspace(state, node.operatorConstant, { maybeWriteKind: SerializerWriteKind.Indented });
                 setWorkspace(state, node.right, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
-            } else if (node.kind === Ast.NodeKind.LogicalExpression) {
+            } else if (node.kind === Ast.NodeKind.LogicalExpression && isMultiline) {
                 setWorkspace(state, node.operatorConstant, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
                 setWorkspace(state, node.right, { maybeWriteKind: SerializerWriteKind.Indented });
             } else {

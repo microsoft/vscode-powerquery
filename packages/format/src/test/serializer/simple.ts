@@ -969,22 +969,76 @@ aReallyReallyReallyReallyLongIdentifier
             compare(expected, actual);
         });
 
-        it(`true or false and true or true`, () => {
+        it(`let x = true and true`, () => {
             const expected: string = `
-true or
-false and
-true or
-true`;
+let
+    x = true and true
+in
+    x`;
+            const actual: string = runFormat(`let x = true and true in x`);
+            compare(expected, actual);
+        });
+
+        it(`let x = 1 <> 2 and 3 <> 4 in x`, () => {
+            const expected: string = `
+let
+    x = 1 <> 2 and 3 <> 4
+in
+    x`;
+            const actual: string = runFormat(`let x = 1 <> 2 and 3 <> 4 in x`);
+            compare(expected, actual);
+        });
+
+        it(`true or false and true or true`, () => {
+            const expected: string = `true or false and true or true`;
             const actual: string = runFormat(`true or false and true or true`);
             compare(expected, actual);
         });
 
         it(`a = true and b = true and c = true`, () => {
-            const expected: string = `
-a = true and
-b = true and
-c = true`;
+            const expected: string = `a = true and b = true and c = true`;
             const actual: string = runFormat(`a = true and b = true and c = true`);
+            compare(expected, actual);
+        });
+
+        it(`true and true and (if true then true else false)`, () => {
+            const expected: string = `
+true
+and true
+and (
+    if true then
+        true
+    else
+        false
+)`;
+            const actual: string = runFormat(`true and true and (if true then true else false)`);
+            compare(expected, actual);
+        });
+
+        it(`true and (if true then true else false) and true`, () => {
+            const expected: string = `
+true
+and (
+    if true then
+        true
+    else
+        false
+)
+and true`;
+            const actual: string = runFormat(`true and (if true then true else false) and true`);
+            compare(expected, actual);
+        });
+
+        it(`(if true then true else false) and true`, () => {
+            const expected: string = `
+(
+    if true then
+        true
+    else
+        false
+)
+and true`;
+            const actual: string = runFormat(`(if true then true else false) and true`);
             compare(expected, actual);
         });
     });
