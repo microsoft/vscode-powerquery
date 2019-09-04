@@ -85,9 +85,5 @@
     "tslint": "^5.16.0",
     "vscode": "^1.1.34"
   },
-  "dependencies": {
-    "powerquery-format": "./packages/format",
-    "powerquery-library": "./packages/library",
-    "@microsoft/powerquery-parser": "0.1.19"
-  }
+  "dependencies": {}
 }

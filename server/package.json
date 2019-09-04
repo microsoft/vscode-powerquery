@@ -21,6 +21,8 @@
     "scripts": {},
     "dependencies": {
         "@microsoft/powerquery-parser": "0.1.19",
+        "powerquery-format": "../packages/format",
+        "powerquery-library": "../packages/library",
         "vscode-languageserver": "next"
     },
     "devDependencies": {
