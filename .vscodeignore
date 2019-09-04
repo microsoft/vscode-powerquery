@@ -1,0 +1,10 @@
+.vscode/
+.vscode-test/
+scripts/
+packages/
+**/*.ts
+**/tsconfig.json
+**/tsconfig.tsbuildinfo
+**/.vscode/*
+client/out
+client/testFixture
