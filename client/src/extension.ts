@@ -15,7 +15,7 @@ let client: LanguageClient;
 
 export function activate(context: ExtensionContext): void {
     // The server is implemented in node
-    const serverModule: string = context.asAbsolutePath(path.join("server", "out", "server.js"));
+    const serverModule: string = context.asAbsolutePath(path.join("server", "dist", "server.js"));
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
     const debugOptions: ForkOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
@@ -51,7 +51,7 @@ export function activate(context: ExtensionContext): void {
     };
 
     // Create the language client and start the client.
-    client = new LanguageClient("powerquery", "Power Query Language Server", serverOptions, clientOptions);
+    client = new LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
 
     // Start the client. This will also launch the server
     client.start();

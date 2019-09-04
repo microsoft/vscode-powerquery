@@ -65,3 +65,6 @@ scratch/
 .vscode-test/
 **/tsconfig.tsbuildinfo
 client/lib/
+*.vsix
+dist/
+*.zip
