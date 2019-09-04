@@ -66,3 +66,4 @@ scratch/
 **/tsconfig.tsbuildinfo
 client/lib/
 *.vsix
+dist/
