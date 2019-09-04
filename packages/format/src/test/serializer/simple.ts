@@ -1140,6 +1140,30 @@ type table [
             const actual: string = runFormat(`--1`);
             compare(expected, actual);
         });
+
+        it(`not 1`, () => {
+            const expected: string = `not 1`;
+            const actual: string = runFormat(`not 1`);
+            compare(expected, actual);
+        });
+
+        it(`not not 1`, () => {
+            const expected: string = `not not 1`;
+            const actual: string = runFormat(`not not 1`);
+            compare(expected, actual);
+        });
+
+        it(`not -1`, () => {
+            const expected: string = `not -1`;
+            const actual: string = runFormat(`not -1`);
+            compare(expected, actual);
+        });
+
+        it(`- not 1`, () => {
+            const expected: string = `- not 1`;
+            const actual: string = runFormat(`- not 1`);
+            compare(expected, actual);
+        });
     });
 
     // -----------------------------------
