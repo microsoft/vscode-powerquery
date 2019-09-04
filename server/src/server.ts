@@ -424,8 +424,7 @@ connection.onSignatureHelp(
                         triedInspection.value.nodes.length > 0 &&
                         triedInspection.value.nodes[0].kind === PQP.Inspection.NodeKind.InvokeExpression
                     ) {
-                        const invokeExpressionNode: PQP.Inspection.InvokeExpression = triedInspection.value
-                            .nodes[0] as PQP.Inspection.InvokeExpression;
+                        const invokeExpressionNode: PQP.Inspection.InvokeExpression = triedInspection.value.nodes[0];
                         const functionName: string | undefined = invokeExpressionNode.maybeName;
 
                         if (functionName) {
