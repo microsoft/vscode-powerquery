@@ -12,7 +12,7 @@
     "onLanguage:powerquery"
   ],
   "publisher": "powerquery",
-  "main": "./client/out/extension",
+  "main": "./client/dist/extension",
   "contributes": {
     "configuration": {
       "type": "object",
@@ -60,14 +60,19 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run build && npm run server:webpack-prod",
+    "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run build:packages && npm run webpack-prod",
+    "client:webpack-prod": "cd client && webpack --mode production",
+    "client:webpack": "cd client && webpack --mode development",
+    "client:webpack-dev": "cd client && webpack --mode development --watch",
     "server:webpack-prod": "cd server && webpack --mode production",
     "server:webpack": "cd server && webpack --mode development",
     "server:webpack-dev": "cd server && webpack --mode development --watch",
+    "build:packages": "npm run build:format && npm run build:library",
     "build:format": "tsc -p ./packages/format/tsconfig.json",
     "build:library": "tsc -p ./packages/library/tsconfig.json",
-    "build": "npm run build:format && npm run build:library && tsc -b",
+    "build": "npm run build:packages && tsc -b",
     "watch": "tsc -b -watch",
+    "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
     "test:packages": "npm run test:format && npm run test:library",
     "test:format": "cd packages && cd format && npm test",
     "test:library": "cd packages && cd library && npm test",
