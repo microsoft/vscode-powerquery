@@ -51,7 +51,7 @@ export function activate(context: ExtensionContext): void {
     };
 
     // Create the language client and start the client.
-    client = new LanguageClient("powerquery", "Power Query Language Server", serverOptions, clientOptions);
+    client = new LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
 
     // Start the client. This will also launch the server
     client.start();

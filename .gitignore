@@ -67,3 +67,5 @@ scratch/
 client/lib/
 *.vsix
 dist/
+*.zip
+*.vsix
