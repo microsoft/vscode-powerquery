@@ -102,6 +102,10 @@ function visitNode(state: State, node: Ast.TNode): void {
                     visitArrayWrapperForSectionMembers(state, parent.sectionMembers);
                     break;
 
+                case Ast.NodeKind.UnaryExpression:
+                    visitArrayWrapperForUnaryExpression(state, parent.operators);
+                    break;
+
                 default:
                     visitArrayWrapper(state, node);
                     break;
@@ -634,9 +638,16 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
         }
 
-        case Ast.NodeKind.UnaryExpression:
-            propagateWriteKind(state, node, node.operators.elements[0]);
+        case Ast.NodeKind.UnaryExpression: {
+            propagateWriteKind(state, node, node.operators);
+
+            const operators: ReadonlyArray<Ast.Constant> = node.operators.elements;
+            const lastOperator: Ast.Constant = operators[operators.length - 1];
+            if (lastOperator.literal === Ast.UnaryOperator.Not) {
+                setWorkspace(state, node.typeExpression, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
+            }
             break;
+        }
 
         // Leaf nodes.
         // If a parent gave the leaf node a workspace it assigns indentationChange,
@@ -837,6 +848,24 @@ function visitArrayWrapperForSectionMembers(state: State, node: Ast.IArrayWrappe
         setWorkspace(state, member, { maybeWriteKind: memberWriteKind });
 
         maybePreviousSectionMember = member;
+    }
+}
+
+function visitArrayWrapperForUnaryExpression(state: State, node: Ast.IArrayWrapper<Ast.Constant>): void {
+    // `not` is an unary operator which needs to be padded.
+    // The default Any write kind is fine for the other operators (`+` and `-`).
+    const elements: ReadonlyArray<Ast.Constant> = node.elements;
+    const numElements: number = node.elements.length;
+
+    propagateWriteKind(state, node, elements[0]);
+    let previousWasNotOperator: boolean = elements[0].literal === Ast.UnaryOperator.Not;
+    for (let index: number = 1; index < numElements; index += 1) {
+        const operatorConstant: Ast.Constant = elements[index];
+
+        if (previousWasNotOperator || operatorConstant.literal === Ast.UnaryOperator.Not) {
+            setWorkspace(state, operatorConstant, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
+        }
+        previousWasNotOperator = operatorConstant.literal === Ast.UnaryOperator.Not;
     }
 }
 
