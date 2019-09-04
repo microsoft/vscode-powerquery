@@ -20,6 +20,10 @@
       "name": "Attach to Server",
       "port": 6009,
       "restart": true,
+      "preLaunchTask": {
+        "type": "npm",
+        "script": "server:webpack-dev"
+      },
       "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
     },
     {

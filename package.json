@@ -62,7 +62,8 @@
   "scripts": {
     "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run build && npm run server:webpack-prod",
     "server:webpack-prod": "cd server && webpack --mode production",
-    "server:webpack-dev": "cd server && webpack --mode development",
+    "server:webpack": "cd server && webpack --mode development",
+    "server:webpack-dev": "cd server && webpack --mode development --watch",
     "build:format": "tsc -p ./packages/format/tsconfig.json",
     "build:library": "tsc -p ./packages/library/tsconfig.json",
     "build": "npm run build:format && npm run build:library && tsc -b",
