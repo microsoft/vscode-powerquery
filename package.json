@@ -89,8 +89,11 @@
   "devDependencies": {
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.0.0",
-    "typescript": "^3.4.5",
     "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-microsoft-contrib": "^6.2.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.4.5",
     "vscode": "^1.1.36"
   },
   "dependencies": {}

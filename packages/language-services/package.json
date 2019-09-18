@@ -1,0 +1,49 @@
+{
+    "name": "@microsoft/powerquery-language-services",
+    "version": "0.0.1",
+    "description": "Language service functionality for the Power Query / M language.",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "scripts": {
+        "build": "node_modules\\.bin\\tsc",
+        "test": "mocha -r ts-node/register src/test/**/*.ts"
+    },
+    "files": [
+        "lib/language-services/*",
+        "lib/index.d.ts",
+        "lib/index.js",
+        "lib/index.js.map"
+    ],
+    "devDependencies": {
+        "@types/chai": "^4.1.7",
+        "@types/mocha": "^5.2.5",
+        "chai": "^4.2.0",
+        "mocha": "^6.1.4",
+        "prettier": "^1.17.1",
+        "ts-loader": "^6.0.2",
+        "ts-node": "^8.1.0",
+        "tslint": "^5.17.0",
+        "typescript": "^3.4.5"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/microsoft/vscode-powerquery.git",
+        "directory": "packages/language-services"
+    },
+    "prettier": {
+        "trailingComma": "all",
+        "tabWidth": 4,
+        "semi": true,
+        "singleQuote": false,
+        "printWidth": 120
+    },
+    "keywords": [
+        "powerquery"
+    ],
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/microsoft/vscode-powerquery/issues"
+    },
+    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/library/#readme"
+}
