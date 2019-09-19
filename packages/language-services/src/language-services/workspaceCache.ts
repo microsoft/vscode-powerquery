@@ -19,7 +19,7 @@ export function close(textDocument: TextDocument): void {
 export function update(textDocument: TextDocument): void {
     // TODO: support incremental lexing
     // TODO: premptively prepare cache on background thread?
-    // TODO: do we care about the document version?
+    // TODO: use document version
     close(textDocument);
 }
 
