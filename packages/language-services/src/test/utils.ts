@@ -4,17 +4,17 @@
 import { assert, expect } from "chai";
 import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument } from "vscode-languageserver-types";
 
-export function createDocument(text: string): TextDocument {
+export function createDocument(text: string): MockDocument {
     return new MockDocument(text, "powerquery");
 }
 
-class MockDocument implements TextDocument {
+export class MockDocument implements TextDocument {
     private static _nextUri: number = 0;
 
     private readonly _uri: string;
     private readonly _languageId: string;
-    private readonly _text: string;
 
+    private _text: string;
     private _version: number;
 
     constructor(text: string, languageId: string) {
@@ -40,16 +40,17 @@ class MockDocument implements TextDocument {
         return this._version;
     }
 
-    set version(value: number) {
-        this._version = value;
-    }
-
     getText(range?: Range): string {
         if (range) {
-            throw new Error("Method not implemented.");
+            throw new Error("getText with range not implemented.");
         }
 
         return this._text;
+    }
+
+    setText(text: string): void {
+        this._text = text;
+        this._version++;
     }
 
     positionAt(offset: number): Position {
