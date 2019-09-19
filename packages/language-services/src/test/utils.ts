@@ -9,7 +9,7 @@ export function createDocument(text: string): MockDocument {
 }
 
 export class MockDocument implements TextDocument {
-    private static _nextUri: number = 0;
+    private static NextUri: number = 0;
 
     private readonly _uri: string;
     private readonly _languageId: string;
@@ -62,7 +62,7 @@ export class MockDocument implements TextDocument {
     }
 
     private static getNextUri(): string {
-        return (MockDocument._nextUri++).toString();
+        return (MockDocument.NextUri++).toString();
     }
 }
 
