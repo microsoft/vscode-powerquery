@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Range, Position, TextDocument } from "vscode-languageserver-types";
+import { assert, expect } from "chai";
+import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument } from "vscode-languageserver-types";
 
 export function createDocument(text: string): TextDocument {
     return new MockDocument(text, "powerquery");
@@ -63,3 +64,11 @@ class MockDocument implements TextDocument {
         return (MockDocument._nextUri++).toString();
     }
 }
+
+export function validateError(diagnostic: Diagnostic, startPosition: Position): void {
+    assert.isDefined(diagnostic.message);
+    assert.isDefined(diagnostic.range);
+    expect(diagnostic.range.start).to.deep.equal(startPosition);
+    expect(diagnostic.severity).to.equal(DiagnosticSeverity.Error);
+}
+

@@ -16,7 +16,7 @@ describe("workspaceCache", () => {
         const state: PQP.Lexer.State = WorkspaceCache.getLexerState(document);
         assert.isDefined(state);
         expect(state.lines.length).to.equal(3);
-    })
+    });
 
     it("getTriedLexerSnapshot", () => {
         const document: TextDocument = Utils.createDocument("let a = 1 in a");
