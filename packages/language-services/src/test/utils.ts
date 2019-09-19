@@ -72,4 +72,3 @@ export function validateError(diagnostic: Diagnostic, startPosition: Position): 
     expect(diagnostic.range.start).to.deep.equal(startPosition);
     expect(diagnostic.severity).to.equal(DiagnosticSeverity.Error);
 }
-

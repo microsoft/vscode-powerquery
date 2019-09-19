@@ -16,14 +16,14 @@ export function validate(document: TextDocument): ValidationResult {
     let diagnostics: Diagnostic[] = [];
     if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
         const lexAndParseErr: PQP.LexAndParseErr = triedLexAndParse.error;
-        const innerError: PQP.LexerError.TInnerLexerError | PQP.ParserError.TInnerParserError = lexAndParseErr.innerError;
+        const innerError: PQP.LexerError.TInnerLexerError | PQP.ParserError.TInnerParserError =
+            lexAndParseErr.innerError;
         if (PQP.ParserError.isTInnerParserError(innerError)) {
             const maybeDiagnostic: undefined | Diagnostic = maybeParserErrorToDiagnostic(innerError);
             if (maybeDiagnostic !== undefined) {
                 diagnostics = [maybeDiagnostic];
             }
-        }
-        else if (PQP.LexerError.isTInnerLexerError(innerError)) {
+        } else if (PQP.LexerError.isTInnerLexerError(innerError)) {
             const maybeLexerErrorDiagnostics: undefined | Diagnostic[] = maybeLexerErrorToDiagnostics(innerError);
             if (maybeLexerErrorDiagnostics !== undefined) {
                 diagnostics = maybeLexerErrorDiagnostics;
@@ -32,9 +32,10 @@ export function validate(document: TextDocument): ValidationResult {
     }
     return {
         hasErrors: diagnostics.length > 0,
-        diagnostics
+        diagnostics,
     };
 }
+
 function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): undefined | Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     // TODO: handle other types of lexer errors
@@ -66,24 +67,21 @@ function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): u
 function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError): undefined | Diagnostic {
     const message: string = error.message;
     let errorToken: PQP.Token;
-    if ((error instanceof PQP.ParserError.ExpectedAnyTokenKindError ||
-        error instanceof PQP.ParserError.ExpectedTokenKindError) &&
-        error.maybeFoundToken !== undefined) {
+    if (
+        (error instanceof PQP.ParserError.ExpectedAnyTokenKindError ||
+            error instanceof PQP.ParserError.ExpectedTokenKindError) &&
+        error.maybeFoundToken !== undefined
+    ) {
         errorToken = error.maybeFoundToken.token;
-    }
-    else if (error instanceof PQP.ParserError.InvalidPrimitiveTypeError) {
+    } else if (error instanceof PQP.ParserError.InvalidPrimitiveTypeError) {
         errorToken = error.token;
-    }
-    else if (error instanceof PQP.ParserError.UnterminatedBracketError) {
+    } else if (error instanceof PQP.ParserError.UnterminatedBracketError) {
         errorToken = error.openBracketToken;
-    }
-    else if (error instanceof PQP.ParserError.UnterminatedParenthesesError) {
+    } else if (error instanceof PQP.ParserError.UnterminatedParenthesesError) {
         errorToken = error.openParenthesesToken;
-    }
-    else if (error instanceof PQP.ParserError.UnusedTokensRemainError) {
+    } else if (error instanceof PQP.ParserError.UnusedTokensRemainError) {
         errorToken = error.firstUnusedToken;
-    }
-    else {
+    } else {
         return undefined;
     }
     return {
