@@ -45,5 +45,9 @@
     "bugs": {
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
-    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/library/#readme"
+    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/library/#readme",
+    "dependencies": {
+        "@microsoft/powerquery-parser": "^0.1.21",
+        "vscode-languageserver-types": "^3.14.0"
+    }
 }

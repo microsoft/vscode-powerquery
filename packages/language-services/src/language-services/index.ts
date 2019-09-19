@@ -1,4 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export const Value: number = 1;
+import { TextDocument } from "vscode-languageserver-types";
+import * as WorkspaceCache from "./workspaceCache";
+
+export function documentUpdated(document: TextDocument): void {
+    WorkspaceCache.update(document);
+}
+
+export function documentClosed(document: TextDocument): void {
+    WorkspaceCache.close(document);
+}
+
