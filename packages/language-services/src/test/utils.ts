@@ -6,10 +6,13 @@
 import { assert, expect } from "chai";
 import {
     CompletionItem,
+    CompletionItemKind,
     Diagnostic,
     DiagnosticSeverity,
+    Hover,
     Position,
     Range,
+    SignatureHelp,
     TextDocument,
 } from "vscode-languageserver-types";
 
@@ -18,19 +21,82 @@ import {
     Analysis,
     AnalysisOptions,
     CompletionItemProviderContext,
+    HoverProviderContext,
+    LibrarySymbolProvider,
     NullLibrarySymbolProvider,
+    SignatureProviderContext,
 } from "../language-services";
 
-class ErrorProvider extends NullLibrarySymbolProvider {
+class ErrorLibraryProvider extends NullLibrarySymbolProvider {
     public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
         throw new Error("error provider always errors");
+    }
+}
+
+class SimpleLibraryProvider implements LibrarySymbolProvider {
+    private members: string[];
+
+    constructor(members: string[]) {
+        this.members = members;
+    }
+
+    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
+        let result: CompletionItem[] = [];
+        this.members.forEach(member => {
+            result.push({
+                kind: CompletionItemKind.Function,
+                label: member,
+            });
+        });
+
+        return result;
+    }
+
+    public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover> {
+        const member: string | undefined = this.getMember(identifier);
+        if (member) {
+            return {
+                contents: `member named '${member}`,
+                range: context.range,
+            };
+        }
+
+        return emptyHover;
+    }
+
+    public async getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp> {
+        const member: string | undefined = this.getMember(functionName);
+        if (member) {
+            return {
+                signatures: [
+                    {
+                        label: member,
+                        parameters: [],
+                    },
+                ],
+                activeParameter: context.argumentOrdinal ? context.argumentOrdinal : null,
+                activeSignature: 0,
+            };
+        }
+
+        return emptySignatureHelp;
+    }
+
+    public includeModules(modules: string[]): void {
+        throw new Error("Method not implemented.");
+    }
+
+    private getMember(value: string): string | undefined {
+        return this.members.find((value: string) => {
+            return value.toLocaleLowerCase() === value.toLocaleLowerCase();
+        });
     }
 }
 
 const defaultAnalysisOptions: AnalysisOptions = {};
 
 export const errorAnalysisOptions: AnalysisOptions = {
-    librarySymbolProvider: new ErrorProvider(),
+    librarySymbolProvider: new ErrorLibraryProvider(),
 };
 
 export function createDocument(text: string): MockDocument {
@@ -54,40 +120,15 @@ export async function getCompletionItems(text: string, analysisOptions?: Analysi
     }
 
     const document: MockDocument = createDocument(text.replace("|", ""));
-    document.cursorPosition = {
+    const cursorPosition: Position = {
         line: cursorLine,
         character: cursorCharacter,
     };
 
     const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
-    const analysis: Analysis = LanguageServices.createAnalysisSession(document, options);
+    const analysis: Analysis = LanguageServices.createAnalysisSession(document, cursorPosition, options);
 
-    return analysis.getCompletionItems(document.cursorPosition);
-}
-
-export function createDocumentWithCursor(text: string): MockDocument {
-    expect(text).to.contain("|", "input string must contain a | to indicate cursor position");
-    expect(text.indexOf("|")).to.equal(text.lastIndexOf("|"), "input string should only have one |");
-
-    const lines: string[] = text.split(/\r?\n/);
-    let cursorLine: number = 0;
-    let cursorCharacter: number = 0;
-    for (let i: number = 0; i < lines.length; i++) {
-        const markerIndex: number = lines[i].indexOf("|");
-        if (markerIndex > 0) {
-            cursorLine = i;
-            cursorCharacter = markerIndex;
-            break;
-        }
-    }
-
-    const document: MockDocument = createDocument(text.replace("|", ""));
-    document.cursorPosition = {
-        line: cursorLine,
-        character: cursorCharacter,
-    };
-
-    return document;
+    return analysis.getCompletionItems();
 }
 
 // Adapted from vscode-languageserver-code implementation
@@ -97,26 +138,16 @@ export class MockDocument implements TextDocument {
     private readonly _uri: string;
     private readonly _languageId: string;
 
-    private _cursorPosition: Position;
     private _content: string;
     private _lineOffsets: number[] | null;
     private _version: number;
 
     constructor(content: string, languageId: string) {
         this._content = content;
-        this._cursorPosition = { line: 0, character: 0 };
         this._languageId = languageId;
         this._lineOffsets = null;
         this._uri = MockDocument.getNextUri();
         this._version = 0;
-    }
-
-    get cursorPosition(): Position {
-        return this._cursorPosition;
-    }
-
-    set cursorPosition(position: Position) {
-        this._cursorPosition = position;
     }
 
     public get uri(): string {
@@ -232,3 +263,16 @@ export function containsCompletionItem(completionItems: CompletionItem[], label:
 
     assert.fail(`completion item '${label}' not found in array. Items: ` + JSON.stringify(completionItems));
 }
+
+export const emptyCompletionItems: CompletionItem[] = [];
+
+export const emptyHover: Hover = {
+    range: undefined,
+    contents: [],
+};
+
+export const emptySignatureHelp: SignatureHelp = {
+    signatures: [],
+    activeParameter: null,
+    activeSignature: 0,
+};

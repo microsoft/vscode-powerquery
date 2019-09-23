@@ -16,26 +16,28 @@ import {
 import { KeywordProvider } from "./keywordProvider";
 
 export interface Analysis {
-    getCompletionItems(position: Position): Promise<CompletionItem[]>;
-    getHover(position: Position): Promise<Hover>;
-    getSignatureHelp(position: Position): Promise<SignatureHelp>;
+    getCompletionItems(): Promise<CompletionItem[]>;
+    getHover(): Promise<Hover>;
+    getSignatureHelp(): Promise<SignatureHelp>;
 }
 
 export interface AnalysisOptions {
     librarySymbolProvider?: LibrarySymbolProvider;
 }
 
-export function createAnalysisSession(document: TextDocument, options: AnalysisOptions): Analysis {
-    return new DocumentAnalysis(document, options);
+export function createAnalysisSession(document: TextDocument, position: Position, options: AnalysisOptions): Analysis {
+    return new DocumentAnalysis(document, position, options);
 }
 
 class DocumentAnalysis implements Analysis {
     private readonly document: TextDocument;
     private readonly keywordProvider: KeywordProvider;
     private readonly librarySymbolProvider: LibrarySymbolProvider;
+    private readonly position: Position;
 
-    constructor(document: TextDocument, options: AnalysisOptions) {
+    constructor(document: TextDocument, position: Position, options: AnalysisOptions) {
         this.document = document;
+        this.position = position;
 
         this.keywordProvider = new KeywordProvider();
         this.librarySymbolProvider = options.librarySymbolProvider
@@ -43,13 +45,13 @@ class DocumentAnalysis implements Analysis {
             : new NullLibrarySymbolProvider();
     }
 
-    public async getCompletionItems(position: Position): Promise<CompletionItem[]> {
+    public async getCompletionItems(): Promise<CompletionItem[]> {
         let context: CompletionItemProviderContext = {};
 
-        const maybeToken: undefined | PQP.LineToken = maybeTokenAt(this.document, position);
+        const maybeToken: undefined | PQP.LineToken = maybeTokenAt(this.document, this.position);
         if (maybeToken !== undefined) {
             context = {
-                range: getTokenRangeForPosition(maybeToken, position),
+                range: getTokenRangeForPosition(maybeToken, this.position),
                 text: maybeToken.data,
                 tokenKind: maybeToken.kind,
             };
@@ -73,11 +75,11 @@ class DocumentAnalysis implements Analysis {
         return completionItems;
     }
 
-    public async getHover(position: Position): Promise<Hover> {
-        const identifierToken: PQP.LineToken | undefined = maybeIdentifierAt(this.document, position);
+    public async getHover(): Promise<Hover> {
+        const identifierToken: PQP.LineToken | undefined = maybeIdentifierAt(this.document, this.position);
         if (identifierToken) {
             const context: ProviderContext = {
-                range: getTokenRangeForPosition(identifierToken, position),
+                range: getTokenRangeForPosition(identifierToken, this.position),
             };
 
             // TODO: catch() failed promise
@@ -96,7 +98,7 @@ class DocumentAnalysis implements Analysis {
         return Common.EmptyHover;
     }
 
-    public async getSignatureHelp(position: Position): Promise<SignatureHelp> {
+    public async getSignatureHelp(): Promise<SignatureHelp> {
         // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
         // We have to retrieve the snapshot and reparse ourselves.
         const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(this.document);
@@ -112,8 +114,8 @@ class DocumentAnalysis implements Analysis {
 
             if (inspectableParser) {
                 const inspectionPosition: PQP.Inspection.Position = {
-                    lineNumber: position.line,
-                    lineCodeUnit: position.character,
+                    lineNumber: this.position.line,
+                    lineCodeUnit: this.position.character,
                 };
 
                 const triedInspection: PQP.Inspection.TriedInspect = PQP.Inspection.tryFrom(
