@@ -6,9 +6,11 @@ import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } f
 
 import * as Common from "./common";
 import * as WorkspaceCache from "./workspaceCache";
-import { LibrarySymbolProvider, NullLibrarySymbolProvider, SignatureProviderContext, ProviderContext } from "./symbolProviders";
+import { LibrarySymbolProvider, NullLibrarySymbolProvider, SignatureProviderContext, ProviderContext, CompletionItemProviderContext } from "./symbolProviders";
+import { KeywordProvider } from "./keywordProvider";
 
 let librarySymbolProvider: LibrarySymbolProvider = new NullLibrarySymbolProvider();
+let keywordProvider: KeywordProvider = new KeywordProvider();
 
 export function registerLibrarySymbolProvider(provider: LibrarySymbolProvider) {
     if (!provider) {
@@ -19,23 +21,27 @@ export function registerLibrarySymbolProvider(provider: LibrarySymbolProvider) {
 
 export async function getCompletionItems(document: TextDocument, position: Position): Promise<CompletionItem[]> {
     // TODO: determine other context values so we can be smarter about what is returned
+    let context: CompletionItemProviderContext = {};
 
-    let currentTokenRange: Range | undefined;
     const maybeToken: undefined | PQP.LineToken = maybeTokenAt(document, position);
     if (maybeToken !== undefined) {
-        currentTokenRange = getTokenRangeForPosition(maybeToken, position);
+        context = {
+            range: getTokenRangeForPosition(maybeToken, position),
+            text: maybeToken.data,
+            tokenKind: maybeToken.kind
+        }
     }
 
-    // TODO: include keywords
+    // TODO: catch errors
     // TODO: get symbols from current scope
-    const getLibraryCompletionItems = librarySymbolProvider.getCompletionItems({ range: currentTokenRange });
+    const getLibraryCompletionItems = librarySymbolProvider.getCompletionItems(context);
+    const getKeywords = keywordProvider.getCompletionItems(context);
 
-    const [libraryResponse] = await Promise.all([getLibraryCompletionItems]);
-    if (libraryResponse === null) {
-        return Common.EmptyCompletionItems;
-    }
+    // TODO: add tracing/logging to the catch()
+    const [libraryResponse, keywordResponse] = await Promise.all([getLibraryCompletionItems, getKeywords]);
 
-    let completionItems: CompletionItem[] = libraryResponse;
+    let completionItems: CompletionItem[] = Array.isArray(keywordResponse) ? keywordResponse : [keywordResponse];
+    completionItems = completionItems.concat(libraryResponse);
 
     return completionItems;
 }
