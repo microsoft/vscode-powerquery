@@ -32,7 +32,7 @@ describe("Completion Items (null provider)", () => {
 });
 
 describe("Completion Items (error provider)", () => {
-    it("blank document keywords", async () => {
+    it("keywords still work", async () => {
         const result: CompletionItem[] = await await Utils.getCompletionItems("|", Utils.errorAnalysisOptions);
 
         expect(result.length).to.equal(totalKeywordCount);
