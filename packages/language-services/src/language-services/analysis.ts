@@ -57,8 +57,12 @@ class DocumentAnalysis implements Analysis {
 
         // TODO: catch errors
         // TODO: get symbols from current scope
-        const getLibraryCompletionItems = this.librarySymbolProvider.getCompletionItems(context);
-        const getKeywords = this.keywordProvider.getCompletionItems(context);
+        const getLibraryCompletionItems = this.librarySymbolProvider.getCompletionItems(context).catch(() => {
+            return Common.EmptyCompletionItems;
+        });
+        const getKeywords = this.keywordProvider.getCompletionItems(context).catch(() => {
+            return Common.EmptyCompletionItems;
+        });
 
         // TODO: add tracing/logging to the catch()
         const [libraryResponse, keywordResponse] = await Promise.all([getLibraryCompletionItems, getKeywords]);
@@ -77,7 +81,9 @@ class DocumentAnalysis implements Analysis {
             };
 
             // TODO: catch() failed promise
-            const getLibraryHover = this.librarySymbolProvider.getHover(identifierToken.data, context);
+            const getLibraryHover = this.librarySymbolProvider.getHover(identifierToken.data, context).catch(() => {
+                return Common.EmptyHover;
+            });
 
             // TODO: use other providers
             // TODO: define priority when multiple providers return results
@@ -136,7 +142,8 @@ class DocumentAnalysis implements Analysis {
                                 const librarySignatureHelp = this.librarySymbolProvider.getSignatureHelp(
                                     functionName,
                                     context,
-                                );
+                                ).catch(() => { return Common.EmptySignatureHelp; });
+
                                 const [libraryResponse] = await Promise.all([librarySignatureHelp]);
 
                                 if (libraryResponse != null) {
