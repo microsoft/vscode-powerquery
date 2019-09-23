@@ -21,6 +21,11 @@ describe("Hover", () => {
         expect(hover).deep.equals(Utils.emptyHover);
     });
 
+    it("Keyword hover", async () => {
+        const hover: Hover = await Utils.getHover('le|t a = "not identifier" in a');
+        expect(hover).deep.equals(Utils.emptyHover);
+    });
+
     it("No provider", async () => {
         const hover: Hover = await Utils.getHover("let abc = Text.NewGu|id() in abc");
         expect(hover).deep.equals(Utils.emptyHover);
