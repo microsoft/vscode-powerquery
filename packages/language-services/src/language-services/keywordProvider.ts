@@ -34,7 +34,7 @@ export class KeywordProvider implements SymbolProvider {
     }
 
     // TODO: context sensitive keywords (closing "in" for "let", "otherwise" for "try", etc...)
-    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[] | null> {
+    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
         return this.keywordCompletionItems;
     }
 

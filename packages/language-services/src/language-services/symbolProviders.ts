@@ -4,7 +4,8 @@
 import { CompletionItem, Hover, Range, SymbolKind, SignatureHelp } from "vscode-languageserver-types";
 
 export interface CompletionItemProviderContext extends ProviderContext {
-
+    text?: string,
+    tokenKind?: string
 }
 
 export interface HoverProviderContext extends ProviderContext {
@@ -27,7 +28,7 @@ export interface Symbol {
 // TODO: revisit naming
 // TODO: will we need to pass the parser token as part of the context?
 export interface SymbolProvider {
-    getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[] | null>;
+    getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]>;
     getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null>;
     getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null>;
 }
@@ -45,8 +46,8 @@ export interface EnvironmentSymbolProvider extends SymbolProvider {
 // TODO: providers for record fields and table columns
 
 export abstract class BaseSymbolProvider implements SymbolProvider {
-    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[] | null> {
-        return null;
+    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
+        return [];
     }
 
     public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null> {
