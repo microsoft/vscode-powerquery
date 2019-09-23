@@ -13,4 +13,5 @@ export function documentClosed(document: TextDocument): void {
     WorkspaceCache.close(document);
 }
 
+export * from "./symbolProviders";
 export * from "./validation";
