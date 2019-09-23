@@ -23,14 +23,14 @@ export class KeywordProvider implements SymbolProvider {
     private readonly keywordCompletionItems: CompletionItem[] = [];
 
     constructor() {
-        for (const keyword in PQP.Keywords) {
+        PQP.Keywords.forEach((keyword) => {
             if (!excludedKeywords.includes(keyword)) {
                 this.keywordCompletionItems.push({
                     kind: CompletionItemKind.Keyword,
                     label: keyword
                 });
             }
-        }
+        });
     }
 
     // TODO: context sensitive keywords (closing "in" for "let", "otherwise" for "try", etc...)
