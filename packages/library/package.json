@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/powerquery-library",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Common library definition files for the Power Query / M language.",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
@@ -15,7 +15,8 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "powerquery-language-services": "../language-services"
+        "powerquery-language-services": "../language-services",
+        "vscode-languageserver-types": "^3.14.0"
     },
     "devDependencies": {
         "@types/chai": "^4.1.7",
