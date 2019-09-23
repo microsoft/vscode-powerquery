@@ -13,8 +13,51 @@ import {
     TextDocument,
 } from "vscode-languageserver-types";
 
+import * as LanguageServices from "../language-services";
+import { Analysis, AnalysisOptions, CompletionItemProviderContext, NullLibrarySymbolProvider } from "../language-services";
+
+class ErrorProvider extends NullLibrarySymbolProvider {
+    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
+        throw new Error("error provider always errors");
+    }
+}
+
+const defaultAnalysisOptions: AnalysisOptions = {};
+
+export const errorAnalysisOptions: AnalysisOptions = {
+    librarySymbolProvider: new ErrorProvider(),
+};
+
 export function createDocument(text: string): MockDocument {
     return new MockDocument(text, "powerquery");
+}
+
+export async function getCompletionItems(text: string, analysisOptions?: AnalysisOptions): Promise<CompletionItem[]> {
+    expect(text).to.contain("|", "input string must contain a | to indicate cursor position");
+    expect(text.indexOf("|")).to.equal(text.lastIndexOf("|"), "input string should only have one |");
+
+    const lines: string[] = text.split(/\r?\n/);
+    let cursorLine: number = 0;
+    let cursorCharacter: number = 0;
+    for (let i: number = 0; i < lines.length; i++) {
+        const markerIndex: number = lines[i].indexOf("|");
+        if (markerIndex > 0) {
+            cursorLine = i;
+            cursorCharacter = markerIndex;
+            break;
+        }
+    }
+
+    const document: MockDocument = createDocument(text.replace("|", ""));
+    document.cursorPosition = {
+        line: cursorLine,
+        character: cursorCharacter,
+    };
+
+    const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
+    const analysis: Analysis = LanguageServices.createAnalysisSession(document, options);
+
+    return analysis.getCompletionItems(document.cursorPosition);
 }
 
 export function createDocumentWithCursor(text: string): MockDocument {
