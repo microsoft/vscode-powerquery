@@ -6,7 +6,7 @@ import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } f
 
 import * as Common from "./common";
 import * as WorkspaceCache from "./workspaceCache";
-import { LibrarySymbolProvider, NullLibrarySymbolProvider, SignatureProviderContext } from "./symbolProviders";
+import { LibrarySymbolProvider, NullLibrarySymbolProvider, SignatureProviderContext, ProviderContext } from "./symbolProviders";
 
 let librarySymbolProvider: LibrarySymbolProvider = new NullLibrarySymbolProvider();
 
@@ -19,9 +19,16 @@ export function registerLibrarySymbolProvider(provider: LibrarySymbolProvider) {
 
 export async function getCompletionItems(document: TextDocument, position: Position): Promise<CompletionItem[]> {
     // TODO: determine other context values so we can be smarter about what is returned
+
+    let currentTokenRange: Range | undefined;
+    const maybeToken: undefined | PQP.LineToken = maybeTokenAt(document, position);
+    if (maybeToken !== undefined) {
+        currentTokenRange = getTokenRangeForPosition(maybeToken, position);
+    }
+
     // TODO: include keywords
     // TODO: get symbols from current scope
-    const getLibraryCompletionItems = librarySymbolProvider.getCompletionItems({});
+    const getLibraryCompletionItems = librarySymbolProvider.getCompletionItems({ range: currentTokenRange });
 
     const [libraryResponse] = await Promise.all([getLibraryCompletionItems]);
     if (libraryResponse === null) {
@@ -30,31 +37,18 @@ export async function getCompletionItems(document: TextDocument, position: Posit
 
     let completionItems: CompletionItem[] = libraryResponse;
 
-    // TODO: Do we really need to adjust the range? should the symbol provider do it?
-    const maybeToken: undefined | PQP.LineToken = maybeTokenAt(document, position);
-    if (maybeToken !== undefined) {
-        const range: Range = {
-            start: {
-                line: position.line,
-                character: maybeToken.positionStart,
-            },
-            end: {
-                line: position.line,
-                character: maybeToken.positionEnd,
-            },
-        };
-
-        completionItems = cloneCompletionItemsWithRange(completionItems, range);
-    }
-
     return completionItems;
 }
 
 export async function getHover(document: TextDocument, position: Position): Promise<Hover> {
     const identifierToken: PQP.LineToken | undefined = maybeIdentifierAt(document, position);
     if (identifierToken) {
+        const context: ProviderContext = {
+            range: getTokenRangeForPosition(identifierToken, position)
+        };
+
         // TODO: catch() failed promise
-        const getLibraryHover = librarySymbolProvider.getHover(identifierToken.data, {});
+        const getLibraryHover = librarySymbolProvider.getHover(identifierToken.data, context);
 
         // TODO: use other providers
         // TODO: define priority when multiple providers return results
@@ -65,11 +59,6 @@ export async function getHover(document: TextDocument, position: Position): Prom
     }
 
     return Common.EmptyHover;
-}
-
-interface Inspectable {
-    nodeIdMapCollection: PQP.NodeIdMap.Collection;
-    leafNodeIds: ReadonlyArray<number>;
 }
 
 export async function getSignatureHelp(document: TextDocument, position: Position): Promise<SignatureHelp> {
@@ -131,19 +120,22 @@ export async function getSignatureHelp(document: TextDocument, position: Positio
     return Common.EmptySignatureHelp;
 }
 
-function cloneCompletionItemsWithRange(completionItems: CompletionItem[], range: Range): CompletionItem[] {
-    const result: CompletionItem[] = [];
-    completionItems.forEach(item => {
-        result.push({
-            ...item,
-            textEdit: {
-                range: range,
-                newText: item.label,
-            },
-        });
-    });
+interface Inspectable {
+    nodeIdMapCollection: PQP.NodeIdMap.Collection;
+    leafNodeIds: ReadonlyArray<number>;
+}
 
-    return result;
+function getTokenRangeForPosition(token: PQP.LineToken, cursorPosition: Position): Range {
+    return {
+        start: {
+            line: cursorPosition.line,
+            character: token.positionStart,
+        },
+        end: {
+            line: cursorPosition.line,
+            character: token.positionEnd,
+        }
+    }
 }
 
 function maybeIdentifierAt(document: TextDocument, position: Position): undefined | PQP.LineToken {

@@ -1,14 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { CompletionItem, Hover, SymbolKind, SignatureHelp } from "vscode-languageserver-types";
-
-export interface ProviderContext {
-
-}
+import { CompletionItem, Hover, Range, SymbolKind, SignatureHelp } from "vscode-languageserver-types";
 
 export interface CompletionItemProviderContext extends ProviderContext {
 
+}
+
+export interface HoverProviderContext extends ProviderContext {
+
+}
+
+export interface ProviderContext {
+    range?: Range
 }
 
 export interface SignatureProviderContext extends ProviderContext {
@@ -24,7 +28,7 @@ export interface Symbol {
 // TODO: will we need to pass the parser token as part of the context?
 export interface SymbolProvider {
     getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[] | null>;
-    getHover(identifier: string, context: ProviderContext): Promise<Hover | null>;
+    getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null>;
     getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null>;
 }
 
@@ -45,7 +49,7 @@ export abstract class BaseSymbolProvider implements SymbolProvider {
         return null;
     }
 
-    public async getHover(identifier: string, context: ProviderContext): Promise<Hover | null> {
+    public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null> {
         return null;
     }
 
