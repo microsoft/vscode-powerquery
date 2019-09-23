@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import { CompletionItem, Hover, Position, Range, TextDocument } from "vscode-languageserver-types";
+import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } from "vscode-languageserver-types";
 
 import * as Common from "./common";
 import * as WorkspaceCache from "./workspaceCache";
-import { LibrarySymbolProvider, NullLibrarySymbolProvider } from "./symbolProviders";
+import { LibrarySymbolProvider, NullLibrarySymbolProvider, SignatureProviderContext } from "./symbolProviders";
 
 let librarySymbolProvider: LibrarySymbolProvider = new NullLibrarySymbolProvider();
 
@@ -65,6 +65,70 @@ export async function getHover(document: TextDocument, position: Position): Prom
     }
 
     return Common.EmptyHover;
+}
+
+interface Inspectable {
+    nodeIdMapCollection: PQP.NodeIdMap.Collection;
+    leafNodeIds: ReadonlyArray<number>;
+}
+
+export async function getSignatureHelp(document: TextDocument, position: Position): Promise<SignatureHelp> {
+    // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
+    // We have to retrieve the snapshot and reparse ourselves.
+    const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(document);
+
+    if (triedSnapshot.kind === PQP.ResultKind.Ok) {
+        const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
+        let inspectableParser: Inspectable | undefined;
+        if (triedParser.kind === PQP.ResultKind.Ok) {
+            inspectableParser = triedParser.value;
+        } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
+            inspectableParser = triedParser.error.context;
+        }
+
+        if (inspectableParser) {
+            const inspectionPosition: PQP.Inspection.Position = {
+                lineNumber: position.line,
+                lineCodeUnit: position.character,
+            };
+
+            const triedInspection: PQP.Inspection.TriedInspect = PQP.Inspection.tryFrom(
+                inspectionPosition,
+                inspectableParser.nodeIdMapCollection,
+                inspectableParser.leafNodeIds,
+            );
+
+            if (triedInspection.kind === PQP.ResultKind.Ok) {
+                if (triedInspection.value.nodes.length > 0) {
+                    // TODO: not sure if taking the first node is correct
+                    const node: PQP.Inspection.TNode = triedInspection.value.nodes[0];
+                    if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
+                        const invokeExpressionNode: PQP.Inspection.InvokeExpression = node;
+                        const functionName: string | undefined = invokeExpressionNode.maybeName;
+                        if (functionName) {
+                            let argumentOrdinal: number | undefined;
+                            if (invokeExpressionNode.maybeArguments) {
+                                argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
+                            }
+
+                            const context: SignatureProviderContext = {
+                                argumentOrdinal
+                            };
+
+                            const librarySignatureHelp = librarySymbolProvider.getSignatureHelp(functionName, context);
+                            const [libraryResponse] = await Promise.all([librarySignatureHelp]);
+
+                            if (libraryResponse != null) {
+                                return libraryResponse;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return Common.EmptySignatureHelp;
 }
 
 function cloneCompletionItemsWithRange(completionItems: CompletionItem[], range: Range): CompletionItem[] {

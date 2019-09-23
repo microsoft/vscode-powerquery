@@ -12,7 +12,7 @@ export interface CompletionItemProviderContext extends ProviderContext {
 }
 
 export interface SignatureProviderContext extends ProviderContext {
-
+    argumentOrdinal?: number;
 }
 
 export interface Symbol {
@@ -24,8 +24,8 @@ export interface Symbol {
 // TODO: will we need to pass the parser token as part of the context?
 export interface SymbolProvider {
     getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[] | null>;
-    getHover(value: string, context: ProviderContext): Promise<Hover | null>;
-    getSignature(value: string, context: SignatureProviderContext): Promise<SignatureHelp | null>;
+    getHover(identifier: string, context: ProviderContext): Promise<Hover | null>;
+    getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null>;
 }
 
 // Lookup provider for built-in and external libaries/modules.
@@ -45,11 +45,11 @@ export abstract class BaseSymbolProvider implements SymbolProvider {
         return null;
     }
 
-    public async getHover(value: string, context: ProviderContext): Promise<Hover | null> {
+    public async getHover(identifier: string, context: ProviderContext): Promise<Hover | null> {
         return null;
     }
 
-    public async getSignature(value: string, context: SignatureProviderContext): Promise<SignatureHelp | null> {
+    public async getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null> {
         return null;
     }
 }
