@@ -87,8 +87,8 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
     }
 
     private getMember(value: string): string | undefined {
-        return this.members.find((value: string) => {
-            return value.toLocaleLowerCase() === value.toLocaleLowerCase();
+        return this.members.find((member: string) => {
+            return value === member;
         });
     }
 }
@@ -104,6 +104,26 @@ export function createDocument(text: string): MockDocument {
 }
 
 export async function getCompletionItems(text: string, analysisOptions?: AnalysisOptions): Promise<CompletionItem[]> {
+    return createAnalysis(text, analysisOptions).getCompletionItems();
+}
+
+export async function getHover(text: string, analysisOptions?: AnalysisOptions): Promise<Hover> {
+    return createAnalysis(text, analysisOptions).getHover();
+}
+
+export async function getSignatureHelp(text: string, analysisOptions?: AnalysisOptions): Promise<SignatureHelp> {
+    return createAnalysis(text, analysisOptions).getSignatureHelp();
+}
+
+function createAnalysis(text: string, analysisOptions?: AnalysisOptions): Analysis {
+    const document: MockDocument = createDocument(text.replace("|", ""));
+    const cursorPosition: Position = getPositionForMarker(text);
+
+    const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
+    return LanguageServices.createAnalysisSession(document, cursorPosition, options);
+}
+
+function getPositionForMarker(text: string): Position {
     expect(text).to.contain("|", "input string must contain a | to indicate cursor position");
     expect(text.indexOf("|")).to.equal(text.lastIndexOf("|"), "input string should only have one |");
 
@@ -119,16 +139,10 @@ export async function getCompletionItems(text: string, analysisOptions?: Analysi
         }
     }
 
-    const document: MockDocument = createDocument(text.replace("|", ""));
-    const cursorPosition: Position = {
+    return {
         line: cursorLine,
         character: cursorCharacter,
     };
-
-    const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
-    const analysis: Analysis = LanguageServices.createAnalysisSession(document, cursorPosition, options);
-
-    return analysis.getCompletionItems();
 }
 
 // Adapted from vscode-languageserver-code implementation

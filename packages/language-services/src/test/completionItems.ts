@@ -8,9 +8,7 @@ import { CompletionItem, CompletionItemKind } from "vscode-languageserver-types"
 import * as Utils from "./utils";
 
 const totalKeywordCount: number = 24;
-const libraryProvider: Utils.SimpleLibraryProvider = new Utils.SimpleLibraryProvider([
-    "Text.NewGuid"
-]);
+const libraryProvider: Utils.SimpleLibraryProvider = new Utils.SimpleLibraryProvider(["Text.NewGuid"]);
 
 describe("Completion Items (null provider)", () => {
     // TODO: add more keyword tests
@@ -52,7 +50,9 @@ describe("Completion Items (error provider)", () => {
 
 describe("Completion Items (Simple provider)", () => {
     it("keywords still work", async () => {
-        const result: CompletionItem[] = await Utils.getCompletionItems("|", { librarySymbolProvider: libraryProvider });
+        const result: CompletionItem[] = await Utils.getCompletionItems("|", {
+            librarySymbolProvider: libraryProvider,
+        });
 
         Utils.containsCompletionItem(result, "Text.NewGuid");
 
