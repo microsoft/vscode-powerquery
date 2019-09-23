@@ -13,6 +13,6 @@ export function documentClosed(document: TextDocument): void {
     WorkspaceCache.close(document);
 }
 
-export * from "./intellisense";
+export * from "./analysis";
 export * from "./symbolProviders";
 export * from "./validation";
