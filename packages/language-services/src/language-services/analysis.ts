@@ -133,7 +133,10 @@ class DocumentAnalysis implements Analysis {
                                     argumentOrdinal,
                                 };
 
-                                const librarySignatureHelp = this.librarySymbolProvider.getSignatureHelp(functionName, context);
+                                const librarySignatureHelp = this.librarySymbolProvider.getSignatureHelp(
+                                    functionName,
+                                    context,
+                                );
                                 const [libraryResponse] = await Promise.all([librarySignatureHelp]);
 
                                 if (libraryResponse != null) {

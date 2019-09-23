@@ -14,7 +14,12 @@ import {
 } from "vscode-languageserver-types";
 
 import * as LanguageServices from "../language-services";
-import { Analysis, AnalysisOptions, CompletionItemProviderContext, NullLibrarySymbolProvider } from "../language-services";
+import {
+    Analysis,
+    AnalysisOptions,
+    CompletionItemProviderContext,
+    NullLibrarySymbolProvider,
+} from "../language-services";
 
 class ErrorProvider extends NullLibrarySymbolProvider {
     public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
@@ -218,7 +223,6 @@ export function validateError(diagnostic: Diagnostic, startPosition: Position): 
 }
 
 export function containsCompletionItem(completionItems: CompletionItem[], label: string): void {
-
     for (let i = 0; i < completionItems.length; i++) {
         const item = completionItems[i];
         if (item.label === label) {
