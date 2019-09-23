@@ -33,7 +33,7 @@ class ErrorLibraryProvider extends NullLibrarySymbolProvider {
     }
 }
 
-class SimpleLibraryProvider implements LibrarySymbolProvider {
+export class SimpleLibraryProvider implements LibrarySymbolProvider {
     private members: string[];
 
     constructor(members: string[]) {
@@ -253,15 +253,16 @@ export function validateError(diagnostic: Diagnostic, startPosition: Position): 
     expect(diagnostic.severity).to.equal(DiagnosticSeverity.Error);
 }
 
-export function containsCompletionItem(completionItems: CompletionItem[], label: string): void {
+export function containsCompletionItem(completionItems: CompletionItem[], label: string): CompletionItem | undefined {
     for (let i = 0; i < completionItems.length; i++) {
         const item = completionItems[i];
         if (item.label === label) {
-            return;
+            return item;
         }
     }
 
     assert.fail(`completion item '${label}' not found in array. Items: ` + JSON.stringify(completionItems));
+    return undefined;
 }
 
 export const emptyCompletionItems: CompletionItem[] = [];

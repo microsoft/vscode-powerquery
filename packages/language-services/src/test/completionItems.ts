@@ -8,6 +8,9 @@ import { CompletionItem, CompletionItemKind } from "vscode-languageserver-types"
 import * as Utils from "./utils";
 
 const totalKeywordCount: number = 24;
+const libraryProvider: Utils.SimpleLibraryProvider = new Utils.SimpleLibraryProvider([
+    "Text.NewGuid"
+]);
 
 describe("Completion Items (null provider)", () => {
     // TODO: add more keyword tests
@@ -33,7 +36,7 @@ describe("Completion Items (null provider)", () => {
 
 describe("Completion Items (error provider)", () => {
     it("keywords still work", async () => {
-        const result: CompletionItem[] = await await Utils.getCompletionItems("|", Utils.errorAnalysisOptions);
+        const result: CompletionItem[] = await Utils.getCompletionItems("|", Utils.errorAnalysisOptions);
 
         expect(result.length).to.equal(totalKeywordCount);
 
@@ -43,6 +46,18 @@ describe("Completion Items (error provider)", () => {
 
         Utils.containsCompletionItem(result, "let");
         Utils.containsCompletionItem(result, "shared");
+        Utils.containsCompletionItem(result, "#shared");
+    });
+});
+
+describe("Completion Items (Simple provider)", () => {
+    it("keywords still work", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems("|", { librarySymbolProvider: libraryProvider });
+
+        Utils.containsCompletionItem(result, "Text.NewGuid");
+
+        Utils.containsCompletionItem(result, "let");
+        Utils.containsCompletionItem(result, "#shared");
         Utils.containsCompletionItem(result, "#shared");
     });
 });
