@@ -4,16 +4,14 @@
 import { CompletionItem, Hover, Range, SymbolKind, SignatureHelp } from "vscode-languageserver-types";
 
 export interface CompletionItemProviderContext extends ProviderContext {
-    text?: string,
-    tokenKind?: string
+    text?: string;
+    tokenKind?: string;
 }
 
-export interface HoverProviderContext extends ProviderContext {
-
-}
+export interface HoverProviderContext extends ProviderContext { }
 
 export interface ProviderContext {
-    range?: Range
+    range?: Range;
 }
 
 export interface SignatureProviderContext extends ProviderContext {
@@ -39,28 +37,29 @@ export interface LibrarySymbolProvider extends SymbolProvider {
 }
 
 // Provides symbols that exist in the current workspace/query editing context.
-export interface EnvironmentSymbolProvider extends SymbolProvider {
-
-}
+export interface EnvironmentSymbolProvider extends SymbolProvider { }
 
 // TODO: providers for record fields and table columns
 
 export abstract class BaseSymbolProvider implements SymbolProvider {
-    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
+    public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
         return [];
     }
 
-    public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null> {
+    public async getHover(_identifier: string, _context: HoverProviderContext): Promise<Hover | null> {
         return null;
     }
 
-    public async getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null> {
+    public async getSignatureHelp(
+        _functionName: string,
+        _context: SignatureProviderContext,
+    ): Promise<SignatureHelp | null> {
         return null;
     }
 }
 
 export class NullLibrarySymbolProvider extends BaseSymbolProvider implements LibrarySymbolProvider {
-    includeModules(modules: string[]): void {
+    includeModules(_modules: string[]): void {
         // No impact
     }
 }

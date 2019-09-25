@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "mocha";
 import { expect } from "chai";
+import "mocha";
 import { CompletionItem, CompletionItemKind } from "vscode-languageserver-types";
 
 import * as Utils from "./utils";

@@ -5,15 +5,15 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } from "vscode-languageserver-types";
 
 import * as Common from "./common";
-import * as WorkspaceCache from "./workspaceCache";
+import { KeywordProvider } from "./keywordProvider";
 import {
+    CompletionItemProviderContext,
     LibrarySymbolProvider,
     NullLibrarySymbolProvider,
-    SignatureProviderContext,
     ProviderContext,
-    CompletionItemProviderContext,
+    SignatureProviderContext,
 } from "./symbolProviders";
-import { KeywordProvider } from "./keywordProvider";
+import * as WorkspaceCache from "./workspaceCache";
 
 export interface Analysis {
     getCompletionItems(): Promise<CompletionItem[]>;
@@ -57,16 +57,17 @@ class DocumentAnalysis implements Analysis {
             };
         }
 
-        // TODO: catch errors
+        // TODO: add tracing/logging to the catch()
         // TODO: get symbols from current scope
-        const getLibraryCompletionItems = this.librarySymbolProvider.getCompletionItems(context).catch(() => {
-            return Common.EmptyCompletionItems;
-        });
-        const getKeywords = this.keywordProvider.getCompletionItems(context).catch(() => {
+        const getLibraryCompletionItems: Promise<CompletionItem[]> = this.librarySymbolProvider
+            .getCompletionItems(context)
+            .catch(() => {
+                return Common.EmptyCompletionItems;
+            });
+        const getKeywords: Promise<CompletionItem[]> = this.keywordProvider.getCompletionItems(context).catch(() => {
             return Common.EmptyCompletionItems;
         });
 
-        // TODO: add tracing/logging to the catch()
         const [libraryResponse, keywordResponse] = await Promise.all([getLibraryCompletionItems, getKeywords]);
 
         let completionItems: CompletionItem[] = Array.isArray(keywordResponse) ? keywordResponse : [keywordResponse];
@@ -82,15 +83,18 @@ class DocumentAnalysis implements Analysis {
                 range: getTokenRangeForPosition(identifierToken, this.position),
             };
 
-            // TODO: catch() failed promise
-            const getLibraryHover = this.librarySymbolProvider.getHover(identifierToken.data, context).catch(() => {
-                return Common.EmptyHover;
-            });
+            // TODO: add tracing/logging to the catch()
+            const getLibraryHover: Promise<Hover | null> = this.librarySymbolProvider
+                .getHover(identifierToken.data, context)
+                .catch(() => {
+                    // tslint:disable-next-line: no-null-keyword
+                    return null;
+                });
 
             // TODO: use other providers
             // TODO: define priority when multiple providers return results
             const [libraryResponse] = await Promise.all([getLibraryHover]);
-            if (libraryResponse != null) {
+            if (libraryResponse) {
                 return libraryResponse;
             }
         }
@@ -141,15 +145,16 @@ class DocumentAnalysis implements Analysis {
                                     argumentOrdinal,
                                 };
 
-                                const librarySignatureHelp = this.librarySymbolProvider
+                                // TODO: add tracing/logging to the catch()
+                                const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
                                     .getSignatureHelp(functionName, context)
                                     .catch(() => {
-                                        return Common.EmptySignatureHelp;
+                                        // tslint:disable-next-line: no-null-keyword
+                                        return null;
                                     });
 
                                 const [libraryResponse] = await Promise.all([librarySignatureHelp]);
-
-                                if (libraryResponse != null) {
+                                if (libraryResponse) {
                                     return libraryResponse;
                                 }
                             }

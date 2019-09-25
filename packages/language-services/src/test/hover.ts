@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "mocha";
 import { assert, expect } from "chai";
+import "mocha";
+import { Hover } from "vscode-languageserver-types";
 
 import * as Utils from "./utils";
-import { Hover } from "vscode-languageserver-types";
 
 const libraryProvider: Utils.SimpleLibraryProvider = new Utils.SimpleLibraryProvider([
     "DateTime.FixedLocalNow",

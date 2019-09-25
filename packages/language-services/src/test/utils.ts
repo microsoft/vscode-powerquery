@@ -16,11 +16,11 @@ import {
     TextDocument,
 } from "vscode-languageserver-types";
 
-import * as LanguageServices from "../language-services";
 import {
     Analysis,
     AnalysisOptions,
     CompletionItemProviderContext,
+    createAnalysisSession,
     HoverProviderContext,
     LibrarySymbolProvider,
     NullLibrarySymbolProvider,
@@ -34,14 +34,14 @@ class ErrorLibraryProvider extends NullLibrarySymbolProvider {
 }
 
 export class SimpleLibraryProvider implements LibrarySymbolProvider {
-    private members: string[];
+    private readonly members: string[];
 
     constructor(members: string[]) {
         this.members = members;
     }
 
     public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
-        let result: CompletionItem[] = [];
+        const result: CompletionItem[] = [];
         this.members.forEach(member => {
             result.push({
                 kind: CompletionItemKind.Function,
@@ -74,6 +74,7 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
                         parameters: [],
                     },
                 ],
+                // tslint:disable-next-line: no-null-keyword
                 activeParameter: context.argumentOrdinal ? context.argumentOrdinal : null,
                 activeSignature: 0,
             };
@@ -120,7 +121,7 @@ function createAnalysis(text: string, analysisOptions?: AnalysisOptions): Analys
     const cursorPosition: Position = getPositionForMarker(text);
 
     const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
-    return LanguageServices.createAnalysisSession(document, cursorPosition, options);
+    return createAnalysisSession(document, cursorPosition, options);
 }
 
 function getPositionForMarker(text: string): Position {
@@ -130,7 +131,7 @@ function getPositionForMarker(text: string): Position {
     const lines: string[] = text.split(/\r?\n/);
     let cursorLine: number = 0;
     let cursorCharacter: number = 0;
-    for (let i: number = 0; i < lines.length; i++) {
+    for (let i: number = 0; i < lines.length; i += 1) {
         const markerIndex: number = lines[i].indexOf("|");
         if (markerIndex > 0) {
             cursorLine = i;
@@ -153,13 +154,12 @@ export class MockDocument implements TextDocument {
     private readonly _languageId: string;
 
     private _content: string;
-    private _lineOffsets: number[] | null;
+    private _lineOffsets: number[] | undefined;
     private _version: number;
 
     constructor(content: string, languageId: string) {
         this._content = content;
         this._languageId = languageId;
-        this._lineOffsets = null;
         this._uri = MockDocument.getNextUri();
         this._version = 0;
     }
@@ -178,8 +178,8 @@ export class MockDocument implements TextDocument {
 
     public getText(range?: Range): string {
         if (range) {
-            let start = this.offsetAt(range.start);
-            let end = this.offsetAt(range.end);
+            const start: number = this.offsetAt(range.start);
+            const end: number = this.offsetAt(range.end);
             return this._content.substring(start, end);
         }
         return this._content;
@@ -187,45 +187,34 @@ export class MockDocument implements TextDocument {
 
     public setText(text: string): void {
         this._content = text;
-        this._lineOffsets = null;
-        this._version++;
+        this._lineOffsets = undefined;
+        this._version += 1;
     }
 
-    private getLineOffsets(): number[] {
-        if (this._lineOffsets === null) {
-            let lineOffsets: number[] = [];
-            let text = this._content;
-            let isLineStart = true;
-            for (let i = 0; i < text.length; i++) {
-                if (isLineStart) {
-                    lineOffsets.push(i);
-                    isLineStart = false;
-                }
-                let ch = text.charAt(i);
-                isLineStart = ch === "\r" || ch === "\n";
-                if (ch === "\r" && i + 1 < text.length && text.charAt(i + 1) === "\n") {
-                    i++;
-                }
-            }
-            if (isLineStart && text.length > 0) {
-                lineOffsets.push(text.length);
-            }
-            this._lineOffsets = lineOffsets;
+    public offsetAt(position: Position): number {
+        const lineOffsets: number[] = this.getLineOffsets();
+        if (position.line >= lineOffsets.length) {
+            return this._content.length;
+        } else if (position.line < 0) {
+            return 0;
         }
-        return this._lineOffsets;
+        const lineOffset: number = lineOffsets[position.line];
+        const nextLineOffset: number =
+            position.line + 1 < lineOffsets.length ? lineOffsets[position.line + 1] : this._content.length;
+        return Math.max(Math.min(lineOffset + position.character, nextLineOffset), lineOffset);
     }
 
-    public positionAt(offset: number) {
+    public positionAt(offset: number): Position {
         offset = Math.max(Math.min(offset, this._content.length), 0);
 
-        let lineOffsets = this.getLineOffsets();
-        let low = 0,
-            high = lineOffsets.length;
+        const lineOffsets: number[] = this.getLineOffsets();
+        let low: number = 0;
+        let high: number = lineOffsets.length;
         if (high === 0) {
             return Position.create(0, offset);
         }
         while (low < high) {
-            let mid = Math.floor((low + high) / 2);
+            const mid: number = Math.floor((low + high) / 2);
             if (lineOffsets[mid] > offset) {
                 high = mid;
             } else {
@@ -234,29 +223,41 @@ export class MockDocument implements TextDocument {
         }
         // low is the least x for which the line offset is larger than the current offset
         // or array.length if no line offset is larger than the current offset
-        let line = low - 1;
+        const line: number = low - 1;
         return Position.create(line, offset - lineOffsets[line]);
     }
 
-    public offsetAt(position: Position) {
-        let lineOffsets = this.getLineOffsets();
-        if (position.line >= lineOffsets.length) {
-            return this._content.length;
-        } else if (position.line < 0) {
-            return 0;
-        }
-        let lineOffset = lineOffsets[position.line];
-        let nextLineOffset =
-            position.line + 1 < lineOffsets.length ? lineOffsets[position.line + 1] : this._content.length;
-        return Math.max(Math.min(lineOffset + position.character, nextLineOffset), lineOffset);
-    }
-
-    public get lineCount() {
+    public get lineCount(): number {
         return this.getLineOffsets().length;
     }
 
     private static getNextUri(): string {
-        return (MockDocument.NextUri++).toString();
+        MockDocument.NextUri += 1;
+        return MockDocument.NextUri.toString();
+    }
+
+    private getLineOffsets(): number[] {
+        if (this._lineOffsets === undefined) {
+            const lineOffsets: number[] = [];
+            const text: string = this._content;
+            let isLineStart: boolean = true;
+            for (let i: number = 0; i < text.length; i += 1) {
+                if (isLineStart) {
+                    lineOffsets.push(i);
+                    isLineStart = false;
+                }
+                const ch: string = text.charAt(i);
+                isLineStart = ch === "\r" || ch === "\n";
+                if (ch === "\r" && i + 1 < text.length && text.charAt(i + 1) === "\n") {
+                    i += 1;
+                }
+            }
+            if (isLineStart && text.length > 0) {
+                lineOffsets.push(text.length);
+            }
+            this._lineOffsets = lineOffsets;
+        }
+        return this._lineOffsets;
     }
 }
 
@@ -268,14 +269,13 @@ export function validateError(diagnostic: Diagnostic, startPosition: Position): 
 }
 
 export function containsCompletionItem(completionItems: CompletionItem[], label: string): CompletionItem | undefined {
-    for (let i = 0; i < completionItems.length; i++) {
-        const item = completionItems[i];
+    for (const item of completionItems) {
         if (item.label === label) {
             return item;
         }
     }
 
-    assert.fail(`completion item '${label}' not found in array. Items: ` + JSON.stringify(completionItems));
+    assert.fail(`completion item '${label}' not found in array. Items: ${JSON.stringify(completionItems)}`);
     return undefined;
 }
 
@@ -288,6 +288,7 @@ export const emptyHover: Hover = {
 
 export const emptySignatureHelp: SignatureHelp = {
     signatures: [],
+    // tslint:disable-next-line: no-null-keyword
     activeParameter: null,
     activeSignature: 0,
 };

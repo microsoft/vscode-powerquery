@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "mocha";
-import { assert, expect } from "chai";
 import * as PQP from "@microsoft/powerquery-parser";
+import { assert, expect } from "chai";
+import "mocha";
 import { TextDocument } from "vscode-languageserver-types";
 
 import * as LanguageServices from "../language-services/index";
-import * as Utils from "./utils";
 import * as WorkspaceCache from "../language-services/workspaceCache";
+import * as Utils from "./utils";
 
 describe("workspaceCache", () => {
     it("getLexerState", () => {
@@ -23,7 +23,7 @@ describe("workspaceCache", () => {
         const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(document);
         assert.isDefined(triedSnapshot);
         if (triedSnapshot.kind === PQP.ResultKind.Ok) {
-            const snapshot: PQP.LexerSnapshot = triedSnapshot.value as PQP.LexerSnapshot;
+            const snapshot: PQP.LexerSnapshot = triedSnapshot.value;
             expect(snapshot.tokens.length).to.equal(6);
         } else {
             assert.fail("triedSnapshot should be OK");
@@ -35,7 +35,7 @@ describe("workspaceCache", () => {
         const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
         assert.isDefined(triedLexAndParse);
         if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
-            const lexAndParseOk: PQP.LexAndParseOk = triedLexAndParse.value as PQP.LexAndParseOk;
+            const lexAndParseOk: PQP.LexAndParseOk = triedLexAndParse.value;
             assert.isDefined(lexAndParseOk.ast);
         } else {
             assert.fail("triedLexAndParse should be OK");
