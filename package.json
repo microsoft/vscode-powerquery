@@ -1,6 +1,6 @@
 {
   "name": "vscode-powerquery",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.36.0"
   },
@@ -26,7 +26,7 @@
             "messages",
             "verbose"
           ],
-          "default": "verbose",
+          "default": "off",
           "description": "Traces the communication between VS Code and the language server."
         }
       }
