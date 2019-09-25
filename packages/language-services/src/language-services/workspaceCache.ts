@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import * as LS from "vscode-languageserver";
+import { TextDocument } from "vscode-languageserver-types";
 
 const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
 const lexerStateCache: Map<string, PQP.Lexer.State> = new Map();
@@ -10,19 +10,20 @@ const triedLexAndParseCache: Map<string, PQP.TriedLexAndParse> = new Map();
 
 const allCaches: Map<string, any>[] = [lexerSnapshotCache, lexerStateCache, triedLexAndParseCache];
 
-export function close(textDocument: LS.TextDocument): void {
+export function close(textDocument: TextDocument): void {
     allCaches.forEach(map => {
         map.delete(textDocument.uri);
     });
 }
 
-export function reset(textDocument: LS.TextDocument): void {
+export function update(textDocument: TextDocument): void {
     // TODO: support incremental lexing
     // TODO: premptively prepare cache on background thread?
+    // TODO: use document version
     close(textDocument);
 }
 
-export function getLexerState(textDocument: LS.TextDocument): PQP.Lexer.State {
+export function getLexerState(textDocument: TextDocument): PQP.Lexer.State {
     let lexerState: PQP.Lexer.State | undefined = lexerStateCache.get(textDocument.uri);
     if (lexerState === undefined) {
         lexerState = PQP.Lexer.stateFrom(textDocument.getText());
@@ -32,7 +33,7 @@ export function getLexerState(textDocument: LS.TextDocument): PQP.Lexer.State {
     return lexerState;
 }
 
-export function getTriedLexerSnapshot(textDocument: LS.TextDocument): PQP.TriedLexerSnapshot {
+export function getTriedLexerSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
     let lexerSnapshot: PQP.TriedLexerSnapshot | undefined = lexerSnapshotCache.get(textDocument.uri);
     if (lexerSnapshot === undefined) {
         lexerSnapshot = PQP.LexerSnapshot.tryFrom(getLexerState(textDocument));
@@ -42,7 +43,7 @@ export function getTriedLexerSnapshot(textDocument: LS.TextDocument): PQP.TriedL
     return lexerSnapshot;
 }
 
-export function getTriedLexAndParse(textDocument: LS.TextDocument): PQP.TriedLexAndParse {
+export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAndParse {
     let triedLexAndParse: PQP.TriedLexAndParse | undefined = triedLexAndParseCache.get(textDocument.uri);
     if (triedLexAndParse === undefined) {
         const lexerSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);

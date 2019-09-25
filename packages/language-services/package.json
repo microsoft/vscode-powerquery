@@ -1,7 +1,7 @@
 {
-    "name": "@microsoft/powerquery-library",
-    "version": "0.0.2",
-    "description": "Common library definition files for the Power Query / M language.",
+    "name": "@microsoft/powerquery-language-services",
+    "version": "0.0.1",
+    "description": "Language service functionality for the Power Query / M language.",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
@@ -9,13 +9,13 @@
         "test": "mocha -r ts-node/register src/test/**/*.ts"
     },
     "files": [
-        "lib/library/*",
+        "lib/language-services/*",
         "lib/index.d.ts",
         "lib/index.js",
         "lib/index.js.map"
     ],
     "dependencies": {
-        "powerquery-language-services": "../language-services",
+        "@microsoft/powerquery-parser": "^0.1.21",
         "vscode-languageserver-types": "^3.14.0"
     },
     "devDependencies": {
@@ -35,7 +35,7 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/microsoft/vscode-powerquery.git",
-        "directory": "packages/library"
+        "directory": "packages/language-services"
     },
     "prettier": {
         "trailingComma": "all",
@@ -52,5 +52,5 @@
     "bugs": {
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
-    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/library/#readme"
+    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/language-services/#readme"
 }

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "powerquery-library";
 import {
     CompletionItem,
     CompletionItemKind,
@@ -11,10 +10,24 @@ import {
     ParameterInformation,
     Range,
     SignatureInformation,
-} from "vscode-languageserver";
+} from "vscode-languageserver-types";
 
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "./jsonTypes";
+
+export function cloneCompletionItemsWithRange(completionItems: CompletionItem[], range: Range): CompletionItem[] {
+    const result: CompletionItem[] = [];
+    completionItems.forEach(item => {
+        result.push({
+            ...item,
+            textEdit: {
+                range: range,
+                newText: item.label,
+            },
+        });
+    });
+
+    return result;
+}
 
 export function libraryDefinitionToCompletionItem(definition: LibraryDefinition): CompletionItem {
     return {
@@ -24,7 +37,7 @@ export function libraryDefinitionToCompletionItem(definition: LibraryDefinition)
     };
 }
 
-export function libraryDefinitionToHover(definition: LibraryDefinition, range: Range): Hover {
+export function libraryDefinitionToHover(definition: LibraryDefinition, range?: Range): Hover {
     let contents: MarkupContent;
 
     // TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
