@@ -14,7 +14,7 @@ describe("validation", () => {
         const document: TextDocument = Utils.createDocument("let\n   b = 1\n   in b");
         const validationResult: ValidationResult = validate(document);
         expect(validationResult.hasErrors).to.equal(false, "validation result is not expected to have errors.");
-        expect(validationResult.diagnostics).to.be.empty("diagnostics should be empty.");
+        expect(validationResult.diagnostics.length).to.equal(0, "no diagnostics expected");
     });
 
     it("single line query with error", () => {

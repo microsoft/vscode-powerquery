@@ -28,7 +28,7 @@ import {
 } from "../language-services";
 
 class ErrorLibraryProvider extends NullLibrarySymbolProvider {
-    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
+    public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
         throw new Error("error provider always errors");
     }
 }
@@ -40,7 +40,7 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         this.members = members;
     }
 
-    public async getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]> {
+    public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
         const result: CompletionItem[] = [];
         this.members.forEach(member => {
             result.push({
@@ -83,7 +83,7 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         return emptySignatureHelp;
     }
 
-    public includeModules(modules: string[]): void {
+    public includeModules(_modules: string[]): void {
         throw new Error("Method not implemented.");
     }
 
