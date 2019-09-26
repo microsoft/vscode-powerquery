@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { CompletionItem, Hover, Range, SignatureHelp, SymbolKind } from "vscode-languageserver-types";
+import { CompletionItem, Hover, Range, SignatureHelp } from "vscode-languageserver-types";
 
 export interface CompletionItemProviderContext extends ProviderContext {
     text?: string;
@@ -21,27 +21,26 @@ export interface SignatureProviderContext extends ProviderContext {
     functionName?: string;
 }
 
-export interface Symbol {
-    kind: SymbolKind;
-    name: string;
+export interface CompletionItemProvider {
+    getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]>;
 }
 
-// TODO: revisit naming
-// TODO: will we need to pass the parser token as part of the context?
-export interface SymbolProvider {
-    getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]>;
+export interface HoverProvider {
     getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null>;
+}
+
+export interface SignatureHelpProvider {
     getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null>;
 }
 
 // Lookup provider for built-in and external libaries/modules.
-export interface LibrarySymbolProvider extends SymbolProvider {
+export interface LibrarySymbolProvider extends CompletionItemProvider, HoverProvider, SignatureHelpProvider {
     includeModules(modules: string[]): void;
 }
 
 // TODO: providers for record fields and table columns
 
-export abstract class BaseSymbolProvider implements SymbolProvider {
+export class NullLibrarySymbolProvider implements LibrarySymbolProvider {
     public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
         return [];
     }
@@ -58,9 +57,7 @@ export abstract class BaseSymbolProvider implements SymbolProvider {
         // tslint:disable-next-line: no-null-keyword
         return null;
     }
-}
 
-export class NullLibrarySymbolProvider extends BaseSymbolProvider implements LibrarySymbolProvider {
     public includeModules(_modules: string[]): void {
         // No impact
     }
