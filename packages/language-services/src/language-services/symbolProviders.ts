@@ -1,14 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { CompletionItem, Hover, Range, SymbolKind, SignatureHelp } from "vscode-languageserver-types";
+import { CompletionItem, Hover, Range, SignatureHelp, SymbolKind } from "vscode-languageserver-types";
 
 export interface CompletionItemProviderContext extends ProviderContext {
     text?: string;
     tokenKind?: string;
 }
 
-export interface HoverProviderContext extends ProviderContext { }
+// tslint:disable-next-line: no-empty-interface
+export interface HoverProviderContext extends ProviderContext {}
 
 export interface ProviderContext {
     range?: Range;
@@ -16,6 +17,8 @@ export interface ProviderContext {
 
 export interface SignatureProviderContext extends ProviderContext {
     argumentOrdinal?: number;
+    // TODO: remove optional
+    functionName?: string;
 }
 
 export interface Symbol {
@@ -36,9 +39,6 @@ export interface LibrarySymbolProvider extends SymbolProvider {
     includeModules(modules: string[]): void;
 }
 
-// Provides symbols that exist in the current workspace/query editing context.
-export interface EnvironmentSymbolProvider extends SymbolProvider { }
-
 // TODO: providers for record fields and table columns
 
 export abstract class BaseSymbolProvider implements SymbolProvider {
@@ -47,6 +47,7 @@ export abstract class BaseSymbolProvider implements SymbolProvider {
     }
 
     public async getHover(_identifier: string, _context: HoverProviderContext): Promise<Hover | null> {
+        // tslint:disable-next-line: no-null-keyword
         return null;
     }
 
@@ -54,12 +55,13 @@ export abstract class BaseSymbolProvider implements SymbolProvider {
         _functionName: string,
         _context: SignatureProviderContext,
     ): Promise<SignatureHelp | null> {
+        // tslint:disable-next-line: no-null-keyword
         return null;
     }
 }
 
 export class NullLibrarySymbolProvider extends BaseSymbolProvider implements LibrarySymbolProvider {
-    includeModules(_modules: string[]): void {
+    public includeModules(_modules: string[]): void {
         // No impact
     }
 }

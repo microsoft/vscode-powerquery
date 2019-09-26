@@ -5,6 +5,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } from "vscode-languageserver-types";
 
 import * as Common from "./common";
+import * as InspectionHelpers from "./inspectionHelpers";
 import { KeywordProvider } from "./keywordProvider";
 import {
     CompletionItemProviderContext,
@@ -115,34 +116,27 @@ class DocumentAnalysis implements Analysis {
         );
 
         if (triedInspection && triedInspection.kind === PQP.ResultKind.Ok) {
-            if (triedInspection.value.nodes.length > 0) {
-                // TODO: not sure if taking the first node is correct
-                const node: PQP.Inspection.TNode = triedInspection.value.nodes[0];
-                if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
-                    const invokeExpressionNode: PQP.Inspection.InvokeExpression = node;
-                    const functionName: string | undefined = invokeExpressionNode.maybeName;
-                    if (functionName) {
-                        let argumentOrdinal: number | undefined;
-                        if (invokeExpressionNode.maybeArguments) {
-                            argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
-                        }
+            const inspected: PQP.Inspection.Inspected = triedInspection.value;
+            const invokeExpression:
+                | PQP.Inspection.InvokeExpression
+                | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
 
-                        const context: SignatureProviderContext = {
-                            argumentOrdinal,
-                        };
+            if (invokeExpression) {
+                const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
+                    invokeExpression,
+                );
+                if (context && context.functionName) {
+                    // TODO: add tracing/logging to the catch()
+                    const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
+                        .getSignatureHelp(context.functionName, context)
+                        .catch(() => {
+                            // tslint:disable-next-line: no-null-keyword
+                            return null;
+                        });
 
-                        // TODO: add tracing/logging to the catch()
-                        const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
-                            .getSignatureHelp(functionName, context)
-                            .catch(() => {
-                                // tslint:disable-next-line: no-null-keyword
-                                return null;
-                            });
-
-                        const [libraryResponse] = await Promise.all([librarySignatureHelp]);
-                        if (libraryResponse) {
-                            return libraryResponse;
-                        }
+                    const [libraryResponse] = await Promise.all([librarySignatureHelp]);
+                    if (libraryResponse) {
+                        return libraryResponse;
                     }
                 }
             }
