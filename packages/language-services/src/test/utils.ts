@@ -106,8 +106,9 @@ export function createDocument(text: string): MockDocument {
 }
 
 export function createDocumentWithMarker(text: string): [MockDocument, Position] {
+    validateTextWithMarker(text);
     const document: MockDocument = createDocument(text.replace("|", ""));
-    const cursorPosition: Position = getPositionForMarker(text);
+    const cursorPosition: Position = document.positionAt(text.indexOf("|"));
 
     return [document, cursorPosition];
 }
@@ -148,26 +149,9 @@ function createAnalysis(text: string, analysisOptions?: AnalysisOptions): Analys
     return createAnalysisSession(document, cursorPosition, options);
 }
 
-function getPositionForMarker(text: string): Position {
+function validateTextWithMarker(text: string): void {
     expect(text).to.contain("|", "input string must contain a | to indicate cursor position");
     expect(text.indexOf("|")).to.equal(text.lastIndexOf("|"), "input string should only have one |");
-
-    const lines: string[] = text.split(/\r?\n/);
-    let cursorLine: number = 0;
-    let cursorCharacter: number = 0;
-    for (let i: number = 0; i < lines.length; i += 1) {
-        const markerIndex: number = lines[i].indexOf("|");
-        if (markerIndex >= 0) {
-            cursorLine = i;
-            cursorCharacter = markerIndex;
-            break;
-        }
-    }
-
-    return {
-        line: cursorLine,
-        character: cursorCharacter,
-    };
 }
 
 // Adapted from vscode-languageserver-code implementation
