@@ -8,8 +8,9 @@ export interface CompletionItemProviderContext extends ProviderContext {
     tokenKind?: string;
 }
 
-// tslint:disable-next-line: no-empty-interface
-export interface HoverProviderContext extends ProviderContext {}
+export interface HoverProviderContext extends ProviderContext {
+    identifier: string;
+}
 
 export interface ProviderContext {
     range?: Range;
@@ -17,8 +18,7 @@ export interface ProviderContext {
 
 export interface SignatureProviderContext extends ProviderContext {
     argumentOrdinal?: number;
-    // TODO: remove optional
-    functionName?: string;
+    functionName: string;
 }
 
 export interface CompletionItemProvider {
@@ -26,11 +26,11 @@ export interface CompletionItemProvider {
 }
 
 export interface HoverProvider {
-    getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null>;
+    getHover(context: HoverProviderContext): Promise<Hover | null>;
 }
 
 export interface SignatureHelpProvider {
-    getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp | null>;
+    getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp | null>;
 }
 
 // Lookup provider for built-in and external libaries/modules.
@@ -45,15 +45,12 @@ export class NullLibrarySymbolProvider implements LibrarySymbolProvider {
         return [];
     }
 
-    public async getHover(_identifier: string, _context: HoverProviderContext): Promise<Hover | null> {
+    public async getHover(_context: HoverProviderContext): Promise<Hover | null> {
         // tslint:disable-next-line: no-null-keyword
         return null;
     }
 
-    public async getSignatureHelp(
-        _functionName: string,
-        _context: SignatureProviderContext,
-    ): Promise<SignatureHelp | null> {
+    public async getSignatureHelp(_context: SignatureProviderContext): Promise<SignatureHelp | null> {
         // tslint:disable-next-line: no-null-keyword
         return null;
     }

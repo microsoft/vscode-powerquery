@@ -9,9 +9,9 @@ import * as InspectionHelpers from "./inspectionHelpers";
 import { KeywordProvider } from "./keywordProvider";
 import {
     CompletionItemProviderContext,
+    HoverProviderContext,
     LibrarySymbolProvider,
     NullLibrarySymbolProvider,
-    ProviderContext,
     SignatureProviderContext,
 } from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
@@ -86,17 +86,16 @@ class DocumentAnalysis implements Analysis {
     public async getHover(): Promise<Hover> {
         const identifierToken: PQP.LineToken | undefined = maybeIdentifierAt(this.document, this.position);
         if (identifierToken) {
-            const context: ProviderContext = {
+            const context: HoverProviderContext = {
                 range: getTokenRangeForPosition(identifierToken, this.position),
+                identifier: identifierToken.data,
             };
 
             // TODO: add tracing/logging to the catch()
-            const getLibraryHover: Promise<Hover | null> = this.librarySymbolProvider
-                .getHover(identifierToken.data, context)
-                .catch(() => {
-                    // tslint:disable-next-line: no-null-keyword
-                    return null;
-                });
+            const getLibraryHover: Promise<Hover | null> = this.librarySymbolProvider.getHover(context).catch(() => {
+                // tslint:disable-next-line: no-null-keyword
+                return null;
+            });
 
             // TODO: use other providers
             // TODO: define priority when multiple providers return results
@@ -128,7 +127,7 @@ class DocumentAnalysis implements Analysis {
                 if (context && context.functionName) {
                     // TODO: add tracing/logging to the catch()
                     const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
-                        .getSignatureHelp(context.functionName, context)
+                        .getSignatureHelp(context)
                         .catch(() => {
                             // tslint:disable-next-line: no-null-keyword
                             return null;

@@ -53,8 +53,8 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         return result;
     }
 
-    public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover> {
-        const member: string | undefined = this.getMember(identifier);
+    public async getHover(context: HoverProviderContext): Promise<Hover> {
+        const member: string | undefined = this.getMember(context.identifier);
         if (member) {
             return {
                 contents: `member named '${member}`,
@@ -65,8 +65,8 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         return emptyHover;
     }
 
-    public async getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp> {
-        const member: string | undefined = this.getMember(functionName);
+    public async getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp> {
+        const member: string | undefined = this.getMember(context.functionName);
         if (member) {
             return {
                 signatures: [
