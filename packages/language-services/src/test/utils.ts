@@ -104,6 +104,13 @@ export function createDocument(text: string): MockDocument {
     return new MockDocument(text, "powerquery");
 }
 
+export function createDocumentWithMarker(text: string): [MockDocument, Position] {
+    const document: MockDocument = createDocument(text.replace("|", ""));
+    const cursorPosition: Position = getPositionForMarker(text);
+
+    return [document, cursorPosition];
+}
+
 export async function getCompletionItems(text: string, analysisOptions?: AnalysisOptions): Promise<CompletionItem[]> {
     return createAnalysis(text, analysisOptions).getCompletionItems();
 }
@@ -117,9 +124,7 @@ export async function getSignatureHelp(text: string, analysisOptions?: AnalysisO
 }
 
 function createAnalysis(text: string, analysisOptions?: AnalysisOptions): Analysis {
-    const document: MockDocument = createDocument(text.replace("|", ""));
-    const cursorPosition: Position = getPositionForMarker(text);
-
+    const [document, cursorPosition] = createDocumentWithMarker(text);
     const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
     return createAnalysisSession(document, cursorPosition, options);
 }
