@@ -13,6 +13,10 @@ Here is a rough list of potential performance and accuracy related intellisense 
     -   Ideally, only the current code block / expression would be reparsed
     -   Symbols at document scope remebered
 
+### Completion Items
+
+-   Field name suggestions for options record when working with library functions
+
 ### Signature Help
 
 -   Maintain cache when a function is found to avoid having to go out to the provider when user hits next parameter
