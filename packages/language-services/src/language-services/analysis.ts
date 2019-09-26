@@ -57,6 +57,13 @@ class DocumentAnalysis implements Analysis {
             };
         }
 
+        // TODO:
+        // - refactor get signature code to return Inspection result
+        // - get inspection for document level (to get top level queries)
+        // - get inspection for current scope
+        // - only include current query name after @
+        // - don't return completion items when on lefthand side of assignment
+
         // TODO: add tracing/logging to the catch()
         // TODO: get symbols from current scope
         const getLibraryCompletionItems: Promise<CompletionItem[]> = this.librarySymbolProvider
