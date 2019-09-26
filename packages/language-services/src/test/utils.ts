@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 // TODO: Split this into a separate language-services-test package so it can be reused.
-
+import * as PQP from "@microsoft/powerquery-parser";
 import { assert, expect } from "chai";
 import {
     CompletionItem,
@@ -26,6 +26,7 @@ import {
     NullLibrarySymbolProvider,
     SignatureProviderContext,
 } from "../language-services";
+import * as WorkspaceCache from "../language-services/workspaceCache";
 
 class ErrorLibraryProvider extends NullLibrarySymbolProvider {
     public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
@@ -109,6 +110,24 @@ export function createDocumentWithMarker(text: string): [MockDocument, Position]
     const cursorPosition: Position = getPositionForMarker(text);
 
     return [document, cursorPosition];
+}
+
+export function getInspection(text: string): PQP.Inspection.Inspected | undefined {
+    const [document, cursorPosition] = createDocumentWithMarker(text);
+    const triedInspect: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(
+        document,
+        cursorPosition,
+    );
+
+    assert.isDefined(triedInspect);
+    // tslint:disable-next-line: no-unnecessary-type-assertion
+    expect(triedInspect!.kind).equals(PQP.ResultKind.Ok);
+
+    if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
+        return triedInspect.value;
+    }
+
+    return undefined;
 }
 
 export async function getCompletionItems(text: string, analysisOptions?: AnalysisOptions): Promise<CompletionItem[]> {
