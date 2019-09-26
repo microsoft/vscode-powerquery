@@ -58,7 +58,6 @@ class DocumentAnalysis implements Analysis {
         }
 
         // TODO:
-        // - refactor get signature code to return Inspection result
         // - get inspection for document level (to get top level queries)
         // - get inspection for current scope
         // - only include current query name after @
@@ -110,61 +109,39 @@ class DocumentAnalysis implements Analysis {
     }
 
     public async getSignatureHelp(): Promise<SignatureHelp> {
-        // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
-        // We have to retrieve the snapshot and reparse ourselves.
-        const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(this.document);
+        const triedInspection: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(
+            this.document,
+            this.position,
+        );
 
-        if (triedSnapshot.kind === PQP.ResultKind.Ok) {
-            const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
-            let inspectableParser: Inspectable | undefined;
-            if (triedParser.kind === PQP.ResultKind.Ok) {
-                inspectableParser = triedParser.value;
-            } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
-                inspectableParser = triedParser.error.context;
-            }
+        if (triedInspection && triedInspection.kind === PQP.ResultKind.Ok) {
+            if (triedInspection.value.nodes.length > 0) {
+                // TODO: not sure if taking the first node is correct
+                const node: PQP.Inspection.TNode = triedInspection.value.nodes[0];
+                if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
+                    const invokeExpressionNode: PQP.Inspection.InvokeExpression = node;
+                    const functionName: string | undefined = invokeExpressionNode.maybeName;
+                    if (functionName) {
+                        let argumentOrdinal: number | undefined;
+                        if (invokeExpressionNode.maybeArguments) {
+                            argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
+                        }
 
-            if (inspectableParser) {
-                const inspectionPosition: PQP.Inspection.Position = {
-                    lineNumber: this.position.line,
-                    lineCodeUnit: this.position.character,
-                };
+                        const context: SignatureProviderContext = {
+                            argumentOrdinal,
+                        };
 
-                const triedInspection: PQP.Inspection.TriedInspect = PQP.Inspection.tryFrom(
-                    inspectionPosition,
-                    inspectableParser.nodeIdMapCollection,
-                    inspectableParser.leafNodeIds,
-                );
+                        // TODO: add tracing/logging to the catch()
+                        const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
+                            .getSignatureHelp(functionName, context)
+                            .catch(() => {
+                                // tslint:disable-next-line: no-null-keyword
+                                return null;
+                            });
 
-                if (triedInspection.kind === PQP.ResultKind.Ok) {
-                    if (triedInspection.value.nodes.length > 0) {
-                        // TODO: not sure if taking the first node is correct
-                        const node: PQP.Inspection.TNode = triedInspection.value.nodes[0];
-                        if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
-                            const invokeExpressionNode: PQP.Inspection.InvokeExpression = node;
-                            const functionName: string | undefined = invokeExpressionNode.maybeName;
-                            if (functionName) {
-                                let argumentOrdinal: number | undefined;
-                                if (invokeExpressionNode.maybeArguments) {
-                                    argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
-                                }
-
-                                const context: SignatureProviderContext = {
-                                    argumentOrdinal,
-                                };
-
-                                // TODO: add tracing/logging to the catch()
-                                const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
-                                    .getSignatureHelp(functionName, context)
-                                    .catch(() => {
-                                        // tslint:disable-next-line: no-null-keyword
-                                        return null;
-                                    });
-
-                                const [libraryResponse] = await Promise.all([librarySignatureHelp]);
-                                if (libraryResponse) {
-                                    return libraryResponse;
-                                }
-                            }
+                        const [libraryResponse] = await Promise.all([librarySignatureHelp]);
+                        if (libraryResponse) {
+                            return libraryResponse;
                         }
                     }
                 }
@@ -173,11 +150,6 @@ class DocumentAnalysis implements Analysis {
 
         return Common.EmptySignatureHelp;
     }
-}
-
-interface Inspectable {
-    nodeIdMapCollection: PQP.NodeIdMap.Collection;
-    leafNodeIds: ReadonlyArray<number>;
 }
 
 function getTokenRangeForPosition(token: PQP.LineToken, cursorPosition: Position): Range {
