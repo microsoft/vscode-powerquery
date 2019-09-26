@@ -7,6 +7,7 @@ import "mocha";
 
 import { SignatureProviderContext } from "../language-services";
 import * as InspectionHelpers from "../language-services/inspectionHelpers";
+import * as WorkspaceCache from "../language-services/workspaceCache";
 import * as Utils from "./utils";
 
 // tslint:disable: no-unnecessary-type-assertion
@@ -62,6 +63,33 @@ describe("Inspection", () => {
         if (context) {
             expect(context.functionName).to.equal("Date.AddDays");
             expect(context.argumentOrdinal).to.equal(1);
+        }
+    });
+
+    it("DirectQueryForSQL file", () => {
+        const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
+        const triedInspect: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(document, {
+            line: 68,
+            character: 23,
+        });
+
+        expect(triedInspect!.kind).equals(PQP.ResultKind.Ok);
+
+        if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
+            const inspected: PQP.Inspection.Inspected = triedInspect.value;
+            expect(inspected.scope.size).to.equal(4);
+
+            assert.isDefined(inspected.maybePositionIdentifier, "position identifier should be defined");
+
+            expect(inspected.maybePositionIdentifier!.identifier.kind).equals(
+                PQP.Ast.NodeKind.Identifier,
+                "expecting identifier",
+            );
+
+            const identifier: PQP.Ast.Identifier = inspected.maybePositionIdentifier!.identifier as PQP.Ast.Identifier;
+
+            expect(identifier.literal).equals("OdbcDataSource");
+            expect(identifier.tokenRange.positionStart.lineNumber).equals(40);
         }
     });
 });

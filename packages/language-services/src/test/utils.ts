@@ -4,6 +4,8 @@
 // TODO: Split this into a separate language-services-test package so it can be reused.
 import * as PQP from "@microsoft/powerquery-parser";
 import { assert, expect } from "chai";
+import * as File from "fs";
+import * as Path from "path";
 import {
     CompletionItem,
     CompletionItemKind,
@@ -103,6 +105,16 @@ export const errorAnalysisOptions: AnalysisOptions = {
 
 export function createDocument(text: string): MockDocument {
     return new MockDocument(text, "powerquery");
+}
+
+export function createDocumentFromFile(fileName: string): MockDocument {
+    const fullPath: string = Path.join(Path.dirname(__filename), "files", fileName);
+    assert.isTrue(File.existsSync(fullPath), `file ${fullPath} not found.`);
+
+    let contents: string = File.readFileSync(fullPath, "utf8");
+    contents = contents.replace(/^\uFEFF/, "");
+
+    return new MockDocument(contents, "powerquery");
 }
 
 export function createDocumentWithMarker(text: string): [MockDocument, Position] {
