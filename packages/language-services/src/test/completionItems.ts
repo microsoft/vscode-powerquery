@@ -57,7 +57,7 @@ describe("Completion Items (Simple provider)", () => {
         Utils.containsCompletionItem(result, "Text.NewGuid");
 
         Utils.containsCompletionItem(result, "let");
-        Utils.containsCompletionItem(result, "#shared");
+        Utils.containsCompletionItem(result, "shared");
         Utils.containsCompletionItem(result, "#shared");
     });
 });
