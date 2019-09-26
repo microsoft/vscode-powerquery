@@ -3,39 +3,39 @@
 
 import { CompletionItem, Hover, Range, SignatureHelp } from "vscode-languageserver-types";
 
-export interface CompletionItemProviderContext extends ProviderContext {
-    text?: string;
-    tokenKind?: string;
-}
-
-export interface HoverProviderContext extends ProviderContext {
-    identifier: string;
-}
-
-export interface ProviderContext {
-    range?: Range;
-}
-
-export interface SignatureProviderContext extends ProviderContext {
-    argumentOrdinal?: number;
-    functionName: string;
-}
-
 export interface CompletionItemProvider {
     getCompletionItems(context: CompletionItemProviderContext): Promise<CompletionItem[]>;
+}
+
+export interface CompletionItemProviderContext extends ProviderContext {
+    readonly text?: string;
+    readonly tokenKind?: string;
 }
 
 export interface HoverProvider {
     getHover(context: HoverProviderContext): Promise<Hover | null>;
 }
 
-export interface SignatureHelpProvider {
-    getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp | null>;
+export interface HoverProviderContext extends ProviderContext {
+    readonly identifier: string;
 }
 
 // Lookup provider for built-in and external libaries/modules.
 export interface LibrarySymbolProvider extends CompletionItemProvider, HoverProvider, SignatureHelpProvider {
     includeModules(modules: string[]): void;
+}
+
+export interface ProviderContext {
+    readonly range?: Range;
+}
+
+export interface SignatureHelpProvider {
+    getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp | null>;
+}
+
+export interface SignatureProviderContext extends ProviderContext {
+    readonly argumentOrdinal?: number;
+    readonly functionName: string;
 }
 
 // TODO: providers for record fields and table columns

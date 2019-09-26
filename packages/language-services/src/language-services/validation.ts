@@ -7,8 +7,8 @@ import { Diagnostic, DiagnosticSeverity, Position, TextDocument } from "vscode-l
 import * as WorkspaceCache from "./workspaceCache";
 
 export interface ValidationResult {
-    hasErrors: boolean;
-    diagnostics: Diagnostic[];
+    readonly hasErrors: boolean;
+    readonly diagnostics: Diagnostic[];
 }
 
 export function validate(document: TextDocument): ValidationResult {

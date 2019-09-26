@@ -23,7 +23,7 @@ export interface Analysis {
 }
 
 export interface AnalysisOptions {
-    librarySymbolProvider?: LibrarySymbolProvider;
+    readonly librarySymbolProvider?: LibrarySymbolProvider;
 }
 
 export function createAnalysisSession(document: TextDocument, position: Position, options: AnalysisOptions): Analysis {
