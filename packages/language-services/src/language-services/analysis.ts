@@ -13,7 +13,7 @@ import {
     NullLibrarySymbolProvider,
     ProviderContext,
     SignatureProviderContext,
-} from "./symbolProviders";
+} from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
 
 export interface Analysis {

@@ -3,7 +3,7 @@
 
 import * as PQP from "@microsoft/powerquery-parser";
 
-import { SignatureProviderContext } from "./symbolProviders";
+import { SignatureProviderContext } from "./providers";
 
 export function getContextForInvokeExpression(
     expression: PQP.Inspection.InvokeExpression,

@@ -4,7 +4,7 @@
 import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItem, CompletionItemKind } from "vscode-languageserver-types";
 
-import { CompletionItemProvider, CompletionItemProviderContext } from "./symbolProviders";
+import { CompletionItemProvider, CompletionItemProviderContext } from "./providers";
 
 // TODO: Power Query parser defines constructor functions (ex. #table()) as keywords, but we want
 // them to be treated like library functions instead.
