@@ -27,9 +27,13 @@ describe("Completion Items (null provider)", () => {
         Utils.containsCompletionItem(result, "#shared");
     });
 
-    it("simple document keywords", async () => {
-        const result: CompletionItem[] = await Utils.getCompletionItems("let\na = 12,\nb=4, c = 2\nin\n  |");
-        expect(result.length).to.equal(totalKeywordCount);
+    it("simple document", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems("let\na = 12,\nb=4, c = 2\nin\n  |c");
+        expect(result.length).to.equal(totalKeywordCount + 3);
+
+        Utils.containsCompletionItem(result, "a");
+        Utils.containsCompletionItem(result, "b");
+        Utils.containsCompletionItem(result, "c");
     });
 });
 

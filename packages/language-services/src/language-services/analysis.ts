@@ -9,12 +9,14 @@ import * as InspectionHelpers from "./inspectionHelpers";
 import { KeywordProvider } from "./keywordProvider";
 import {
     CompletionItemProviderContext,
+    EnvironmentSymbolProvider,
     HoverProviderContext,
     LibrarySymbolProvider,
     NullLibrarySymbolProvider,
     SignatureProviderContext,
 } from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
+import { CurrentDocumentSymbolProvider } from "./currentDocumentSymbolProvider";
 
 export interface Analysis {
     getCompletionItems(): Promise<CompletionItem[]>;
@@ -23,6 +25,7 @@ export interface Analysis {
 }
 
 export interface AnalysisOptions {
+    readonly environmentSymbolProvider?: EnvironmentSymbolProvider;
     readonly librarySymbolProvider?: LibrarySymbolProvider;
 }
 
@@ -32,6 +35,7 @@ export function createAnalysisSession(document: TextDocument, position: Position
 
 class DocumentAnalysis implements Analysis {
     private readonly document: TextDocument;
+    private readonly environmentSymbolProvider: EnvironmentSymbolProvider;
     private readonly keywordProvider: KeywordProvider;
     private readonly librarySymbolProvider: LibrarySymbolProvider;
     private readonly position: Position;
@@ -40,6 +44,9 @@ class DocumentAnalysis implements Analysis {
         this.document = document;
         this.position = position;
 
+        this.environmentSymbolProvider = options.environmentSymbolProvider
+            ? options.environmentSymbolProvider
+            : new CurrentDocumentSymbolProvider(this.document);
         this.keywordProvider = new KeywordProvider();
         this.librarySymbolProvider = options.librarySymbolProvider
             ? options.librarySymbolProvider
@@ -59,7 +66,6 @@ class DocumentAnalysis implements Analysis {
         }
 
         // TODO:
-        // - get inspection for document level (to get top level queries)
         // - get inspection for current scope
         // - only include current query name after @
         // - don't return completion items when on lefthand side of assignment
@@ -74,11 +80,20 @@ class DocumentAnalysis implements Analysis {
         const getKeywords: Promise<CompletionItem[]> = this.keywordProvider.getCompletionItems(context).catch(() => {
             return Common.EmptyCompletionItems;
         });
+        const getEnvironmentCompletionItems: Promise<
+            CompletionItem[]
+        > = this.environmentSymbolProvider.getCompletionItems(context).catch(() => {
+            return Common.EmptyCompletionItems;
+        });
 
-        const [libraryResponse, keywordResponse] = await Promise.all([getLibraryCompletionItems, getKeywords]);
+        const [libraryResponse, keywordResponse, environmentResponse] = await Promise.all([
+            getLibraryCompletionItems,
+            getKeywords,
+            getEnvironmentCompletionItems,
+        ]);
 
         let completionItems: CompletionItem[] = Array.isArray(keywordResponse) ? keywordResponse : [keywordResponse];
-        completionItems = completionItems.concat(libraryResponse);
+        completionItems = completionItems.concat(libraryResponse, environmentResponse);
 
         return completionItems;
     }
