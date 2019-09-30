@@ -130,6 +130,15 @@ describe("Document symbols", () => {
         ]);
     });
 
+    it(`section foo; a = {1,2};`, () => {
+        const document: Utils.MockDocument = Utils.createDocument(`section foo; a = {1,2};`);
+        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+
+        expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
+
+        expectSymbols(lexAndParseOk.ast, [{ name: "a", kind: SymbolKind.Array }]);
+    });
+
     it("HelloWorldWithDocs file", () => {
         const document: Utils.MockDocument = Utils.createDocumentFromFile("HelloWorldWithDocs.pq");
         const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
@@ -142,6 +151,20 @@ describe("Document symbols", () => {
             { name: "HelloWorldImpl", kind: SymbolKind.Function },
             { name: "HelloWorldWithDocs", kind: SymbolKind.Struct },
             { name: "HelloWorldWithDocs.Publish", kind: SymbolKind.Struct },
+        ]);
+    });
+
+    it("DirectQueryForSQL file", () => {
+        const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
+        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+
+        expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
+
+        expectSymbols(lexAndParseOk.ast, [
+            { name: "DirectSQL.Database", kind: SymbolKind.Function },
+            { name: "DirectSQL", kind: SymbolKind.Struct },
+            { name: "DirectSQL.UI", kind: SymbolKind.Struct },
+            { name: "DirectSQL.Icons", kind: SymbolKind.Struct },
         ]);
     });
 });
