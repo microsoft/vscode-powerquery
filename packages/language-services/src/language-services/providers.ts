@@ -25,6 +25,8 @@ export interface LibrarySymbolProvider extends CompletionItemProvider, HoverProv
     includeModules(modules: string[]): void;
 }
 
+export interface EnvironmentSymbolProvider extends CompletionItemProvider, HoverProvider, SignatureHelpProvider {}
+
 export interface ProviderContext {
     readonly range?: Range;
 }

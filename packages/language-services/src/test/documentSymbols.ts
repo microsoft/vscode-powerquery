@@ -1,13 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as PQP from "@microsoft/powerquery-parser";
 import { assert, expect } from "chai";
 import "mocha";
 import { DocumentSymbol, SymbolKind, TextDocument } from "vscode-languageserver-types";
 
-import * as Common from "../language-services/common";
+import * as InspectionHelpers from "../language-services/inspectionHelpers";
 import * as WorkspaceCache from "../language-services/workspaceCache";
 import * as Utils from "./utils";
-
-// tslint:disable: no-unnecessary-type-assertion
 
 function getLexAndParseOk(document: TextDocument): PQP.LexAndParseOk {
     const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
@@ -18,68 +19,6 @@ function getLexAndParseOk(document: TextDocument): PQP.LexAndParseOk {
     }
 
     throw new Error("unexpected");
-}
-
-function getSymbolKindForLiteralExpression(node: PQP.Ast.LiteralExpression): SymbolKind {
-    switch (node.literalKind) {
-        case PQP.Ast.LiteralKind.List:
-            return SymbolKind.Array;
-
-        case PQP.Ast.LiteralKind.Logical:
-            return SymbolKind.Boolean;
-
-        case PQP.Ast.LiteralKind.Null:
-            return SymbolKind.Null;
-
-        case PQP.Ast.LiteralKind.Numeric:
-            return SymbolKind.Number;
-
-        case PQP.Ast.LiteralKind.Record:
-            return SymbolKind.Struct;
-
-        case PQP.Ast.LiteralKind.Str:
-            return SymbolKind.String;
-
-        default:
-            return PQP.isNever(node.literalKind);
-    }
-}
-
-function getSymbolKindFromExpression(node: PQP.Ast.INode): SymbolKind {
-    switch (node.kind) {
-        case PQP.Ast.NodeKind.Constant:
-            return SymbolKind.Constant;
-
-        case PQP.Ast.NodeKind.FunctionExpression:
-            return SymbolKind.Function;
-
-        case PQP.Ast.NodeKind.ListExpression:
-            return SymbolKind.Array;
-
-        case PQP.Ast.NodeKind.LiteralExpression:
-            return getSymbolKindForLiteralExpression(node as PQP.Ast.LiteralExpression);
-
-        case PQP.Ast.NodeKind.MetadataExpression:
-            return SymbolKind.TypeParameter;
-
-        case PQP.Ast.NodeKind.RecordExpression:
-            return SymbolKind.Struct;
-
-        default:
-            return SymbolKind.Variable;
-    }
-}
-
-function getSymbolForIdentifierPairedExpression(
-    identifierPairedExpressionNode: PQP.Ast.IdentifierPairedExpression,
-): DocumentSymbol {
-    return {
-        kind: getSymbolKindFromExpression(identifierPairedExpressionNode.value),
-        deprecated: false,
-        name: identifierPairedExpressionNode.key.literal,
-        range: Common.tokenRangeToRange(identifierPairedExpressionNode.tokenRange),
-        selectionRange: Common.tokenRangeToRange(identifierPairedExpressionNode.key.tokenRange),
-    };
 }
 
 interface ExpectedDocumentSymbol {
@@ -99,10 +38,10 @@ function expectSymbols(document: PQP.Ast.TDocument, expectedSymbols: ExpectedDoc
     let actualSymbols: ExpectedDocumentSymbol[];
 
     if (document.kind === PQP.Ast.NodeKind.Section) {
-        const result: DocumentSymbol[] = getSymbolsForSection(document);
+        const result: DocumentSymbol[] = InspectionHelpers.getSymbolsForSection(document);
         actualSymbols = documentSymbolArrayToExpectedSymbols(result);
     } else if (document.kind === PQP.Ast.NodeKind.LetExpression) {
-        const result: DocumentSymbol[] = getSymbolsForLetExpression(document);
+        const result: DocumentSymbol[] = InspectionHelpers.getSymbolsForLetExpression(document);
         actualSymbols = documentSymbolArrayToExpectedSymbols(result);
     } else {
         throw new Error("unsupported code path");
@@ -111,29 +50,6 @@ function expectSymbols(document: PQP.Ast.TDocument, expectedSymbols: ExpectedDoc
     assert.isDefined(actualSymbols);
 
     expect(actualSymbols).deep.equals(expectedSymbols, "Expected document symbols to match.");
-}
-
-function getSymbolsForLetExpression(expressionNode: PQP.Ast.LetExpression): DocumentSymbol[] {
-    const documentSymbols: DocumentSymbol[] = [];
-
-    for (const element of expressionNode.variableList.elements) {
-        const pairedExpression: PQP.Ast.ICsv<PQP.Ast.IdentifierPairedExpression> = element;
-        const memberSymbol: DocumentSymbol = getSymbolForIdentifierPairedExpression(pairedExpression.node);
-        documentSymbols.push(memberSymbol);
-    }
-
-    return documentSymbols;
-}
-
-function getSymbolsForSection(sectionNode: PQP.Ast.Section): DocumentSymbol[] {
-    const documentSymbols: DocumentSymbol[] = [];
-
-    for (const member of sectionNode.sectionMembers.elements) {
-        const memberSymbol: DocumentSymbol = getSymbolForIdentifierPairedExpression(member.namePairedExpression);
-        documentSymbols.push(memberSymbol);
-    }
-
-    return documentSymbols;
 }
 
 describe("Document symbols", () => {

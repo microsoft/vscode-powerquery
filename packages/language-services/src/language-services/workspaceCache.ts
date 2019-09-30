@@ -113,3 +113,15 @@ export function getInspection(textDocument: TextDocument, position: Position): P
 
     return undefined;
 }
+
+export function getRootNodeForDocument(textDocument: TextDocument): PQP.Ast.TDocument | undefined {
+    const triedLexAndParse: PQP.TriedLexAndParse = getTriedLexAndParse(textDocument);
+    if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
+        return triedLexAndParse.value.ast;
+    } else if (triedLexAndParse.error instanceof PQP.ParserError.ParserError) {
+        // TODO: can we still get document symbols on parser error?
+        return undefined;
+    }
+
+    return undefined;
+}

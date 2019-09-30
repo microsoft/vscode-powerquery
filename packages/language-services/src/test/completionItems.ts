@@ -5,6 +5,7 @@ import { expect } from "chai";
 import "mocha";
 import { CompletionItem, CompletionItemKind } from "vscode-languageserver-types";
 
+import { CurrentDocumentSymbolProvider } from "../language-services/currentDocumentSymbolProvider";
 import * as Utils from "./utils";
 
 const totalKeywordCount: number = 24;
@@ -59,5 +60,19 @@ describe("Completion Items (Simple provider)", () => {
         Utils.containsCompletionItem(result, "let");
         Utils.containsCompletionItem(result, "shared");
         Utils.containsCompletionItem(result, "#shared");
+    });
+});
+
+describe("Completion Items (Current Document Provider)", () => {
+    it("DirectQueryForSQL file", async () => {
+        const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
+        const provider: CurrentDocumentSymbolProvider = new CurrentDocumentSymbolProvider(document);
+
+        const result: CompletionItem[] = await provider.getCompletionItems({});
+
+        Utils.containsCompletionItem(result, "DirectSQL.Database");
+        Utils.containsCompletionItem(result, "DirectSQL");
+        Utils.containsCompletionItem(result, "DirectSQL.UI");
+        Utils.containsCompletionItem(result, "DirectSQL.Icons");
     });
 });
