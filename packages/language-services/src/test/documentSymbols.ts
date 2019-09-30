@@ -96,13 +96,33 @@ function documentSymbolArrayToExpectedSymbols(documentSymbols: DocumentSymbol[])
 }
 
 function expectSymbols(document: PQP.Ast.TDocument, expectedSymbols: ExpectedDocumentSymbol[]): void {
+    let actualSymbols: ExpectedDocumentSymbol[];
+
     if (document.kind === PQP.Ast.NodeKind.Section) {
-        const actualSymbols: DocumentSymbol[] = getSymbolsForSection(document);
-        const converted: ExpectedDocumentSymbol[] = documentSymbolArrayToExpectedSymbols(actualSymbols);
-        expect(converted).deep.equals(expectedSymbols, "Expected document symbols to match.");
+        const result: DocumentSymbol[] = getSymbolsForSection(document);
+        actualSymbols = documentSymbolArrayToExpectedSymbols(result);
+    } else if (document.kind === PQP.Ast.NodeKind.LetExpression) {
+        const result: DocumentSymbol[] = getSymbolsForLetExpression(document);
+        actualSymbols = documentSymbolArrayToExpectedSymbols(result);
     } else {
         throw new Error("unsupported code path");
     }
+
+    assert.isDefined(actualSymbols);
+
+    expect(actualSymbols).deep.equals(expectedSymbols, "Expected document symbols to match.");
+}
+
+function getSymbolsForLetExpression(expressionNode: PQP.Ast.LetExpression): DocumentSymbol[] {
+    const documentSymbols: DocumentSymbol[] = [];
+
+    for (const element of expressionNode.variableList.elements) {
+        const pairedExpression: PQP.Ast.ICsv<PQP.Ast.IdentifierPairedExpression> = element;
+        const memberSymbol: DocumentSymbol = getSymbolForIdentifierPairedExpression(pairedExpression.node);
+        documentSymbols.push(memberSymbol);
+    }
+
+    return documentSymbols;
 }
 
 function getSymbolsForSection(sectionNode: PQP.Ast.Section): DocumentSymbol[] {
@@ -137,6 +157,19 @@ describe("Document symbols", () => {
         expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
 
         expectSymbols(lexAndParseOk.ast, [{ name: "a", kind: SymbolKind.Array }]);
+    });
+
+    it(`let a = 1, b = 2, c = 3 in c`, () => {
+        const document: Utils.MockDocument = Utils.createDocument(`let a = 1, b = 2, c = 3 in c`);
+        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+
+        expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.LetExpression);
+
+        expectSymbols(lexAndParseOk.ast, [
+            { name: "a", kind: SymbolKind.Number },
+            { name: "b", kind: SymbolKind.Number },
+            { name: "c", kind: SymbolKind.Number },
+        ]);
     });
 
     it("HelloWorldWithDocs file", () => {
