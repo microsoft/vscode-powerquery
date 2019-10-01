@@ -14,7 +14,11 @@ export let platformEol: string;
  */
 export async function activate(docUri: vscode.Uri): Promise<void> {
     // The extensionId is `publisher.name` from package.json
-    const ext: vscode.Extension<any> = vscode.extensions.getExtension("powerquery.vscode-powerquery");
+    const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension("powerquery.vscode-powerquery");
+    if (ext === undefined) {
+        throw new Error("Failed to load extension.");
+    }
+
     await Promise.resolve(ext.activate());
     try {
         doc = await Promise.resolve(vscode.workspace.openTextDocument(docUri));

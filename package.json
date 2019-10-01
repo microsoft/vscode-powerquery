@@ -1,6 +1,6 @@
 {
   "name": "vscode-powerquery",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.36.0"
   },
@@ -71,6 +71,7 @@
     "build:language-services": "tsc -p ./packages/language-services/tsconfig.json",
     "build:format": "tsc -p ./packages/format/tsconfig.json",
     "build:library": "tsc -p ./packages/library/tsconfig.json",
+    "build:client": "tsc -p ./client/tsconfig.json",
     "build": "npm run build:packages && tsc -b",
     "watch": "tsc -b -watch",
     "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
@@ -85,7 +86,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Microsoft/vscode-powerquery.git"
+    "url": "git+https://github.com/microsoft/vscode-powerquery.git"
   },
   "license": "MIT",
   "devDependencies": {

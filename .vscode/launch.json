@@ -32,11 +32,16 @@
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
+        "--disable-extensions",
         "--extensionDevelopmentPath=${workspaceRoot}",
         "--extensionTestsPath=${workspaceRoot}/client/out/test",
         "${workspaceRoot}/client/testFixture"
       ],
-      "outFiles": ["${workspaceRoot}/client/out/test/**/*.js"]
+      "outFiles": ["${workspaceRoot}/client/out/test/**/*.js"],
+      "preLaunchTask": {
+        "type": "npm",
+        "script": "build:client"
+      }
     }
   ],
   "compounds": [
