@@ -5,6 +5,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } from "vscode-languageserver-types";
 
 import * as Common from "./common";
+import { CurrentDocumentSymbolProvider } from "./currentDocumentSymbolProvider";
 import * as InspectionHelpers from "./inspectionHelpers";
 import { KeywordProvider } from "./keywordProvider";
 import {
@@ -16,7 +17,6 @@ import {
     SignatureProviderContext,
 } from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
-import { CurrentDocumentSymbolProvider } from "./currentDocumentSymbolProvider";
 
 export interface Analysis {
     getCompletionItems(): Promise<CompletionItem[]>;
@@ -124,7 +124,7 @@ class DocumentAnalysis implements Analysis {
     }
 
     public async getSignatureHelp(): Promise<SignatureHelp> {
-        const triedInspection: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(
+        const triedInspection: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(
             this.document,
             this.position,
         );

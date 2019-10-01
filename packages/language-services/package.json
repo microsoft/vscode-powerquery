@@ -15,7 +15,7 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "@microsoft/powerquery-parser": "^0.1.21",
+        "@microsoft/powerquery-parser": "0.1.22",
         "vscode-languageserver-types": "^3.14.0"
     },
     "devDependencies": {

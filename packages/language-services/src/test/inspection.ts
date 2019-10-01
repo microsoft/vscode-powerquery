@@ -50,8 +50,24 @@ describe("Inspection", () => {
         }
     });
 
-    it("getContextForInvokeExpression", () => {
-        const inspected: PQP.Inspection.Inspected | undefined = Utils.getInspection("Date.AddDays(d,|)");
+    it("getContextForInvokeExpression - Date.AddDays(d,|", () => {
+        const inspected: PQP.Inspection.Inspected | undefined = Utils.getInspection("Date.AddDays(d,|");
+        const expression:
+            | PQP.Inspection.InvokeExpression
+            | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected!);
+        const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
+            expression!,
+        );
+
+        assert.isDefined(context, "context should be defined");
+        if (context) {
+            expect(context.functionName).to.equal("Date.AddDays");
+            expect(context.argumentOrdinal).to.equal(1);
+        }
+    });
+
+    it("getContextForInvokeExpression - Date.AddDays(d,1|)", () => {
+        const inspected: PQP.Inspection.Inspected | undefined = Utils.getInspection("Date.AddDays(d,1|)");
         const expression:
             | PQP.Inspection.InvokeExpression
             | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected!);
@@ -68,7 +84,7 @@ describe("Inspection", () => {
 
     it("DirectQueryForSQL file", () => {
         const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
-        const triedInspect: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(document, {
+        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(document, {
             line: 68,
             character: 23,
         });
@@ -77,7 +93,7 @@ describe("Inspection", () => {
 
         if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
             const inspected: PQP.Inspection.Inspected = triedInspect.value;
-            expect(inspected.scope.size).to.equal(4);
+            expect(inspected.scope.size).to.equal(7);
 
             assert.isDefined(inspected.maybePositionIdentifier, "position identifier should be defined");
 

@@ -54,7 +54,7 @@ export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAnd
         const lexerSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
 
         if (lexerSnapshot.kind === PQP.ResultKind.Ok) {
-            const triedParse: PQP.Parser.TriedParse = PQP.Parser.tryParse(lexerSnapshot.value);
+            const triedParse: PQP.TriedParse = getTriedParseFromSnapshot(lexerSnapshot.value);
             if (triedParse.kind === PQP.ResultKind.Ok) {
                 triedLexAndParse = {
                     kind: PQP.ResultKind.Ok,
@@ -83,13 +83,16 @@ export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAnd
     return triedLexAndParse;
 }
 
-export function getInspection(textDocument: TextDocument, position: Position): PQP.Inspection.TriedInspect | undefined {
+export function getInspection(
+    textDocument: TextDocument,
+    position: Position,
+): PQP.Inspection.TriedInspection | undefined {
     // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
     // We have to retrieve the snapshot and reparse ourselves.
     const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
 
     if (triedSnapshot.kind === PQP.ResultKind.Ok) {
-        const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
+        const triedParser: PQP.TriedParse = getTriedParseFromSnapshot(triedSnapshot.value);
         let inspectableParser: Inspectable | undefined;
         if (triedParser.kind === PQP.ResultKind.Ok) {
             inspectableParser = triedParser.value;
@@ -124,4 +127,9 @@ export function getRootNodeForDocument(textDocument: TextDocument): PQP.Ast.TDoc
     }
 
     return undefined;
+}
+
+function getTriedParseFromSnapshot(lexerSnapshot: PQP.LexerSnapshot): PQP.TriedParse {
+    const parserState: PQP.IParserState = PQP.IParserStateUtils.newState(lexerSnapshot);
+    return PQP.Parser.RecursiveDescentParser.readDocument(parserState, PQP.Parser.RecursiveDescentParser);
 }
