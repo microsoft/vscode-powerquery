@@ -37,8 +37,8 @@ class StaticLibrarySymbolProvider implements LibrarySymbolProvider {
         return this.getCachedCompletionItems();
     }
 
-    public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover | null> {
-        const definition: LibraryDefinition | undefined = this.activeLibrary.get(identifier);
+    public async getHover(context: HoverProviderContext): Promise<Hover | null> {
+        const definition: LibraryDefinition | undefined = this.activeLibrary.get(context.identifier);
         if (definition) {
             return Utils.libraryDefinitionToHover(definition, context.range);
         }
@@ -47,11 +47,8 @@ class StaticLibrarySymbolProvider implements LibrarySymbolProvider {
         return null;
     }
 
-    public async getSignatureHelp(
-        functionName: string,
-        context: SignatureProviderContext,
-    ): Promise<SignatureHelp | null> {
-        const definition: LibraryDefinition | undefined = this.activeLibrary.get(functionName);
+    public async getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp | null> {
+        const definition: LibraryDefinition | undefined = this.activeLibrary.get(context.functionName);
         if (definition) {
             const signatures: SignatureInformation[] = Utils.signaturesToSignatureInformation(definition.signatures);
 

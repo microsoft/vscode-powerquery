@@ -5,15 +5,18 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItem, Hover, Position, Range, SignatureHelp, TextDocument } from "vscode-languageserver-types";
 
 import * as Common from "./common";
+import * as InspectionHelpers from "./inspectionHelpers";
 import { KeywordProvider } from "./keywordProvider";
 import {
     CompletionItemProviderContext,
+    EnvironmentSymbolProvider,
+    HoverProviderContext,
     LibrarySymbolProvider,
     NullLibrarySymbolProvider,
-    ProviderContext,
     SignatureProviderContext,
-} from "./symbolProviders";
+} from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
+import { CurrentDocumentSymbolProvider } from "./currentDocumentSymbolProvider";
 
 export interface Analysis {
     getCompletionItems(): Promise<CompletionItem[]>;
@@ -22,7 +25,8 @@ export interface Analysis {
 }
 
 export interface AnalysisOptions {
-    librarySymbolProvider?: LibrarySymbolProvider;
+    readonly environmentSymbolProvider?: EnvironmentSymbolProvider;
+    readonly librarySymbolProvider?: LibrarySymbolProvider;
 }
 
 export function createAnalysisSession(document: TextDocument, position: Position, options: AnalysisOptions): Analysis {
@@ -31,6 +35,7 @@ export function createAnalysisSession(document: TextDocument, position: Position
 
 class DocumentAnalysis implements Analysis {
     private readonly document: TextDocument;
+    private readonly environmentSymbolProvider: EnvironmentSymbolProvider;
     private readonly keywordProvider: KeywordProvider;
     private readonly librarySymbolProvider: LibrarySymbolProvider;
     private readonly position: Position;
@@ -39,6 +44,9 @@ class DocumentAnalysis implements Analysis {
         this.document = document;
         this.position = position;
 
+        this.environmentSymbolProvider = options.environmentSymbolProvider
+            ? options.environmentSymbolProvider
+            : new CurrentDocumentSymbolProvider(this.document);
         this.keywordProvider = new KeywordProvider();
         this.librarySymbolProvider = options.librarySymbolProvider
             ? options.librarySymbolProvider
@@ -57,6 +65,11 @@ class DocumentAnalysis implements Analysis {
             };
         }
 
+        // TODO:
+        // - get inspection for current scope
+        // - only include current query name after @
+        // - don't return completion items when on lefthand side of assignment
+
         // TODO: add tracing/logging to the catch()
         // TODO: get symbols from current scope
         const getLibraryCompletionItems: Promise<CompletionItem[]> = this.librarySymbolProvider
@@ -67,11 +80,20 @@ class DocumentAnalysis implements Analysis {
         const getKeywords: Promise<CompletionItem[]> = this.keywordProvider.getCompletionItems(context).catch(() => {
             return Common.EmptyCompletionItems;
         });
+        const getEnvironmentCompletionItems: Promise<
+            CompletionItem[]
+        > = this.environmentSymbolProvider.getCompletionItems(context).catch(() => {
+            return Common.EmptyCompletionItems;
+        });
 
-        const [libraryResponse, keywordResponse] = await Promise.all([getLibraryCompletionItems, getKeywords]);
+        const [libraryResponse, keywordResponse, environmentResponse] = await Promise.all([
+            getLibraryCompletionItems,
+            getKeywords,
+            getEnvironmentCompletionItems,
+        ]);
 
         let completionItems: CompletionItem[] = Array.isArray(keywordResponse) ? keywordResponse : [keywordResponse];
-        completionItems = completionItems.concat(libraryResponse);
+        completionItems = completionItems.concat(libraryResponse, environmentResponse);
 
         return completionItems;
     }
@@ -79,17 +101,16 @@ class DocumentAnalysis implements Analysis {
     public async getHover(): Promise<Hover> {
         const identifierToken: PQP.LineToken | undefined = maybeIdentifierAt(this.document, this.position);
         if (identifierToken) {
-            const context: ProviderContext = {
+            const context: HoverProviderContext = {
                 range: getTokenRangeForPosition(identifierToken, this.position),
+                identifier: identifierToken.data,
             };
 
             // TODO: add tracing/logging to the catch()
-            const getLibraryHover: Promise<Hover | null> = this.librarySymbolProvider
-                .getHover(identifierToken.data, context)
-                .catch(() => {
-                    // tslint:disable-next-line: no-null-keyword
-                    return null;
-                });
+            const getLibraryHover: Promise<Hover | null> = this.librarySymbolProvider.getHover(context).catch(() => {
+                // tslint:disable-next-line: no-null-keyword
+                return null;
+            });
 
             // TODO: use other providers
             // TODO: define priority when multiple providers return results
@@ -103,62 +124,33 @@ class DocumentAnalysis implements Analysis {
     }
 
     public async getSignatureHelp(): Promise<SignatureHelp> {
-        // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
-        // We have to retrieve the snapshot and reparse ourselves.
-        const triedSnapshot: PQP.TriedLexerSnapshot = WorkspaceCache.getTriedLexerSnapshot(this.document);
+        const triedInspection: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(
+            this.document,
+            this.position,
+        );
 
-        if (triedSnapshot.kind === PQP.ResultKind.Ok) {
-            const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
-            let inspectableParser: Inspectable | undefined;
-            if (triedParser.kind === PQP.ResultKind.Ok) {
-                inspectableParser = triedParser.value;
-            } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
-                inspectableParser = triedParser.error.context;
-            }
+        if (triedInspection && triedInspection.kind === PQP.ResultKind.Ok) {
+            const inspected: PQP.Inspection.Inspected = triedInspection.value;
+            const invokeExpression:
+                | PQP.Inspection.InvokeExpression
+                | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
 
-            if (inspectableParser) {
-                const inspectionPosition: PQP.Inspection.Position = {
-                    lineNumber: this.position.line,
-                    lineCodeUnit: this.position.character,
-                };
-
-                const triedInspection: PQP.Inspection.TriedInspect = PQP.Inspection.tryFrom(
-                    inspectionPosition,
-                    inspectableParser.nodeIdMapCollection,
-                    inspectableParser.leafNodeIds,
+            if (invokeExpression) {
+                const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
+                    invokeExpression,
                 );
+                if (context && context.functionName) {
+                    // TODO: add tracing/logging to the catch()
+                    const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
+                        .getSignatureHelp(context)
+                        .catch(() => {
+                            // tslint:disable-next-line: no-null-keyword
+                            return null;
+                        });
 
-                if (triedInspection.kind === PQP.ResultKind.Ok) {
-                    if (triedInspection.value.nodes.length > 0) {
-                        // TODO: not sure if taking the first node is correct
-                        const node: PQP.Inspection.TNode = triedInspection.value.nodes[0];
-                        if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
-                            const invokeExpressionNode: PQP.Inspection.InvokeExpression = node;
-                            const functionName: string | undefined = invokeExpressionNode.maybeName;
-                            if (functionName) {
-                                let argumentOrdinal: number | undefined;
-                                if (invokeExpressionNode.maybeArguments) {
-                                    argumentOrdinal = invokeExpressionNode.maybeArguments.positionArgumentIndex;
-                                }
-
-                                const context: SignatureProviderContext = {
-                                    argumentOrdinal,
-                                };
-
-                                // TODO: add tracing/logging to the catch()
-                                const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
-                                    .getSignatureHelp(functionName, context)
-                                    .catch(() => {
-                                        // tslint:disable-next-line: no-null-keyword
-                                        return null;
-                                    });
-
-                                const [libraryResponse] = await Promise.all([librarySignatureHelp]);
-                                if (libraryResponse) {
-                                    return libraryResponse;
-                                }
-                            }
-                        }
+                    const [libraryResponse] = await Promise.all([librarySignatureHelp]);
+                    if (libraryResponse) {
+                        return libraryResponse;
                     }
                 }
             }
@@ -166,11 +158,6 @@ class DocumentAnalysis implements Analysis {
 
         return Common.EmptySignatureHelp;
     }
-}
-
-interface Inspectable {
-    nodeIdMapCollection: PQP.NodeIdMap.Collection;
-    leafNodeIds: ReadonlyArray<number>;
 }
 
 function getTokenRangeForPosition(token: PQP.LineToken, cursorPosition: Position): Range {

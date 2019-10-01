@@ -2,13 +2,18 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import { TextDocument } from "vscode-languageserver-types";
+import { Position, TextDocument } from "vscode-languageserver-types";
 
 const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
 const lexerStateCache: Map<string, PQP.Lexer.State> = new Map();
 const triedLexAndParseCache: Map<string, PQP.TriedLexAndParse> = new Map();
 
 const allCaches: Map<string, any>[] = [lexerSnapshotCache, lexerStateCache, triedLexAndParseCache];
+
+interface Inspectable {
+    nodeIdMapCollection: PQP.NodeIdMap.Collection;
+    leafNodeIds: ReadonlyArray<number>;
+}
 
 export function close(textDocument: TextDocument): void {
     allCaches.forEach(map => {
@@ -76,4 +81,47 @@ export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAnd
     }
 
     return triedLexAndParse;
+}
+
+export function getInspection(textDocument: TextDocument, position: Position): PQP.Inspection.TriedInspect | undefined {
+    // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
+    // We have to retrieve the snapshot and reparse ourselves.
+    const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
+
+    if (triedSnapshot.kind === PQP.ResultKind.Ok) {
+        const triedParser: PQP.Parser.TriedParse = PQP.Parser.tryParse(triedSnapshot.value);
+        let inspectableParser: Inspectable | undefined;
+        if (triedParser.kind === PQP.ResultKind.Ok) {
+            inspectableParser = triedParser.value;
+        } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
+            inspectableParser = triedParser.error.context;
+        }
+
+        if (inspectableParser) {
+            const inspectionPosition: PQP.Inspection.Position = {
+                lineNumber: position.line,
+                lineCodeUnit: position.character,
+            };
+
+            return PQP.Inspection.tryFrom(
+                inspectionPosition,
+                inspectableParser.nodeIdMapCollection,
+                inspectableParser.leafNodeIds,
+            );
+        }
+    }
+
+    return undefined;
+}
+
+export function getRootNodeForDocument(textDocument: TextDocument): PQP.Ast.TDocument | undefined {
+    const triedLexAndParse: PQP.TriedLexAndParse = getTriedLexAndParse(textDocument);
+    if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
+        return triedLexAndParse.value.ast;
+    } else if (triedLexAndParse.error instanceof PQP.ParserError.ParserError) {
+        // TODO: can we still get document symbols on parser error?
+        return undefined;
+    }
+
+    return undefined;
 }

@@ -2,8 +2,10 @@
 // Licensed under the MIT license.
 
 // TODO: Split this into a separate language-services-test package so it can be reused.
-
+import * as PQP from "@microsoft/powerquery-parser";
 import { assert, expect } from "chai";
+import * as File from "fs";
+import * as Path from "path";
 import {
     CompletionItem,
     CompletionItemKind,
@@ -26,6 +28,7 @@ import {
     NullLibrarySymbolProvider,
     SignatureProviderContext,
 } from "../language-services";
+import * as WorkspaceCache from "../language-services/workspaceCache";
 
 class ErrorLibraryProvider extends NullLibrarySymbolProvider {
     public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
@@ -52,8 +55,8 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         return result;
     }
 
-    public async getHover(identifier: string, context: HoverProviderContext): Promise<Hover> {
-        const member: string | undefined = this.getMember(identifier);
+    public async getHover(context: HoverProviderContext): Promise<Hover> {
+        const member: string | undefined = this.getMember(context.identifier);
         if (member) {
             return {
                 contents: `member named '${member}`,
@@ -64,8 +67,8 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         return emptyHover;
     }
 
-    public async getSignatureHelp(functionName: string, context: SignatureProviderContext): Promise<SignatureHelp> {
-        const member: string | undefined = this.getMember(functionName);
+    public async getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp> {
+        const member: string | undefined = this.getMember(context.functionName);
         if (member) {
             return {
                 signatures: [
@@ -104,6 +107,42 @@ export function createDocument(text: string): MockDocument {
     return new MockDocument(text, "powerquery");
 }
 
+export function createDocumentFromFile(fileName: string): MockDocument {
+    const fullPath: string = Path.join(Path.dirname(__filename), "files", fileName);
+    assert.isTrue(File.existsSync(fullPath), `file ${fullPath} not found.`);
+
+    let contents: string = File.readFileSync(fullPath, "utf8");
+    contents = contents.replace(/^\uFEFF/, "");
+
+    return new MockDocument(contents, "powerquery");
+}
+
+export function createDocumentWithMarker(text: string): [MockDocument, Position] {
+    validateTextWithMarker(text);
+    const document: MockDocument = createDocument(text.replace("|", ""));
+    const cursorPosition: Position = document.positionAt(text.indexOf("|"));
+
+    return [document, cursorPosition];
+}
+
+export function getInspection(text: string): PQP.Inspection.Inspected | undefined {
+    const [document, cursorPosition] = createDocumentWithMarker(text);
+    const triedInspect: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(
+        document,
+        cursorPosition,
+    );
+
+    assert.isDefined(triedInspect);
+    // tslint:disable-next-line: no-unnecessary-type-assertion
+    expect(triedInspect!.kind).equals(PQP.ResultKind.Ok);
+
+    if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
+        return triedInspect.value;
+    }
+
+    return undefined;
+}
+
 export async function getCompletionItems(text: string, analysisOptions?: AnalysisOptions): Promise<CompletionItem[]> {
     return createAnalysis(text, analysisOptions).getCompletionItems();
 }
@@ -117,33 +156,14 @@ export async function getSignatureHelp(text: string, analysisOptions?: AnalysisO
 }
 
 function createAnalysis(text: string, analysisOptions?: AnalysisOptions): Analysis {
-    const document: MockDocument = createDocument(text.replace("|", ""));
-    const cursorPosition: Position = getPositionForMarker(text);
-
+    const [document, cursorPosition] = createDocumentWithMarker(text);
     const options: AnalysisOptions = analysisOptions ? analysisOptions : defaultAnalysisOptions;
     return createAnalysisSession(document, cursorPosition, options);
 }
 
-function getPositionForMarker(text: string): Position {
+function validateTextWithMarker(text: string): void {
     expect(text).to.contain("|", "input string must contain a | to indicate cursor position");
     expect(text.indexOf("|")).to.equal(text.lastIndexOf("|"), "input string should only have one |");
-
-    const lines: string[] = text.split(/\r?\n/);
-    let cursorLine: number = 0;
-    let cursorCharacter: number = 0;
-    for (let i: number = 0; i < lines.length; i += 1) {
-        const markerIndex: number = lines[i].indexOf("|");
-        if (markerIndex > 0) {
-            cursorLine = i;
-            cursorCharacter = markerIndex;
-            break;
-        }
-    }
-
-    return {
-        line: cursorLine,
-        character: cursorCharacter,
-    };
 }
 
 // Adapted from vscode-languageserver-code implementation
@@ -292,3 +312,8 @@ export const emptySignatureHelp: SignatureHelp = {
     activeParameter: null,
     activeSignature: 0,
 };
+
+export function dumpNodeToTraceFile(node: PQP.Ast.INode, filePath: string): void {
+    const asJson: string = JSON.stringify(node);
+    File.writeFileSync(filePath, asJson);
+}

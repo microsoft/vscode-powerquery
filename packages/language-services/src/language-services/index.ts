@@ -14,5 +14,5 @@ export function documentClosed(document: TextDocument): void {
 }
 
 export * from "./analysis";
-export * from "./symbolProviders";
+export * from "./providers";
 export * from "./validation";

@@ -11,7 +11,7 @@ describe("Should get diagnostics", () => {
     it("Simple test", async () => {
         await testDiagnostics(docUri, [
             {
-                message: "Expected to find a Equal on line 0, column 9, but a KeywordNot was found instead.",
+                message: "Expected to find a Equal on line 1, column 10, but a KeywordNot was found instead.",
                 range: toRange(0, 9, 0, 12),
                 severity: vscode.DiagnosticSeverity.Error,
             },

@@ -5,6 +5,7 @@ import { expect } from "chai";
 import "mocha";
 import { CompletionItem, CompletionItemKind } from "vscode-languageserver-types";
 
+import { CurrentDocumentSymbolProvider } from "../language-services/currentDocumentSymbolProvider";
 import * as Utils from "./utils";
 
 const totalKeywordCount: number = 24;
@@ -26,9 +27,13 @@ describe("Completion Items (null provider)", () => {
         Utils.containsCompletionItem(result, "#shared");
     });
 
-    it("simple document keywords", async () => {
-        const result: CompletionItem[] = await Utils.getCompletionItems("let\na = 12,\nb=4, c = 2\nin\n  |");
-        expect(result.length).to.equal(totalKeywordCount);
+    it("simple document", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems("let\na = 12,\nb=4, c = 2\nin\n  |c");
+        expect(result.length).to.equal(totalKeywordCount + 3);
+
+        Utils.containsCompletionItem(result, "a");
+        Utils.containsCompletionItem(result, "b");
+        Utils.containsCompletionItem(result, "c");
     });
 });
 
@@ -57,7 +62,21 @@ describe("Completion Items (Simple provider)", () => {
         Utils.containsCompletionItem(result, "Text.NewGuid");
 
         Utils.containsCompletionItem(result, "let");
+        Utils.containsCompletionItem(result, "shared");
         Utils.containsCompletionItem(result, "#shared");
-        Utils.containsCompletionItem(result, "#shared");
+    });
+});
+
+describe("Completion Items (Current Document Provider)", () => {
+    it("DirectQueryForSQL file", async () => {
+        const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
+        const provider: CurrentDocumentSymbolProvider = new CurrentDocumentSymbolProvider(document);
+
+        const result: CompletionItem[] = await provider.getCompletionItems({});
+
+        Utils.containsCompletionItem(result, "DirectSQL.Database");
+        Utils.containsCompletionItem(result, "DirectSQL");
+        Utils.containsCompletionItem(result, "DirectSQL.UI");
+        Utils.containsCompletionItem(result, "DirectSQL.Icons");
     });
 });
