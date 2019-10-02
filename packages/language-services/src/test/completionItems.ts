@@ -12,7 +12,6 @@ const totalKeywordCount: number = 24;
 const libraryProvider: Utils.SimpleLibraryProvider = new Utils.SimpleLibraryProvider(["Text.NewGuid"]);
 
 describe("Completion Items (null provider)", () => {
-    // TODO: add more keyword tests
     it("blank document keywords", async () => {
         const result: CompletionItem[] = await Utils.getCompletionItems("|");
 
@@ -48,12 +47,29 @@ describe("Completion Items (error provider)", () => {
 });
 
 describe("Completion Items (Simple provider)", () => {
-    it("keywords still work", async () => {
+    it("keywords still work with library provider", async () => {
         const result: CompletionItem[] = await Utils.getCompletionItems("|", {
             librarySymbolProvider: libraryProvider,
         });
 
-        Utils.containsCompletionItems(result, ["Text.NewGuid", "let", "shared", "#shared"]);
+        Utils.containsCompletionItems(result, ["Text.NewGuid", "let", "shared", "section"]);
+    });
+
+    it("keywords still work with environment provider", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems("|", {
+            environmentSymbolProvider: libraryProvider,
+        });
+
+        Utils.containsCompletionItems(result, ["Text.NewGuid", "let", "shared", "section"]);
+    });
+
+    it("keywords still work with library and environment", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems("|", {
+            librarySymbolProvider: libraryProvider,
+            environmentSymbolProvider: libraryProvider,
+        });
+
+        Utils.containsCompletionItems(result, ["Text.NewGuid", "let", "shared", "section"]);
     });
 });
 
