@@ -22,18 +22,14 @@ describe("Completion Items (null provider)", () => {
             expect(item.kind).to.equal(CompletionItemKind.Keyword);
         });
 
-        Utils.containsCompletionItem(result, "let");
-        Utils.containsCompletionItem(result, "shared");
-        Utils.containsCompletionItem(result, "#shared");
+        Utils.containsCompletionItems(result, ["let", "shared", "#shared"]);
     });
 
     it("simple document", async () => {
         const result: CompletionItem[] = await Utils.getCompletionItems("let\na = 12,\nb=4, c = 2\nin\n  |c");
         expect(result.length).to.equal(totalKeywordCount + 3);
 
-        Utils.containsCompletionItem(result, "a");
-        Utils.containsCompletionItem(result, "b");
-        Utils.containsCompletionItem(result, "c");
+        Utils.containsCompletionItems(result, ["a", "b", "c"]);
     });
 });
 
@@ -47,9 +43,7 @@ describe("Completion Items (error provider)", () => {
             expect(item.kind).to.equal(CompletionItemKind.Keyword);
         });
 
-        Utils.containsCompletionItem(result, "let");
-        Utils.containsCompletionItem(result, "shared");
-        Utils.containsCompletionItem(result, "#shared");
+        Utils.containsCompletionItems(result, ["let", "shared", "#shared"]);
     });
 });
 
@@ -59,11 +53,7 @@ describe("Completion Items (Simple provider)", () => {
             librarySymbolProvider: libraryProvider,
         });
 
-        Utils.containsCompletionItem(result, "Text.NewGuid");
-
-        Utils.containsCompletionItem(result, "let");
-        Utils.containsCompletionItem(result, "shared");
-        Utils.containsCompletionItem(result, "#shared");
+        Utils.containsCompletionItems(result, ["Text.NewGuid", "let", "shared", "#shared"]);
     });
 });
 
@@ -77,9 +67,24 @@ describe("Completion Items (Current Document Provider)", () => {
 
         const result: CompletionItem[] = await provider.getCompletionItems({});
 
-        Utils.containsCompletionItem(result, "CredentialConnectionString");
-        Utils.containsCompletionItem(result, "DirectSQL");
-        Utils.containsCompletionItem(result, "DirectSQL.UI");
-        Utils.containsCompletionItem(result, "DirectSQL.Icons");
+        Utils.containsCompletionItems(result, [
+            "ConnectionString",
+            "Credential",
+            "CredentialConnectionString",
+            "Database",
+            "DirectSQL",
+            "DirectSQL.UI",
+            "DirectSQL.Icons",
+            "server",
+            "database",
+        ]);
+    });
+
+    it(`section foo; a = () => true; b = "string"; c = 1; d = |;`, async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems(
+            `section foo; a = () => true; b = "string"; c = 1; d = |;`,
+        );
+
+        Utils.containsCompletionItems(result, ["a", "b", "c", "let"]);
     });
 });

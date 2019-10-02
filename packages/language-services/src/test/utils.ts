@@ -288,15 +288,22 @@ export function validateError(diagnostic: Diagnostic, startPosition: Position): 
     expect(diagnostic.severity).to.equal(DiagnosticSeverity.Error);
 }
 
-export function containsCompletionItem(completionItems: CompletionItem[], label: string): CompletionItem | undefined {
+export function containsCompletionItem(completionItems: CompletionItem[], label: string): void {
     for (const item of completionItems) {
         if (item.label === label) {
-            return item;
+            return;
         }
     }
 
     assert.fail(`completion item '${label}' not found in array. Items: ${JSON.stringify(completionItems)}`);
-    return undefined;
+}
+
+export function containsCompletionItems(completionItems: CompletionItem[], labels: string[]): void {
+    const actualCompletionItemLabels: string[] = completionItems.map(value => {
+        return value.label;
+    });
+
+    expect(actualCompletionItemLabels).to.contain.members(labels);
 }
 
 export const emptyCompletionItems: CompletionItem[] = [];
