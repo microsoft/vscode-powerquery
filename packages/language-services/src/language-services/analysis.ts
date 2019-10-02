@@ -52,7 +52,7 @@ class DocumentAnalysis implements Analysis {
         this.librarySymbolProvider = options.librarySymbolProvider
             ? options.librarySymbolProvider
             : new NullLibrarySymbolProvider();
-        this.localSymbolProvider = new CurrentDocumentSymbolProvider(document);
+        this.localSymbolProvider = new CurrentDocumentSymbolProvider(document, position);
     }
 
     public async getCompletionItems(): Promise<CompletionItem[]> {
@@ -132,7 +132,7 @@ class DocumentAnalysis implements Analysis {
     }
 
     public async getSignatureHelp(): Promise<SignatureHelp> {
-        const triedInspection: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(
+        const triedInspection: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(
             this.document,
             this.position,
         );

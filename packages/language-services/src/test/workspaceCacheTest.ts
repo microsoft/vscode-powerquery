@@ -51,7 +51,7 @@ describe("workspaceCache", () => {
 
     it("getInspection", () => {
         const [document, postion] = Utils.createDocumentWithMarker("let c = 1 in |c");
-        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(
+        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(
             document,
             postion,
         );
@@ -64,7 +64,7 @@ describe("workspaceCache", () => {
 
     it("getInspection with parser error", () => {
         const [document, postion] = Utils.createDocumentWithMarker("let c = 1, in |");
-        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(
+        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(
             document,
             postion,
         );

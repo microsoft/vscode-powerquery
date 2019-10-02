@@ -7,8 +7,18 @@ import { Position, TextDocument } from "vscode-languageserver-types";
 const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
 const lexerStateCache: Map<string, PQP.Lexer.State> = new Map();
 const triedLexAndParseCache: Map<string, PQP.TriedLexAndParse> = new Map();
+const triedInspectionCache: Map<string, InspectionMap> = new Map();
 
-const allCaches: Map<string, any>[] = [lexerSnapshotCache, lexerStateCache, triedLexAndParseCache];
+const allCaches: Map<string, any>[] = [
+    lexerSnapshotCache,
+    lexerStateCache,
+    triedLexAndParseCache,
+    triedInspectionCache,
+];
+
+// TODO: is the position key valid for a single intellisense operation,
+// or would it be the same for multiple invocations?
+type InspectionMap = WeakMap<Position, PQP.Inspection.TriedInspection>;
 
 interface Inspectable {
     nodeIdMapCollection: PQP.NodeIdMap.Collection;
@@ -83,38 +93,57 @@ export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAnd
     return triedLexAndParse;
 }
 
-export function getInspection(
+export function getTriedInspection(
     textDocument: TextDocument,
     position: Position,
 ): PQP.Inspection.TriedInspection | undefined {
-    // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
-    // We have to retrieve the snapshot and reparse ourselves.
-    const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
+    // Check if we already have this inspection result in the cache
+    let result: PQP.Inspection.TriedInspection | undefined;
+    let inspectionMap: InspectionMap | undefined = triedInspectionCache.get(textDocument.uri);
+    if (inspectionMap) {
+        result = inspectionMap.get(position);
+    }
 
-    if (triedSnapshot.kind === PQP.ResultKind.Ok) {
-        const triedParser: PQP.TriedParse = getTriedParseFromSnapshot(triedSnapshot.value);
-        let inspectableParser: Inspectable | undefined;
-        if (triedParser.kind === PQP.ResultKind.Ok) {
-            inspectableParser = triedParser.value;
-        } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
-            inspectableParser = triedParser.error.context;
-        }
+    if (result === undefined) {
+        // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
+        // We have to retrieve the snapshot and reparse ourselves.
+        const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
 
-        if (inspectableParser) {
-            const inspectionPosition: PQP.Inspection.Position = {
-                lineNumber: position.line,
-                lineCodeUnit: position.character,
-            };
+        if (triedSnapshot.kind === PQP.ResultKind.Ok) {
+            const triedParser: PQP.TriedParse = getTriedParseFromSnapshot(triedSnapshot.value);
+            let inspectableParser: Inspectable | undefined;
+            if (triedParser.kind === PQP.ResultKind.Ok) {
+                inspectableParser = triedParser.value;
+            } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
+                inspectableParser = triedParser.error.context;
+            }
 
-            return PQP.Inspection.tryFrom(
-                inspectionPosition,
-                inspectableParser.nodeIdMapCollection,
-                inspectableParser.leafNodeIds,
-            );
+            if (inspectableParser) {
+                const inspectionPosition: PQP.Inspection.Position = {
+                    lineNumber: position.line,
+                    lineCodeUnit: position.character,
+                };
+
+                result = PQP.Inspection.tryFrom(
+                    inspectionPosition,
+                    inspectableParser.nodeIdMapCollection,
+                    inspectableParser.leafNodeIds,
+                );
+
+                if (result) {
+                    // Add to cache
+                    if (inspectionMap === undefined) {
+                        inspectionMap = new Map();
+                    }
+
+                    inspectionMap.set(position, result);
+                    triedInspectionCache.set(textDocument.uri, inspectionMap);
+                }
+            }
         }
     }
 
-    return undefined;
+    return result;
 }
 
 export function getRootNodeForDocument(textDocument: TextDocument): PQP.Ast.TDocument | undefined {

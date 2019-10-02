@@ -70,11 +70,14 @@ describe("Completion Items (Simple provider)", () => {
 describe("Completion Items (Current Document Provider)", () => {
     it("DirectQueryForSQL file", async () => {
         const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
-        const provider: CurrentDocumentSymbolProvider = new CurrentDocumentSymbolProvider(document);
+        const provider: CurrentDocumentSymbolProvider = new CurrentDocumentSymbolProvider(document, {
+            line: 40,
+            character: 25,
+        });
 
         const result: CompletionItem[] = await provider.getCompletionItems({});
 
-        Utils.containsCompletionItem(result, "DirectSQL.Database");
+        Utils.containsCompletionItem(result, "CredentialConnectionString");
         Utils.containsCompletionItem(result, "DirectSQL");
         Utils.containsCompletionItem(result, "DirectSQL.UI");
         Utils.containsCompletionItem(result, "DirectSQL.Icons");

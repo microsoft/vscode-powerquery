@@ -88,7 +88,7 @@ describe("Inspection - InvokeExpression", () => {
 
     it("DirectQueryForSQL file", () => {
         const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
-        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(document, {
+        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(document, {
             line: 68,
             character: 23,
         });
