@@ -10,11 +10,11 @@ import * as InspectionHelpers from "./inspectionHelpers";
 import { KeywordProvider } from "./keywordProvider";
 import {
     CompletionItemProviderContext,
-    EnvironmentSymbolProvider,
     HoverProviderContext,
     LibrarySymbolProvider,
     NullLibrarySymbolProvider,
     SignatureProviderContext,
+    SymbolProvider,
 } from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
 
@@ -25,7 +25,7 @@ export interface Analysis {
 }
 
 export interface AnalysisOptions {
-    readonly environmentSymbolProvider?: EnvironmentSymbolProvider;
+    readonly environmentSymbolProvider?: SymbolProvider;
     readonly librarySymbolProvider?: LibrarySymbolProvider;
 }
 
@@ -35,9 +35,10 @@ export function createAnalysisSession(document: TextDocument, position: Position
 
 class DocumentAnalysis implements Analysis {
     private readonly document: TextDocument;
-    private readonly environmentSymbolProvider: EnvironmentSymbolProvider;
+    private readonly environmentSymbolProvider: SymbolProvider;
     private readonly keywordProvider: KeywordProvider;
     private readonly librarySymbolProvider: LibrarySymbolProvider;
+    private readonly localSymbolProvider: SymbolProvider;
     private readonly position: Position;
 
     constructor(document: TextDocument, position: Position, options: AnalysisOptions) {
@@ -46,11 +47,12 @@ class DocumentAnalysis implements Analysis {
 
         this.environmentSymbolProvider = options.environmentSymbolProvider
             ? options.environmentSymbolProvider
-            : new CurrentDocumentSymbolProvider(this.document);
+            : new NullLibrarySymbolProvider();
         this.keywordProvider = new KeywordProvider();
         this.librarySymbolProvider = options.librarySymbolProvider
             ? options.librarySymbolProvider
             : new NullLibrarySymbolProvider();
+        this.localSymbolProvider = new CurrentDocumentSymbolProvider(document);
     }
 
     public async getCompletionItems(): Promise<CompletionItem[]> {
@@ -65,13 +67,13 @@ class DocumentAnalysis implements Analysis {
             };
         }
 
-        // TODO:
+        // TODO: intellisense improvements
+        // - honor expected data type
         // - get inspection for current scope
         // - only include current query name after @
         // - don't return completion items when on lefthand side of assignment
 
         // TODO: add tracing/logging to the catch()
-        // TODO: get symbols from current scope
         const getLibraryCompletionItems: Promise<CompletionItem[]> = this.librarySymbolProvider
             .getCompletionItems(context)
             .catch(() => {
@@ -85,15 +87,21 @@ class DocumentAnalysis implements Analysis {
         > = this.environmentSymbolProvider.getCompletionItems(context).catch(() => {
             return Common.EmptyCompletionItems;
         });
+        const getLocalCompletionItems: Promise<CompletionItem[]> = this.localSymbolProvider
+            .getCompletionItems(context)
+            .catch(() => {
+                return Common.EmptyCompletionItems;
+            });
 
-        const [libraryResponse, keywordResponse, environmentResponse] = await Promise.all([
+        const [libraryResponse, keywordResponse, environmentResponse, localResponse] = await Promise.all([
             getLibraryCompletionItems,
             getKeywords,
             getEnvironmentCompletionItems,
+            getLocalCompletionItems,
         ]);
 
         let completionItems: CompletionItem[] = Array.isArray(keywordResponse) ? keywordResponse : [keywordResponse];
-        completionItems = completionItems.concat(libraryResponse, environmentResponse);
+        completionItems = completionItems.concat(libraryResponse, environmentResponse, localResponse);
 
         return completionItems;
     }

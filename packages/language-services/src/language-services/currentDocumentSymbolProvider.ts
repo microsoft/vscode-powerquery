@@ -8,14 +8,14 @@ import * as Common from "./common";
 import * as InspectionHelpers from "./inspectionHelpers";
 import {
     CompletionItemProviderContext,
-    EnvironmentSymbolProvider,
     HoverProviderContext,
     SignatureProviderContext,
+    SymbolProvider,
 } from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
 
 // TODO: we can improve this logic by using the Inspect/Traverse classes.
-export class CurrentDocumentSymbolProvider implements EnvironmentSymbolProvider {
+export class CurrentDocumentSymbolProvider implements SymbolProvider {
     private readonly document: TextDocument;
 
     private documentSymbols: DocumentSymbol[] | undefined;
