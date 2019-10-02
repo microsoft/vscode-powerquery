@@ -68,3 +68,4 @@ client/lib/
 *.vsix
 dist/
 *.zip
+.vs/

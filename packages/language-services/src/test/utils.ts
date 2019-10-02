@@ -125,9 +125,9 @@ export function createDocumentWithMarker(text: string): [MockDocument, Position]
     return [document, cursorPosition];
 }
 
-export function getInspection(text: string): PQP.Inspection.Inspected | undefined {
+export function getInspection(text: string): PQP.Inspection.Inspected {
     const [document, cursorPosition] = createDocumentWithMarker(text);
-    const triedInspect: PQP.Inspection.TriedInspect | undefined = WorkspaceCache.getInspection(
+    const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getInspection(
         document,
         cursorPosition,
     );
@@ -140,7 +140,7 @@ export function getInspection(text: string): PQP.Inspection.Inspected | undefine
         return triedInspect.value;
     }
 
-    return undefined;
+    throw new Error("unexpected");
 }
 
 export async function getCompletionItems(text: string, analysisOptions?: AnalysisOptions): Promise<CompletionItem[]> {
