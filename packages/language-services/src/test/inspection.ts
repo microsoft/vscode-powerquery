@@ -101,7 +101,18 @@ describe("Inspection - InvokeExpression", () => {
 
         if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
             const inspected: PQP.Inspection.Inspected = triedInspect.value;
-            expect(inspected.scope.size).to.equal(7);
+
+            expectScope(inspected, [
+                "ConnectionString",
+                "Credential",
+                "CredentialConnectionString",
+                "DirectSQL",
+                "DirectSQL.Icons",
+                "DirectSQL.UI",
+                "OdbcDataSource",
+                "database",
+                "server",
+            ]);
 
             assert.isDefined(inspected.maybePositionIdentifier, "position identifier should be defined");
 
@@ -132,8 +143,7 @@ describe("Inspection - Identifiers in Scope", () => {
             "section foo; a = 1; b = 2; c = let d = 2 in |d; e = () => true;",
         );
 
-        // TODO: "e" should be in scope
-        expectScope(inspected, ["d", "c", "b", "a"]);
+        expectScope(inspected, ["a", "b", "d", "e"]);
     });
 
     it("section foo; a = 1; b = 2; c = let d = 2 in d; e = |", () => {
@@ -141,7 +151,7 @@ describe("Inspection - Identifiers in Scope", () => {
             "section foo; a = 1; b = 2; c = let d = 2 in d; e = |",
         );
 
-        // TODO: "e" should not be in scope
-        expectScope(inspected, ["e", "c", "b", "a"]);
+        // TODO: e should not be in scope
+        expectScope(inspected, ["a", "b", "c", "e"]);
     });
 });
