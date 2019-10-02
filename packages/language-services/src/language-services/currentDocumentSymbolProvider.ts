@@ -2,26 +2,34 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import { CompletionItem, DocumentSymbol, Hover, SignatureHelp, TextDocument } from "vscode-languageserver-types";
+import {
+    CompletionItem,
+    DocumentSymbol,
+    Hover,
+    Position,
+    SignatureHelp,
+    TextDocument,
+} from "vscode-languageserver-types";
 
 import * as Common from "./common";
 import * as InspectionHelpers from "./inspectionHelpers";
 import {
     CompletionItemProviderContext,
-    EnvironmentSymbolProvider,
     HoverProviderContext,
     SignatureProviderContext,
+    SymbolProvider,
 } from "./providers";
 import * as WorkspaceCache from "./workspaceCache";
 
-// TODO: we can improve this logic by using the Inspect/Traverse classes.
-export class CurrentDocumentSymbolProvider implements EnvironmentSymbolProvider {
+export class CurrentDocumentSymbolProvider implements SymbolProvider {
     private readonly document: TextDocument;
+    private readonly position: Position;
 
     private documentSymbols: DocumentSymbol[] | undefined;
 
-    constructor(textDocument: TextDocument) {
+    constructor(textDocument: TextDocument, position: Position) {
         this.document = textDocument;
+        this.position = position;
     }
 
     public async getCompletionItems(_context: CompletionItemProviderContext): Promise<CompletionItem[]> {
@@ -44,15 +52,14 @@ export class CurrentDocumentSymbolProvider implements EnvironmentSymbolProvider 
         if (this.documentSymbols === undefined) {
             this.documentSymbols = [];
 
-            const rootNode: PQP.Ast.TDocument | undefined = WorkspaceCache.getRootNodeForDocument(this.document);
-            if (rootNode) {
-                if (rootNode.kind === PQP.Ast.NodeKind.Section) {
-                    this.documentSymbols = InspectionHelpers.getSymbolsForSection(rootNode);
-                } else if (rootNode.kind === PQP.Ast.NodeKind.LetExpression) {
-                    this.documentSymbols = InspectionHelpers.getSymbolsForLetExpression(rootNode);
-                }
+            const triedInspection: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(
+                this.document,
+                this.position,
+            );
 
-                // TODO: are there other cases we need to handle?
+            if (triedInspection && triedInspection.kind === PQP.ResultKind.Ok) {
+                const inspected: PQP.Inspection.Inspected = triedInspection.value;
+                this.documentSymbols = InspectionHelpers.getSymbolsForInspectionScope(inspected);
             }
         }
 

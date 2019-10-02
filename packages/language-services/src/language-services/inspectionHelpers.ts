@@ -64,7 +64,7 @@ export function getSymbolKindForLiteralExpression(node: PQP.Ast.LiteralExpressio
     }
 }
 
-export function getSymbolKindFromExpression(node: PQP.Ast.INode): SymbolKind {
+export function getSymbolKindFromNode(node: PQP.Ast.INode | PQP.ParserContext.Node): SymbolKind {
     switch (node.kind) {
         case PQP.Ast.NodeKind.Constant:
             return SymbolKind.Constant;
@@ -116,10 +116,32 @@ export function getSymbolForIdentifierPairedExpression(
     identifierPairedExpressionNode: PQP.Ast.IdentifierPairedExpression,
 ): DocumentSymbol {
     return {
-        kind: getSymbolKindFromExpression(identifierPairedExpressionNode.value),
+        kind: getSymbolKindFromNode(identifierPairedExpressionNode.value),
         deprecated: false,
         name: identifierPairedExpressionNode.key.literal,
         range: Common.tokenRangeToRange(identifierPairedExpressionNode.tokenRange),
         selectionRange: Common.tokenRangeToRange(identifierPairedExpressionNode.key.tokenRange),
     };
+}
+
+export function getSymbolsForInspectionScope(inspected: PQP.Inspection.Inspected): DocumentSymbol[] {
+    const documentSymbols: DocumentSymbol[] = [];
+
+    inspected.scope.forEach((value, key) => {
+        if (value.kind === PQP.NodeIdMap.XorNodeKind.Ast) {
+            if (value.node.kind === PQP.Ast.NodeKind.IdentifierPairedExpression) {
+                documentSymbols.push(getSymbolForIdentifierPairedExpression(value.node));
+            } else {
+                documentSymbols.push({
+                    name: key,
+                    kind: getSymbolKindFromNode(value.node),
+                    deprecated: false,
+                    range: Common.tokenRangeToRange(value.node.tokenRange),
+                    selectionRange: Common.tokenRangeToRange(value.node.tokenRange),
+                });
+            }
+        }
+    });
+
+    return documentSymbols;
 }

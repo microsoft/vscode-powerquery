@@ -25,8 +25,6 @@ export interface LibrarySymbolProvider extends CompletionItemProvider, HoverProv
     includeModules(modules: string[]): void;
 }
 
-export interface EnvironmentSymbolProvider extends CompletionItemProvider, HoverProvider, SignatureHelpProvider {}
-
 export interface ProviderContext {
     readonly range?: Range;
 }
@@ -39,6 +37,8 @@ export interface SignatureProviderContext extends ProviderContext {
     readonly argumentOrdinal?: number;
     readonly functionName: string;
 }
+
+export interface SymbolProvider extends CompletionItemProvider, HoverProvider, SignatureHelpProvider {}
 
 // TODO: providers for record fields and table columns
 
