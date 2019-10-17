@@ -1,4 +1,4 @@
-**/.vscode/
+**/.*/
 **/*.ts
 **/*.js.map
 .gitignore
@@ -12,8 +12,8 @@ contributing.md
 scripts/
 packages/
 client/**
-!client/dist/**
+!client/dist/**/*.js
 server/**
-!server/dist/**
+!server/dist/**/*.js
 **/*.zip
 **/*.vsix
