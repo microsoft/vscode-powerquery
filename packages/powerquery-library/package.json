@@ -15,7 +15,7 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "powerquery-language-services": "../language-services",
+        "powerquery-language-services": "../powerquery-language-services",
         "vscode-languageserver-types": "^3.14.0"
     },
     "devDependencies": {
