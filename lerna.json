@@ -1,0 +1,4 @@
+{
+  "packages": ["packages/*", "client/", "server/"],
+  "version": "0.0.30"
+}
