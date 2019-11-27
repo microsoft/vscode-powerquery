@@ -12,19 +12,18 @@ export interface ValidationResult {
 }
 
 export function validate(document: TextDocument): ValidationResult {
-    const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
+    const triedLexParse: PQP.TriedLexParse = WorkspaceCache.getTriedLexAndParse(document);
     let diagnostics: Diagnostic[] = [];
-    if (triedLexAndParse.kind !== PQP.ResultKind.Ok) {
-        const lexAndParseErr: PQP.LexAndParseErr = triedLexAndParse.error;
-        const innerError: PQP.LexerError.TInnerLexerError | PQP.ParserError.TInnerParserError =
-            lexAndParseErr.innerError;
-        if (PQP.ParserError.isTInnerParserError(innerError)) {
-            const maybeDiagnostic: undefined | Diagnostic = maybeParserErrorToDiagnostic(innerError);
+    if (triedLexParse.kind !== PQP.ResultKind.Ok) {
+        const lexAndParseErr: PQP.LexAndParseErr = triedLexParse.error;
+        const innerError: PQP.LexError.TInnerLexError | PQP.ParseError.TInnerParseError = lexAndParseErr.innerError;
+        if (PQP.ParseError.isTInnerParseError(innerError)) {
+            const maybeDiagnostic: undefined | Diagnostic = maybeParseErrorToDiagnostic(innerError);
             if (maybeDiagnostic !== undefined) {
                 diagnostics = [maybeDiagnostic];
             }
-        } else if (PQP.LexerError.isTInnerLexerError(innerError)) {
-            const maybeLexerErrorDiagnostics: undefined | Diagnostic[] = maybeLexerErrorToDiagnostics(innerError);
+        } else if (PQP.LexError.isTInnerLexError(innerError)) {
+            const maybeLexerErrorDiagnostics: undefined | Diagnostic[] = maybeLexErrorToDiagnostics(innerError);
             if (maybeLexerErrorDiagnostics !== undefined) {
                 diagnostics = maybeLexerErrorDiagnostics;
             }
@@ -36,12 +35,12 @@ export function validate(document: TextDocument): ValidationResult {
     };
 }
 
-function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): undefined | Diagnostic[] {
+function maybeLexErrorToDiagnostics(error: PQP.LexError.TInnerLexError): undefined | Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     // TODO: handle other types of lexer errors
-    if (error instanceof PQP.LexerError.ErrorLineMapError) {
+    if (error instanceof PQP.LexError.ErrorLineMapError) {
         for (const errorLine of error.errorLineMap.values()) {
-            const innerError: PQP.LexerError.TInnerLexerError = errorLine.error.innerError;
+            const innerError: PQP.LexError.TInnerLexError = errorLine.error.innerError;
             if ((innerError as any).graphemePosition) {
                 const graphemePosition: PQP.StringUtils.GraphemePosition = (innerError as any).graphemePosition;
                 const message: string = innerError.message;
@@ -64,22 +63,22 @@ function maybeLexerErrorToDiagnostics(error: PQP.LexerError.TInnerLexerError): u
     return diagnostics.length ? diagnostics : undefined;
 }
 
-function maybeParserErrorToDiagnostic(error: PQP.ParserError.TInnerParserError): undefined | Diagnostic {
+function maybeParseErrorToDiagnostic(error: PQP.ParseError.TInnerParseError): undefined | Diagnostic {
     const message: string = error.message;
     let errorToken: PQP.Token;
     if (
-        (error instanceof PQP.ParserError.ExpectedAnyTokenKindError ||
-            error instanceof PQP.ParserError.ExpectedTokenKindError) &&
+        (error instanceof PQP.ParseError.ExpectedAnyTokenKindError ||
+            error instanceof PQP.ParseError.ExpectedTokenKindError) &&
         error.maybeFoundToken !== undefined
     ) {
         errorToken = error.maybeFoundToken.token;
-    } else if (error instanceof PQP.ParserError.InvalidPrimitiveTypeError) {
+    } else if (error instanceof PQP.ParseError.InvalidPrimitiveTypeError) {
         errorToken = error.token;
-    } else if (error instanceof PQP.ParserError.UnterminatedBracketError) {
+    } else if (error instanceof PQP.ParseError.UnterminatedBracketError) {
         errorToken = error.openBracketToken;
-    } else if (error instanceof PQP.ParserError.UnterminatedParenthesesError) {
+    } else if (error instanceof PQP.ParseError.UnterminatedParenthesesError) {
         errorToken = error.openParenthesesToken;
-    } else if (error instanceof PQP.ParserError.UnusedTokensRemainError) {
+    } else if (error instanceof PQP.ParseError.UnusedTokensRemainError) {
         errorToken = error.firstUnusedToken;
     } else {
         return undefined;

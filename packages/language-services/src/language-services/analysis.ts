@@ -139,13 +139,14 @@ class DocumentAnalysis implements Analysis {
 
         if (triedInspection && triedInspection.kind === PQP.ResultKind.Ok) {
             const inspected: PQP.Inspection.Inspected = triedInspection.value;
-            const invokeExpression:
-                | PQP.Inspection.InvokeExpression
+            const maybeInspectedInvokeExpression:
+                | PQP.Inspection.InspectedInvokeExpression
                 | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
 
-            if (invokeExpression) {
+            if (maybeInspectedInvokeExpression) {
+                const inspectedInvokeExpression: PQP.Inspection.InspectedInvokeExpression = maybeInspectedInvokeExpression;
                 const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
-                    invokeExpression,
+                    inspectedInvokeExpression,
                 );
                 if (context && context.functionName) {
                     // TODO: add tracing/logging to the catch()

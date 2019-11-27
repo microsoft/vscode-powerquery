@@ -6,7 +6,7 @@ import { Position, TextDocument } from "vscode-languageserver-types";
 
 const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
 const lexerStateCache: Map<string, PQP.Lexer.State> = new Map();
-const triedLexAndParseCache: Map<string, PQP.TriedLexAndParse> = new Map();
+const triedLexAndParseCache: Map<string, PQP.TriedLexParse> = new Map();
 const triedInspectionCache: Map<string, InspectionMap> = new Map();
 
 const allCaches: Map<string, any>[] = [
@@ -48,7 +48,7 @@ export function getLexerState(textDocument: TextDocument): PQP.Lexer.State {
     return lexerState;
 }
 
-export function getTriedLexerSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
+export function getTriedLexSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
     let lexerSnapshot: PQP.TriedLexerSnapshot | undefined = lexerSnapshotCache.get(textDocument.uri);
     if (lexerSnapshot === undefined) {
         lexerSnapshot = PQP.LexerSnapshot.tryFrom(getLexerState(textDocument));
@@ -58,15 +58,15 @@ export function getTriedLexerSnapshot(textDocument: TextDocument): PQP.TriedLexe
     return lexerSnapshot;
 }
 
-export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAndParse {
-    let triedLexAndParse: PQP.TriedLexAndParse | undefined = triedLexAndParseCache.get(textDocument.uri);
-    if (triedLexAndParse === undefined) {
-        const lexerSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
+export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexParse {
+    let triedLexParse: PQP.TriedLexParse | undefined = triedLexAndParseCache.get(textDocument.uri);
+    if (triedLexParse === undefined) {
+        const lexerSnapshot: PQP.TriedLexerSnapshot = getTriedLexSnapshot(textDocument);
 
         if (lexerSnapshot.kind === PQP.ResultKind.Ok) {
             const triedParse: PQP.TriedParse = getTriedParseFromSnapshot(lexerSnapshot.value);
             if (triedParse.kind === PQP.ResultKind.Ok) {
-                triedLexAndParse = {
+                triedLexParse = {
                     kind: PQP.ResultKind.Ok,
                     value: {
                         ast: triedParse.value.document,
@@ -75,22 +75,22 @@ export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexAnd
                     },
                 };
             } else {
-                triedLexAndParse = {
+                triedLexParse = {
                     kind: PQP.ResultKind.Err,
                     error: triedParse.error,
                 };
             }
         } else {
-            triedLexAndParse = {
+            triedLexParse = {
                 kind: PQP.ResultKind.Err,
                 error: lexerSnapshot.error,
             };
         }
 
-        triedLexAndParseCache.set(textDocument.uri, triedLexAndParse);
+        triedLexAndParseCache.set(textDocument.uri, triedLexParse);
     }
 
-    return triedLexAndParse;
+    return triedLexParse;
 }
 
 export function getTriedInspection(
@@ -107,14 +107,14 @@ export function getTriedInspection(
     if (result === undefined) {
         // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
         // We have to retrieve the snapshot and reparse ourselves.
-        const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
+        const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexSnapshot(textDocument);
 
         if (triedSnapshot.kind === PQP.ResultKind.Ok) {
             const triedParser: PQP.TriedParse = getTriedParseFromSnapshot(triedSnapshot.value);
             let inspectableParser: Inspectable | undefined;
             if (triedParser.kind === PQP.ResultKind.Ok) {
                 inspectableParser = triedParser.value;
-            } else if (triedParser.error instanceof PQP.ParserError.ParserError) {
+            } else if (triedParser.error instanceof PQP.ParseError.ParseError) {
                 inspectableParser = triedParser.error.context;
             }
 
@@ -147,10 +147,10 @@ export function getTriedInspection(
 }
 
 export function getRootNodeForDocument(textDocument: TextDocument): PQP.Ast.TDocument | undefined {
-    const triedLexAndParse: PQP.TriedLexAndParse = getTriedLexAndParse(textDocument);
+    const triedLexAndParse: PQP.TriedLexParse = getTriedLexAndParse(textDocument);
     if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
         return triedLexAndParse.value.ast;
-    } else if (triedLexAndParse.error instanceof PQP.ParserError.ParserError) {
+    } else if (triedLexAndParse.error instanceof PQP.ParseError.ParseError) {
         // TODO: can we still get document symbols on parser error?
         return undefined;
     }
