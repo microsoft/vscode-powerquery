@@ -14,19 +14,20 @@ import {
 import * as LanguageServices from "powerquery-language-services";
 import * as Library from "powerquery-library";
 import * as LS from "vscode-languageserver";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 
-const documents: LS.TextDocuments = new LS.TextDocuments(LS.TextDocumentSyncKind.Incremental);
+const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
 let analysisOptions: LanguageServices.AnalysisOptions;
 
 connection.onInitialize(() => {
     return {
         capabilities: {
-            textDocumentSync: documents.syncKind,
+            textDocumentSync: LS.TextDocumentSyncKind.Incremental,
             documentFormattingProvider: true,
             completionProvider: {
                 // TODO: is it better to return the first pass without documention to reduce message size?

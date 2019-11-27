@@ -23,7 +23,8 @@
         "powerquery-format": "../packages/powerquery-format",
         "powerquery-language-services": "../packages/powerquery-language-services",
         "powerquery-library": "../packages/powerquery-library",
-        "vscode-languageserver": "next"
+        "vscode-languageserver": "next",
+        "vscode-languageserver-textdocument": "next"
     },
     "devDependencies": {
         "prettier": "^1.18.2",
