@@ -1,7 +1,54 @@
+# Power Query SDK for VS Code
 
-# Contributing
+Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/), and (eventually) feature parity with the [Power Query SDK for Visual Studio](https://marketplace.visualstudio.com/items?itemName=Dakahn.PowerQuerySDK).
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lerna.js.org/)
+
+## How to build
+
+This repo uses [Lerna](https://lerna.js.org/) to manage sub-package dependencies.
+
+1. install lerna globally:
+
+```cmd
+npm install --global lerna
+```
+
+2. install package dependencies and create symlinks:
+
+```cmd
+lerna bootstrap
+```
+
+3. build all packages:
+
+```cmd
+lerna run build
+```
+
+## How to run tests
+
+```cmd
+lerna run test
+```
+
+## Generate vscode extension
+
+Install the [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) CLI utility.
+
+```cmd
+npm install --global vsce
+```
+
+Generate vsix package:
+
+```cmd
+vsce package
+```
+
+## Contributing
+
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 

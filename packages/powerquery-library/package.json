@@ -1,12 +1,12 @@
 {
     "name": "@microsoft/powerquery-library",
-    "version": "0.0.2",
+    "version": "0.0.31",
     "description": "Common library definition files for the Power Query / M language.",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
         "build": "node_modules\\.bin\\tsc",
-        "test": "mocha -r ts-node/register src/test/**/*.ts"
+        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
     },
     "files": [
         "lib/library/*",
@@ -15,7 +15,7 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "powerquery-language-services": "../language-services",
+        "@microsoft/powerquery-language-services": "0.0.31",
         "vscode-languageserver-types": "^3.14.0"
     },
     "devDependencies": {

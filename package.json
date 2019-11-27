@@ -1,6 +1,6 @@
 {
   "name": "vscode-powerquery",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "engines": {
     "vscode": "^1.36.0"
   },
@@ -60,29 +60,27 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run build:packages && npm run webpack-prod",
-    "client:webpack-prod": "cd client && webpack --mode production",
-    "client:webpack": "cd client && webpack --mode development",
-    "client:webpack-dev": "cd client && webpack --mode development --watch",
-    "server:webpack-prod": "cd server && webpack --mode production",
-    "server:webpack": "cd server && webpack --mode development",
-    "server:webpack-dev": "cd server && webpack --mode development --watch",
+    "vscode:prepublish": "npm run build:packages && npm run webpack-prod",
+    "client:webpack-prod": "cd client && node_modules\\.bin\\webpack --mode production",
+    "client:webpack": "cd client && node_modules\\.bin\\webpack --mode development",
+    "client:webpack-dev": "cd client && node_modules\\.bin\\webpack --mode development --watch",
+    "server:webpack-prod": "cd server && node_modules\\.bin\\webpack --mode production",
+    "server:webpack": "cd server && node_modules\\.bin\\webpack --mode development",
+    "server:webpack-dev": "cd server && node_modules\\.bin\\webpack --mode development --watch",
     "build:packages": "npm run build:language-services && npm run build:format && npm run build:library",
-    "build:language-services": "tsc -p ./packages/language-services/tsconfig.json",
-    "build:format": "tsc -p ./packages/format/tsconfig.json",
-    "build:library": "tsc -p ./packages/library/tsconfig.json",
-    "build:client": "tsc -p ./client/tsconfig.json",
-    "build": "npm run build:packages && tsc -b",
-    "watch": "tsc -b -watch",
+    "build:language-services": "cd packages && cd powerquery-language-services && npm run build",
+    "build:format": "cd packages && cd powerquery-format && npm run build",
+    "build:library": "cd packages && cd powerquery-library && npm run build",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build": "npm run build:packages && npm run build:server && npm run build:client",
+    "watch": "node_modules\\.bin\\tsc -b -watch",
     "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
     "test:packages": "npm run test:language-services && npm run test:format && npm run test:library",
-    "test:language-services": "cd packages && cd language-services && npm test",
-    "test:format": "cd packages && cd format && npm test",
-    "test:library": "cd packages && cd library && npm test",
-    "test": "node ./scripts/e2e.js",
-    "postinstall:packages": "cd packages && cd language-services && npm install && cd ../format && npm install && cd ../library && npm install && cd ../..",
-    "postinstall:vscode": "cd client && npm install && cd ../server && npm install && cd ..",
-    "postinstall": "npm run postinstall:packages && npm run postinstall:vscode"
+    "test:language-services": "cd packages && cd powerquery-language-services && npm test",
+    "test:format": "cd packages && cd powerquery-format && npm test",
+    "test:library": "cd packages && cd powerquery-library && npm test",
+    "test": "node ./scripts/e2e.js"
   },
   "repository": {
     "type": "git",
@@ -92,15 +90,15 @@
   "devDependencies": {
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.11.2",
+    "lerna": "^3.19.0",
     "ts-loader": "^6.2.0",
     "tslint": "^5.20.0",
     "tslint-config-prettier": "^1.18.0",
     "tslint-microsoft-contrib": "^6.2.0",
     "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.6.4",
+    "typescript": "^3.7.2",
     "vscode": "^1.1.36",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9"
-  },
-  "dependencies": {}
+  }
 }
