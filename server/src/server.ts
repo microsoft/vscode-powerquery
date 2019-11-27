@@ -10,9 +10,9 @@ import {
     Result,
     ResultKind,
     SerializerOptions,
-} from "powerquery-format";
-import * as LanguageServices from "powerquery-language-services";
-import * as Library from "powerquery-library";
+} from "@microsoft/powerquery-format";
+import * as LanguageServices from "@microsoft/powerquery-language-services";
+import * as Library from "@microsoft/powerquery-library";
 import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 

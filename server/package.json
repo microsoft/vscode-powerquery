@@ -18,7 +18,10 @@
         "singleQuote": false,
         "printWidth": 120
     },
-    "scripts": {},
+    "scripts": {
+        "build": "node_modules\\.bin\\tsc -p ./",
+        "watch": "node_modules\\.bin\\tsc -watch -p ./"
+    },
     "dependencies": {
         "@microsoft/powerquery-format": "0.0.31",
         "@microsoft/powerquery-language-services": "0.0.31",
@@ -27,13 +30,14 @@
         "vscode-languageserver-textdocument": "1.0.0-next.5"
     },
     "devDependencies": {
+        "@types/node": "12.12.14",
         "prettier": "^1.18.2",
         "ts-loader": "^6.2.0",
         "tslint": "^5.20.0",
         "tslint-config-prettier": "^1.18.0",
         "tslint-microsoft-contrib": "^6.2.0",
         "tslint-plugin-prettier": "^2.0.1",
-        "typescript": "^3.6.4",
+        "typescript": "^3.7.2",
         "webpack": "^4.41.2",
         "webpack-cli": "^3.3.9"
     }
