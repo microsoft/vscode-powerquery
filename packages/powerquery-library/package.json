@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/powerquery-library",
-    "version": "0.0.2",
+    "version": "0.0.31",
     "description": "Common library definition files for the Power Query / M language.",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",

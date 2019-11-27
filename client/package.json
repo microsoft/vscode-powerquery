@@ -3,7 +3,7 @@
     "description": "VS Code part of language server",
     "author": "Microsoft Corporation",
     "license": "MIT",
-    "version": "0.0.1",
+    "version": "0.0.31",
     "publisher": "powerquery",
     "repository": {
         "type": "git",

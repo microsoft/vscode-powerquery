@@ -1,6 +1,6 @@
 {
     "name": "@microsoft/powerquery-language-services",
-    "version": "0.0.1",
+    "version": "0.0.31",
     "description": "Language service functionality for the Power Query / M language.",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
