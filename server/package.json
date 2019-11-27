@@ -20,9 +20,9 @@
     },
     "scripts": {},
     "dependencies": {
-        "powerquery-format": "../packages/powerquery-format",
-        "powerquery-language-services": "../packages/powerquery-language-services",
-        "powerquery-library": "../packages/powerquery-library",
+        "@microsoft/powerquery-format": "0.0.31",
+        "@microsoft/powerquery-language-services": "0.0.31",
+        "@microsoft/powerquery-library": "0.0.31",
         "vscode-languageserver": "6.0.0-next.7",
         "vscode-languageserver-textdocument": "1.0.0-next.5"
     },
