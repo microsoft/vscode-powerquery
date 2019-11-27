@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
+// tslint:disable-next-line: no-implicit-dependencies
 import * as vscode from "vscode";
 import { activate, getDocUri } from "./helper";
 
