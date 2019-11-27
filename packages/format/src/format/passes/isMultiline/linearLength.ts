@@ -248,7 +248,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
 
         case Ast.NodeKind.MetadataExpression: {
-            linearLength = sumLinearLengths(state, 2, node.left, node.constant, node.right);
+            linearLength = sumLinearLengths(state, 2, node.left, node.operatorConstant, node.right);
             break;
         }
 

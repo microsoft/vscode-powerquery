@@ -3,14 +3,15 @@
 
 import {
     Ast,
-    LexAndParseOk,
+    LexParseOk,
     NodeIdMap,
+    Parser,
     Result,
     ResultKind,
     TComment,
     Traverse,
-    TriedLexAndParse,
-    tryLexAndParse,
+    TriedLexParse,
+    tryLexParse,
 } from "@microsoft/powerquery-parser";
 import { FormatError } from ".";
 import { CommentCollectionMap, tryTraverse as tryTraverseComment } from "./passes/comment";
@@ -25,15 +26,15 @@ export interface FormatRequest {
 }
 
 export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const triedLexAndParse: TriedLexAndParse = tryLexAndParse(formatRequest.text);
-    if (triedLexAndParse.kind === ResultKind.Err) {
-        return triedLexAndParse;
+    const triedLexParse: TriedLexParse = tryLexParse(formatRequest.text, Parser.CombinatorialParser);
+    if (triedLexParse.kind === ResultKind.Err) {
+        return triedLexParse;
     }
 
-    const lexAndParseOk: LexAndParseOk = triedLexAndParse.value;
-    const ast: Ast.TDocument = lexAndParseOk.ast;
-    const comments: ReadonlyArray<TComment> = lexAndParseOk.comments;
-    const nodeIdMapCollection: NodeIdMap.Collection = lexAndParseOk.nodeIdMapCollection;
+    const lexParseOk: LexParseOk = triedLexParse.value;
+    const ast: Ast.TDocument = lexParseOk.ast;
+    const comments: ReadonlyArray<TComment> = lexParseOk.lexerSnapshot.comments;
+    const nodeIdMapCollection: NodeIdMap.Collection = lexParseOk.nodeIdMapCollection;
 
     let commentCollectionMap: CommentCollectionMap = new Map();
     if (comments.length) {
@@ -75,7 +76,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         serializerParameterMap,
     };
     const serializeRequest: SerializerRequest = {
-        document: lexAndParseOk.ast,
+        document: lexParseOk.ast,
         nodeIdMapCollection,
         maps,
         options: formatRequest.options,

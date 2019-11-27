@@ -296,7 +296,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
 
         case Ast.NodeKind.MetadataExpression:
-            isMultiline = isAnyMultiline(isMultilineMap, node.left, node.constant, node.right);
+            isMultiline = isAnyMultiline(isMultilineMap, node.left, node.operatorConstant, node.right);
             break;
 
         case Ast.NodeKind.ParenthesizedExpression:
