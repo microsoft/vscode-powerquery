@@ -6,7 +6,7 @@
     "types": "lib/index.d.ts",
     "scripts": {
         "build": "node_modules\\.bin\\tsc",
-        "test": "mocha -r ts-node/register src/test/**/*.ts"
+        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
     },
     "files": [
         "lib/language-services/*",
@@ -21,6 +21,7 @@
     "devDependencies": {
         "@types/chai": "^4.2.3",
         "@types/mocha": "^5.2.7",
+        "@types/node": "12.12.14",
         "chai": "^4.2.0",
         "mocha": "^6.2.2",
         "prettier": "^1.18.2",

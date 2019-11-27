@@ -29,7 +29,7 @@
     ],
     "scripts": {
         "build": "node_modules\\.bin\\tsc",
-        "test": "mocha -r ts-node/register src/test/**/*.ts"
+        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
     },
     "repository": {
         "type": "git",

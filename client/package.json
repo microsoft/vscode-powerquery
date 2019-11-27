@@ -24,7 +24,7 @@
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run build",
-        "test": "node ./out/test/runTest.js"
+        "test-disabled": "node ./out/test/runTest.js"
     },
     "dependencies": {
         "vscode-languageclient": "6.0.0-next.8"
