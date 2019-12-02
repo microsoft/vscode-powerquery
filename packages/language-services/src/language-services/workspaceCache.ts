@@ -4,27 +4,17 @@
 import * as PQP from "@microsoft/powerquery-parser";
 import { Position, TextDocument } from "vscode-languageserver-types";
 
-const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
 const lexerStateCache: Map<string, PQP.Lexer.State> = new Map();
-const triedLexAndParseCache: Map<string, PQP.TriedLexParse> = new Map();
+const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
+const triedLexParseCache: Map<string, PQP.TriedLexParse> = new Map();
 const triedInspectionCache: Map<string, InspectionMap> = new Map();
 
-const allCaches: Map<string, any>[] = [
-    lexerSnapshotCache,
-    lexerStateCache,
-    triedLexAndParseCache,
-    triedInspectionCache,
-];
+type InspectionMap = WeakMap<Position, undefined | PQP.Inspection.TriedInspection>;
+
+const allCaches: Map<string, any>[] = [lexerSnapshotCache, lexerStateCache, triedLexParseCache, triedInspectionCache];
 
 // TODO: is the position key valid for a single intellisense operation,
 // or would it be the same for multiple invocations?
-type InspectionMap = WeakMap<Position, PQP.Inspection.TriedInspection>;
-
-interface Inspectable {
-    nodeIdMapCollection: PQP.NodeIdMap.Collection;
-    leafNodeIds: ReadonlyArray<number>;
-}
-
 export function close(textDocument: TextDocument): void {
     allCaches.forEach(map => {
         map.delete(textDocument.uri);
@@ -39,126 +29,106 @@ export function update(textDocument: TextDocument): void {
 }
 
 export function getLexerState(textDocument: TextDocument): PQP.Lexer.State {
-    let lexerState: PQP.Lexer.State | undefined = lexerStateCache.get(textDocument.uri);
-    if (lexerState === undefined) {
-        lexerState = PQP.Lexer.stateFrom(textDocument.getText());
-        lexerStateCache.set(textDocument.uri, lexerState);
-    }
-
-    return lexerState;
+    return getOrCreate(lexerStateCache, textDocument, createLexerState);
 }
 
-export function getTriedLexSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
-    let lexerSnapshot: PQP.TriedLexerSnapshot | undefined = lexerSnapshotCache.get(textDocument.uri);
-    if (lexerSnapshot === undefined) {
-        lexerSnapshot = PQP.LexerSnapshot.tryFrom(getLexerState(textDocument));
-        lexerSnapshotCache.set(textDocument.uri, lexerSnapshot);
-    }
-
-    return lexerSnapshot;
+export function getTriedLexerSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
+    return getOrCreate(lexerSnapshotCache, textDocument, createTriedLexerSnapshot);
 }
 
-export function getTriedLexAndParse(textDocument: TextDocument): PQP.TriedLexParse {
-    let triedLexParse: PQP.TriedLexParse | undefined = triedLexAndParseCache.get(textDocument.uri);
-    if (triedLexParse === undefined) {
-        const lexerSnapshot: PQP.TriedLexerSnapshot = getTriedLexSnapshot(textDocument);
-
-        if (lexerSnapshot.kind === PQP.ResultKind.Ok) {
-            const triedParse: PQP.TriedParse = getTriedParseFromSnapshot(lexerSnapshot.value);
-            if (triedParse.kind === PQP.ResultKind.Ok) {
-                triedLexParse = {
-                    kind: PQP.ResultKind.Ok,
-                    value: {
-                        ast: triedParse.value.document,
-                        comments: lexerSnapshot.value.comments,
-                        nodeIdMapCollection: triedParse.value.nodeIdMapCollection,
-                    },
-                };
-            } else {
-                triedLexParse = {
-                    kind: PQP.ResultKind.Err,
-                    error: triedParse.error,
-                };
-            }
-        } else {
-            triedLexParse = {
-                kind: PQP.ResultKind.Err,
-                error: lexerSnapshot.error,
-            };
-        }
-
-        triedLexAndParseCache.set(textDocument.uri, triedLexParse);
-    }
-
-    return triedLexParse;
+export function getTriedLexParse(textDocument: TextDocument): PQP.TriedLexParse {
+    return getOrCreate(triedLexParseCache, textDocument, createTriedLexParse);
 }
 
 export function getTriedInspection(
     textDocument: TextDocument,
     position: Position,
-): PQP.Inspection.TriedInspection | undefined {
-    // Check if we already have this inspection result in the cache
-    let result: PQP.Inspection.TriedInspection | undefined;
-    let inspectionMap: InspectionMap | undefined = triedInspectionCache.get(textDocument.uri);
-    if (inspectionMap) {
-        result = inspectionMap.get(position);
+): undefined | PQP.Inspection.TriedInspection {
+    const cacheKey: string = `${textDocument.uri},${position.character},${position.line}`;
+    const maybePositionCache:
+        | undefined
+        | WeakMap<Position, undefined | PQP.Inspection.TriedInspection> = triedInspectionCache.get(cacheKey);
+
+    let positionCache: WeakMap<Position, undefined | PQP.Inspection.TriedInspection>;
+    // document has been inspected before
+    if (maybePositionCache !== undefined) {
+        positionCache = maybePositionCache;
+    } else {
+        positionCache = new WeakMap();
+        triedInspectionCache.set(textDocument.uri, positionCache);
     }
 
-    if (result === undefined) {
-        // TODO: triedLexAndParse doesn't have a leafNodeIds member so we can't pass it to Inspection.
-        // We have to retrieve the snapshot and reparse ourselves.
-        const triedSnapshot: PQP.TriedLexerSnapshot = getTriedLexSnapshot(textDocument);
-
-        if (triedSnapshot.kind === PQP.ResultKind.Ok) {
-            const triedParser: PQP.TriedParse = getTriedParseFromSnapshot(triedSnapshot.value);
-            let inspectableParser: Inspectable | undefined;
-            if (triedParser.kind === PQP.ResultKind.Ok) {
-                inspectableParser = triedParser.value;
-            } else if (triedParser.error instanceof PQP.ParseError.ParseError) {
-                inspectableParser = triedParser.error.context;
-            }
-
-            if (inspectableParser) {
-                const inspectionPosition: PQP.Inspection.Position = {
-                    lineNumber: position.line,
-                    lineCodeUnit: position.character,
-                };
-
-                result = PQP.Inspection.tryFrom(
-                    inspectionPosition,
-                    inspectableParser.nodeIdMapCollection,
-                    inspectableParser.leafNodeIds,
-                );
-
-                if (result) {
-                    // Add to cache
-                    if (inspectionMap === undefined) {
-                        inspectionMap = new Map();
-                    }
-
-                    inspectionMap.set(position, result);
-                    triedInspectionCache.set(textDocument.uri, inspectionMap);
-                }
-            }
-        }
+    if (positionCache.has(position)) {
+        return positionCache.get(position);
+    } else {
+        const value: undefined | PQP.Inspection.TriedInspection = createTriedInspection(textDocument, position);
+        positionCache.set(position, value);
+        return value;
     }
-
-    return result;
 }
 
-export function getRootNodeForDocument(textDocument: TextDocument): PQP.Ast.TDocument | undefined {
-    const triedLexAndParse: PQP.TriedLexParse = getTriedLexAndParse(textDocument);
-    if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
-        return triedLexAndParse.value.ast;
-    } else if (triedLexAndParse.error instanceof PQP.ParseError.ParseError) {
-        // TODO: can we still get document symbols on parser error?
+function getOrCreate<T>(
+    cache: Map<string, T>,
+    textDocument: TextDocument,
+    factoryFn: (textDocument: TextDocument) => T,
+): T {
+    const cacheKey: string = textDocument.uri;
+    const maybeValue: undefined | T = cache.get(cacheKey);
+
+    if (maybeValue === undefined) {
+        const value: T = factoryFn(textDocument);
+        cache.set(cacheKey, value);
+        return value;
+    } else {
+        return maybeValue;
+    }
+}
+
+function createLexerState(textDocument: TextDocument): PQP.Lexer.State {
+    return PQP.Lexer.stateFrom(textDocument.getText());
+}
+
+function createTriedLexerSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
+    const lexerState: PQP.Lexer.State = getLexerState(textDocument);
+    return PQP.LexerSnapshot.tryFrom(lexerState);
+}
+
+function createTriedLexParse(textDocument: TextDocument): PQP.TriedLexParse {
+    const triedLexerSnapshot: PQP.TriedLexerSnapshot = getTriedLexerSnapshot(textDocument);
+    if (triedLexerSnapshot.kind === PQP.ResultKind.Err) {
+        return triedLexerSnapshot;
+    }
+    const lexerSnapshot: PQP.LexerSnapshot = triedLexerSnapshot.value;
+
+    const triedParse: PQP.TriedParse = PQP.tryParse(lexerSnapshot, PQP.Parser.CombinatorialParser);
+    if (triedParse.kind === PQP.ResultKind.Err) {
+        return triedParse;
+    }
+    const parseOk: PQP.ParseOk = triedParse.value;
+
+    return {
+        kind: PQP.ResultKind.Ok,
+        value: {
+            ...parseOk,
+            lexerSnapshot,
+        },
+    };
+}
+
+function createTriedInspection(
+    textDocument: TextDocument,
+    position: Position,
+): undefined | PQP.Inspection.TriedInspection {
+    const triedLexParse: PQP.TriedLexParse = getTriedLexParse(textDocument);
+    if (triedLexParse.kind === PQP.ResultKind.Err) {
         return undefined;
     }
 
-    return undefined;
-}
+    const lexParseOk: PQP.LexParseOk = triedLexParse.value;
+    const inspectionPosition: PQP.Inspection.Position = {
+        lineNumber: position.line,
+        lineCodeUnit: position.character,
+    };
 
-function getTriedParseFromSnapshot(lexerSnapshot: PQP.LexerSnapshot): PQP.TriedParse {
-    const parserState: PQP.IParserState = PQP.IParserStateUtils.newState(lexerSnapshot);
-    return PQP.Parser.RecursiveDescentParser.readDocument(parserState, PQP.Parser.RecursiveDescentParser);
+    return PQP.Inspection.tryFrom(inspectionPosition, lexParseOk.nodeIdMapCollection, lexParseOk.leafNodeIds);
 }

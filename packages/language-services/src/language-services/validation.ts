@@ -12,11 +12,11 @@ export interface ValidationResult {
 }
 
 export function validate(document: TextDocument): ValidationResult {
-    const triedLexParse: PQP.TriedLexParse = WorkspaceCache.getTriedLexAndParse(document);
+    const triedLexParse: PQP.TriedLexParse = WorkspaceCache.getTriedLexParse(document);
     let diagnostics: Diagnostic[] = [];
     if (triedLexParse.kind !== PQP.ResultKind.Ok) {
-        const lexAndParseErr: PQP.LexAndParseErr = triedLexParse.error;
-        const innerError: PQP.LexError.TInnerLexError | PQP.ParseError.TInnerParseError = lexAndParseErr.innerError;
+        const lexParseErr: PQP.LexError.TLexError | PQP.ParseError.TParseError = triedLexParse.error;
+        const innerError: PQP.LexError.TInnerLexError | PQP.ParseError.TInnerParseError = lexParseErr.innerError;
         if (PQP.ParseError.isTInnerParseError(innerError)) {
             const maybeDiagnostic: undefined | Diagnostic = maybeParseErrorToDiagnostic(innerError);
             if (maybeDiagnostic !== undefined) {

@@ -8,7 +8,7 @@ import * as Common from "./common";
 import { SignatureProviderContext } from "./providers";
 
 export function getContextForInvokeExpression(
-    expression: PQP.Inspection.InvokeExpression,
+    expression: PQP.Inspection.InspectedInvokeExpression,
 ): SignatureProviderContext | undefined {
     const functionName: string | undefined = expression.maybeName;
     if (functionName) {
@@ -28,11 +28,12 @@ export function getContextForInvokeExpression(
 
 export function getCurrentNodeAsInvokeExpression(
     inspected: PQP.Inspection.Inspected,
-): PQP.Inspection.InvokeExpression | undefined {
-    if (inspected.nodes.length > 0) {
-        const node: PQP.Inspection.TNode = inspected.nodes[0];
-        if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
-            return node;
+): PQP.Inspection.InspectedInvokeExpression | undefined {
+    const visitedNodes: ReadonlyArray<PQP.Inspection.IInspectedNode> = inspected.visitedNodes;
+    if (visitedNodes.length) {
+        const node: PQP.Inspection.IInspectedNode = visitedNodes[0];
+        if (node.kind === PQP.Ast.NodeKind.InvokeExpression) {
+            return node as PQP.Inspection.InspectedInvokeExpression;
         }
     }
 
