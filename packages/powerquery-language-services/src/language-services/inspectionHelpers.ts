@@ -10,20 +10,18 @@ import { SignatureProviderContext } from "./providers";
 export function getContextForInvokeExpression(
     expression: PQP.Inspection.InspectedInvokeExpression,
 ): SignatureProviderContext | undefined {
-    const functionName: string | undefined = expression.maybeName;
-    if (functionName) {
-        let argumentOrdinal: number | undefined;
-        if (expression.maybeArguments) {
-            argumentOrdinal = expression.maybeArguments.positionArgumentIndex;
-        }
+    const functionName: undefined | string = expression.maybeName !== undefined ? expression.maybeName : undefined;
+    const argumentOrdinal: undefined | number =
+        expression.maybeArguments !== undefined ? expression.maybeArguments.positionArgumentIndex : undefined;
 
+    if (functionName !== undefined || argumentOrdinal !== undefined) {
         return {
-            argumentOrdinal,
-            functionName,
+            maybeArgumentOrdinal: argumentOrdinal,
+            maybeFunctionName: functionName,
         };
+    } else {
+        return undefined;
     }
-
-    return undefined;
 }
 
 export function getCurrentNodeAsInvokeExpression(

@@ -6,7 +6,7 @@
     "types": "lib/index.d.ts",
     "scripts": {
         "build": "node_modules\\.bin\\tsc",
-        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
+        "test": "node_modules\\.bin\\mocha -g 'abc123' -r ts-node/register src/test/**/*.ts"
     },
     "files": [
         "lib/language-services/*",
@@ -15,7 +15,7 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "@microsoft/powerquery-parser": "0.1.29",
+        "@microsoft/powerquery-parser": "0.1.30",
         "vscode-languageserver-types": "^3.14.0"
     },
     "devDependencies": {

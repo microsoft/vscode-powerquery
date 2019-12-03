@@ -10,12 +10,12 @@ import * as InspectionHelpers from "../language-services/inspectionHelpers";
 import * as WorkspaceCache from "../language-services/workspaceCache";
 import * as Utils from "./utils";
 
-function getLexAndParseOk(document: TextDocument): PQP.LexAndParseOk {
-    const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
-    assert.isDefined(triedLexAndParse);
-    expect(triedLexAndParse.kind).equals(PQP.ResultKind.Ok, "expected OK result");
-    if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
-        return triedLexAndParse.value;
+function getLexAndParseOk(document: TextDocument): PQP.LexParseOk {
+    const triedLexParse: PQP.TriedLexParse = WorkspaceCache.getTriedLexParse(document);
+    assert.isDefined(triedLexParse);
+    expect(triedLexParse.kind).equals(PQP.ResultKind.Ok, "expected OK result");
+    if (triedLexParse.kind === PQP.ResultKind.Ok) {
+        return triedLexParse.value;
     }
 
     throw new Error("unexpected");
@@ -55,7 +55,7 @@ function expectSymbols(document: PQP.Ast.TDocument, expectedSymbols: ExpectedDoc
 describe("Document symbols", () => {
     it(`section foo; shared a = 1; b = "abc"; c = true;`, () => {
         const document: Utils.MockDocument = Utils.createDocument(`section foo; shared a = 1; b = "abc"; c = true;`);
-        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+        const lexAndParseOk: PQP.LexParseOk = getLexAndParseOk(document);
 
         expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
 
@@ -68,7 +68,7 @@ describe("Document symbols", () => {
 
     it(`section foo; a = {1,2};`, () => {
         const document: Utils.MockDocument = Utils.createDocument(`section foo; a = {1,2};`);
-        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+        const lexAndParseOk: PQP.LexParseOk = getLexAndParseOk(document);
 
         expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
 
@@ -77,7 +77,7 @@ describe("Document symbols", () => {
 
     it(`let a = 1, b = 2, c = 3 in c`, () => {
         const document: Utils.MockDocument = Utils.createDocument(`let a = 1, b = 2, c = 3 in c`);
-        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+        const lexAndParseOk: PQP.LexParseOk = getLexAndParseOk(document);
 
         expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.LetExpression);
 
@@ -90,7 +90,7 @@ describe("Document symbols", () => {
 
     it("HelloWorldWithDocs file", () => {
         const document: Utils.MockDocument = Utils.createDocumentFromFile("HelloWorldWithDocs.pq");
-        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+        const lexAndParseOk: PQP.LexParseOk = getLexAndParseOk(document);
 
         expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
 
@@ -105,7 +105,7 @@ describe("Document symbols", () => {
 
     it("DirectQueryForSQL file", () => {
         const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
-        const lexAndParseOk: PQP.LexAndParseOk = getLexAndParseOk(document);
+        const lexAndParseOk: PQP.LexParseOk = getLexAndParseOk(document);
 
         expect(lexAndParseOk.ast.kind).to.equal(PQP.Ast.NodeKind.Section);
 

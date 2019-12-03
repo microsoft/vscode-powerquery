@@ -30,23 +30,23 @@ describe("workspaceCache", () => {
         }
     });
 
-    it("getTriedLexAndParse", () => {
+    it("getTriedLexParse", () => {
         const document: TextDocument = Utils.createDocument("let c = 1 in c");
-        const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
-        assert.isDefined(triedLexAndParse);
-        if (triedLexAndParse.kind === PQP.ResultKind.Ok) {
-            const lexAndParseOk: PQP.LexAndParseOk = triedLexAndParse.value;
-            assert.isDefined(lexAndParseOk.ast);
+        const triedLexParse: PQP.TriedLexParse = WorkspaceCache.getTriedLexParse(document);
+        assert.isDefined(triedLexParse);
+        if (triedLexParse.kind === PQP.ResultKind.Ok) {
+            const lexParseOk: PQP.LexParseOk = triedLexParse.value;
+            assert.isDefined(lexParseOk.ast);
         } else {
-            assert.fail("triedLexAndParse should be OK");
+            assert.fail("triedLexParse should be OK");
         }
     });
 
-    it("getTriedLexAndParse with error", () => {
+    it("getTriedLexParse with error", () => {
         const document: TextDocument = Utils.createDocument("let c = 1, in c");
-        const triedLexAndParse: PQP.TriedLexAndParse = WorkspaceCache.getTriedLexAndParse(document);
-        assert.isDefined(triedLexAndParse);
-        expect(triedLexAndParse.kind).to.equal(PQP.ResultKind.Err);
+        const triedLexParse: PQP.TriedLexParse = WorkspaceCache.getTriedLexParse(document);
+        assert.isDefined(triedLexParse);
+        expect(triedLexParse.kind).to.equal(PQP.ResultKind.Err);
     });
 
     it("getInspection", () => {

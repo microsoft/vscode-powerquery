@@ -34,8 +34,8 @@ export interface SignatureHelpProvider {
 }
 
 export interface SignatureProviderContext extends ProviderContext {
-    readonly argumentOrdinal?: number;
-    readonly functionName: string;
+    readonly maybeArgumentOrdinal: undefined | number;
+    readonly maybeFunctionName: undefined | string;
 }
 
 export interface SymbolProvider extends CompletionItemProvider, HoverProvider, SignatureHelpProvider {}

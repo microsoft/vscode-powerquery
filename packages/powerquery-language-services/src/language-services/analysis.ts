@@ -148,7 +148,7 @@ class DocumentAnalysis implements Analysis {
                 const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
                     inspectedInvokeExpression,
                 );
-                if (context && context.functionName) {
+                if (context && context.maybeFunctionName) {
                     // TODO: add tracing/logging to the catch()
                     const librarySignatureHelp: Promise<SignatureHelp | null> = this.librarySymbolProvider
                         .getSignatureHelp(context)
