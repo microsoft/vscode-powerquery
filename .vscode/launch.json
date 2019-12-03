@@ -11,7 +11,7 @@
       "outFiles": ["${workspaceRoot}/client/dist/**/*.js"],
       "preLaunchTask": {
         "type": "npm",
-        "script": "client:webpack-dev"
+        "script": "client:webpack"
       }
     },
     {
@@ -22,7 +22,7 @@
       "restart": true,
       "preLaunchTask": {
         "type": "npm",
-        "script": "server:webpack-dev"
+        "script": "server:webpack"
       },
       "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
     },

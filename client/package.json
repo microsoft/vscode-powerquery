@@ -3,7 +3,7 @@
     "description": "VS Code part of language server",
     "author": "Microsoft Corporation",
     "license": "MIT",
-    "version": "0.0.1",
+    "version": "0.0.31",
     "publisher": "powerquery",
     "repository": {
         "type": "git",
@@ -18,24 +18,32 @@
         "printWidth": 120
     },
     "engines": {
-        "vscode": "^1.36.0"
+        "vscode": "1.40.0"
     },
     "scripts": {
-        "update-vscode": "vscode-install",
-        "postinstall": "vscode-install"
+        "build": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run build",
+        "test-disabled": "node ./out/test/runTest.js"
     },
     "dependencies": {
-        "vscode-languageclient": "next"
+        "vscode-languageclient": "6.0.0-next.8"
     },
     "devDependencies": {
+        "@types/glob": "^7.1.1",
+        "@types/mocha": "^5.2.6",
+        "@types/vscode": "1.40.0",
+        "glob": "^7.1.4",
+        "mocha": "^6.1.4",
         "prettier": "^1.18.2",
+        "source-map-support": "^0.5.12",
         "ts-loader": "^6.2.0",
         "tslint": "^5.20.0",
         "tslint-config-prettier": "^1.18.0",
         "tslint-microsoft-contrib": "^6.2.0",
         "tslint-plugin-prettier": "^2.0.1",
         "typescript": "^3.6.4",
-        "vscode": "^1.1.36",
+        "vscode-test": "1.2.3",
         "webpack": "^4.41.2",
         "webpack-cli": "^3.3.9"
     }

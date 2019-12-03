@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
+// tslint:disable-next-line: no-implicit-dependencies
 import * as vscode from "vscode";
 
 export let doc: vscode.TextDocument;
@@ -35,7 +36,8 @@ async function sleep(ms: number): Promise<unknown> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export const getDocPath: (p: string) => string = (p: string): string => path.resolve(__dirname, "../../testFixture", p);
+export const getDocPath: (p: string) => string = (p: string): string =>
+    path.resolve(__dirname, "../../../testFixture", p);
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 

@@ -1,6 +1,6 @@
 {
-    "name": "@microsoft/powerquery-formatter",
-    "version": "0.0.6",
+    "name": "@microsoft/powerquery-format",
+    "version": "0.0.31",
     "description": "Code formatting library for the Power Query / M language.",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
@@ -29,7 +29,7 @@
     ],
     "scripts": {
         "build": "node_modules\\.bin\\tsc",
-        "test": "mocha -r ts-node/register src/test/**/*.ts"
+        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
     },
     "repository": {
         "type": "git",
