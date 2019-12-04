@@ -44,7 +44,7 @@ export function getTriedInspection(
     textDocument: TextDocument,
     position: Position,
 ): undefined | PQP.Inspection.TriedInspection {
-    const cacheKey: string = `${textDocument.uri},${position.character},${position.line}`;
+    const cacheKey: string = textDocument.uri;
     const maybePositionCache:
         | undefined
         | WeakMap<Position, undefined | PQP.Inspection.TriedInspection> = triedInspectionCache.get(cacheKey);
@@ -120,15 +120,27 @@ function createTriedInspection(
     position: Position,
 ): undefined | PQP.Inspection.TriedInspection {
     const triedLexParse: PQP.TriedLexParse = getTriedLexParse(textDocument);
+    let nodeIdMapCollection: PQP.NodeIdMap.Collection;
+    let leafNodeIds: ReadonlyArray<number>;
+
     if (triedLexParse.kind === PQP.ResultKind.Err) {
-        return undefined;
+        // You can't inspect something that was never parsed
+        if (!(triedLexParse.error instanceof PQP.ParseError.ParseError)) {
+            return undefined;
+        }
+        const context: PQP.ParserContext.State = triedLexParse.error.context;
+        nodeIdMapCollection = context.nodeIdMapCollection;
+        leafNodeIds = context.leafNodeIds;
+    } else {
+        const parseOk: PQP.ParseOk = triedLexParse.value;
+        nodeIdMapCollection = parseOk.nodeIdMapCollection;
+        leafNodeIds = parseOk.leafNodeIds;
     }
 
-    const lexParseOk: PQP.LexParseOk = triedLexParse.value;
     const inspectionPosition: PQP.Inspection.Position = {
         lineNumber: position.line,
         lineCodeUnit: position.character,
     };
 
-    return PQP.Inspection.tryFrom(inspectionPosition, lexParseOk.nodeIdMapCollection, lexParseOk.leafNodeIds);
+    return PQP.Inspection.tryFrom(inspectionPosition, nodeIdMapCollection, leafNodeIds);
 }

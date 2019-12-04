@@ -7,12 +7,19 @@ import { DocumentSymbol, SymbolKind } from "vscode-languageserver-types";
 import * as Common from "./common";
 import { SignatureProviderContext } from "./providers";
 
+export function getContextForInspected(inspected: PQP.Inspection.Inspected): undefined | SignatureProviderContext {
+    return inspected.maybeInvokeExpression !== undefined
+        ? getContextForInvokeExpression(inspected.maybeInvokeExpression)
+        : undefined;
+}
+
 export function getContextForInvokeExpression(
-    expression: PQP.Inspection.InspectedInvokeExpression,
-): SignatureProviderContext | undefined {
-    const functionName: undefined | string = expression.maybeName !== undefined ? expression.maybeName : undefined;
+    maybeExpression: PQP.Inspection.InspectedInvokeExpression,
+): undefined | SignatureProviderContext {
+    const functionName: undefined | string =
+        maybeExpression.maybeName !== undefined ? maybeExpression.maybeName : undefined;
     const argumentOrdinal: undefined | number =
-        expression.maybeArguments !== undefined ? expression.maybeArguments.positionArgumentIndex : undefined;
+        maybeExpression.maybeArguments !== undefined ? maybeExpression.maybeArguments.positionArgumentIndex : undefined;
 
     if (functionName !== undefined || argumentOrdinal !== undefined) {
         return {
