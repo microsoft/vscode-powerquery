@@ -9,6 +9,11 @@ const lexerSnapshotCache: Map<string, PQP.TriedLexerSnapshot> = new Map();
 const triedLexParseCache: Map<string, PQP.TriedLexParse> = new Map();
 const triedInspectionCache: Map<string, InspectionMap> = new Map();
 
+// Notice that the value type for WeakMap includes undefined.
+// Take thethe scenario where an inspection was requested on a document that was not parsable,
+// then createTriedInspection would return undefined as you can't inspect something that wasn't parsed.
+// If we used WeakMap.get(...) we wouldn't know if an undefined was returned because of a cache miss
+// or that we we couldn't do an inspection.
 type InspectionMap = WeakMap<Position, undefined | PQP.Inspection.TriedInspection>;
 
 const allCaches: Map<string, any>[] = [lexerSnapshotCache, lexerStateCache, triedLexParseCache, triedInspectionCache];
@@ -40,6 +45,8 @@ export function getTriedLexParse(textDocument: TextDocument): PQP.TriedLexParse 
     return getOrCreate(triedLexParseCache, textDocument, createTriedLexParse);
 }
 
+// We can't easily reuse getOrCreate because inspections require a position argument.
+// This results in a double layer cache.
 export function getTriedInspection(
     textDocument: TextDocument,
     position: Position,
@@ -115,6 +122,8 @@ function createTriedLexParse(textDocument: TextDocument): PQP.TriedLexParse {
     };
 }
 
+// We're allowed to return undefined because if a document wasn't parsed
+// then there's no way to perform an inspection.
 function createTriedInspection(
     textDocument: TextDocument,
     position: Position,
