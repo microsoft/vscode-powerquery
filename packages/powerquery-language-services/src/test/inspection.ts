@@ -16,40 +16,6 @@ function expectScope(inspected: PQP.Inspection.Inspected, expected: string[]): v
     expect(inspected.scope).to.have.keys(expected);
 }
 
-function expectNumOfNodeKind(
-    inspected: PQP.Inspection.Inspected,
-    expectedKind: PQP.Ast.NodeKind,
-    expectedNum: number,
-): void {
-    const actualNum: number = inspected.visitedNodes.filter(x => x.kind === expectedKind).length;
-    expect(actualNum).to.equal(
-        expectedNum,
-        `expected to find ${expectedNum} of ${expectedKind}, but found ${actualNum} instead.`,
-    );
-}
-
-function expectNthOfNodeKind<T>(
-    inspected: PQP.Inspection.Inspected,
-    nodeKind: PQP.Ast.NodeKind,
-    nth: number,
-): T & PQP.Inspection.IInspectedNode {
-    if (nth <= 0) {
-        throw new Error("nth must be > 0");
-    }
-
-    let nthFound: number = 0;
-    for (const node of inspected.visitedNodes) {
-        if (node.kind === nodeKind) {
-            nthFound += 1;
-            if (nth === nthFound) {
-                return (node as unknown) as T & PQP.Inspection.IInspectedNode;
-            }
-        }
-    }
-
-    throw new Error(`only found ${nthFound} out of ${nth} ${nodeKind} nodes.`);
-}
-
 // Unit testing for analysis operations related to power query parser inspection results.
 describe("Inspection - InvokeExpression", () => {
     it("getContextForInvokeExpression - Date.AddDays(d|,", () => {
@@ -148,6 +114,6 @@ describe("Inspection - Identifiers in Scope", () => {
         );
 
         // TODO: e should not be in scope
-        expectScope(inspected, ["a", "b", "c", "e"]);
+        expectScope(inspected, ["a", "b", "c"]);
     });
 });
