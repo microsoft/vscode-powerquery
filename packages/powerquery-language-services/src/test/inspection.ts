@@ -113,7 +113,6 @@ describe("Inspection - Identifiers in Scope", () => {
             "section foo; a = 1; b = 2; c = let d = 2 in d; e = |",
         );
 
-        // TODO: e should not be in scope
         expectScope(inspected, ["a", "b", "c"]);
     });
 });
