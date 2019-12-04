@@ -17,141 +17,90 @@ function expectScope(inspected: PQP.Inspection.Inspected, expected: string[]): v
 }
 
 // Unit testing for analysis operations related to power query parser inspection results.
-describe("Inspection - InvokeExpression", () => {
-    it("zero parameter function", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection("Text.Guid(|)");
-        expect(inspected.nodes.length).equals(1);
-        expect(inspected.nodes[0].kind).equals(PQP.Inspection.NodeKind.InvokeExpression);
-    });
+describe("InspectedInvokeExpression", () => {
+    describe("getContextForInspected", () => {
+        it("Date.AddDays(d|,", () => {
+            const inspected: PQP.Inspection.Inspected = Utils.getInspection("Date.AddDays(d|,");
+            const maybeContext: SignatureProviderContext | undefined = InspectionHelpers.getContextForInspected(
+                inspected,
+            );
+            assert.isDefined(maybeContext);
+            const context: SignatureProviderContext = maybeContext!;
 
-    it("getCurrentNodeAsInvokeExpression", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection("Text.Guid(|)");
-        const expression:
-            | PQP.Inspection.InvokeExpression
-            | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
-
-        assert.isDefined(expression, "expression should be defined.");
-
-        if (expression) {
-            expect(expression.maybeName).equals("Text.Guid");
-            assert.isDefined(expression.maybeArguments);
-            expect(expression.maybeArguments!.numArguments).equals(0);
-        }
-    });
-
-    it("getCurrentNodeAsInvokeExpression multiline", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection("Text.Guid(\n|)");
-        const expression:
-            | PQP.Inspection.InvokeExpression
-            | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
-
-        assert.isDefined(expression, "expression should be defined.");
-
-        if (expression) {
-            expect(expression.maybeName).equals("Text.Guid");
-            assert.isDefined(expression.maybeArguments);
-            expect(expression.maybeArguments!.numArguments).equals(0);
-        }
-    });
-
-    it("getContextForInvokeExpression - Date.AddDays(d,|", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection("Date.AddDays(d,|");
-        const expression:
-            | PQP.Inspection.InvokeExpression
-            | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
-        const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
-            expression!,
-        );
-
-        assert.isDefined(context, "context should be defined");
-        if (context) {
-            expect(context.functionName).to.equal("Date.AddDays");
-            expect(context.argumentOrdinal).to.equal(1);
-        }
-    });
-
-    it("getContextForInvokeExpression - Date.AddDays(d,1|)", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection("Date.AddDays(d,1|)");
-        const expression:
-            | PQP.Inspection.InvokeExpression
-            | undefined = InspectionHelpers.getCurrentNodeAsInvokeExpression(inspected);
-        const context: SignatureProviderContext | undefined = InspectionHelpers.getContextForInvokeExpression(
-            expression!,
-        );
-
-        assert.isDefined(context, "context should be defined");
-        if (context) {
-            expect(context.functionName).to.equal("Date.AddDays");
-            expect(context.argumentOrdinal).to.equal(1);
-        }
-    });
-
-    it("DirectQueryForSQL file", () => {
-        const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
-        const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(document, {
-            line: 68,
-            character: 23,
+            expect(context.maybeFunctionName).to.equal("Date.AddDays");
+            expect(context.maybeArgumentOrdinal).to.equal(0);
         });
 
-        if (triedInspect === undefined) {
-            throw new Error("triedInspect should not be undefined");
-        }
-
-        expect(triedInspect.kind).equals(PQP.ResultKind.Ok);
-
-        if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
-            const inspected: PQP.Inspection.Inspected = triedInspect.value;
-
-            expectScope(inspected, [
-                "ConnectionString",
-                "Credential",
-                "CredentialConnectionString",
-                "DirectSQL",
-                "DirectSQL.Icons",
-                "DirectSQL.UI",
-                "OdbcDataSource",
-                "database",
-                "server",
-            ]);
-
-            assert.isDefined(inspected.maybePositionIdentifier, "position identifier should be defined");
-
-            expect(inspected.maybePositionIdentifier!.identifier.kind).equals(
-                PQP.Ast.NodeKind.Identifier,
-                "expecting identifier",
+        it("Date.AddDays(d,|", () => {
+            const inspected: PQP.Inspection.Inspected = Utils.getInspection("Date.AddDays(d,|");
+            const maybeContext: SignatureProviderContext | undefined = InspectionHelpers.getContextForInspected(
+                inspected,
             );
+            assert.isDefined(maybeContext);
+            const context: SignatureProviderContext = maybeContext!;
 
-            const identifier: PQP.Ast.Identifier = inspected.maybePositionIdentifier!.identifier as PQP.Ast.Identifier;
+            expect(context.maybeFunctionName).to.equal("Date.AddDays");
+            expect(context.maybeArgumentOrdinal).to.equal(1);
+        });
 
-            expect(identifier.literal).equals("OdbcDataSource");
-            expect(identifier.tokenRange.positionStart.lineNumber).equals(40);
-        }
-    });
-});
+        it("Date.AddDays(d,1|", () => {
+            const inspected: PQP.Inspection.Inspected = Utils.getInspection("Date.AddDays(d,1|");
+            const maybeContext: SignatureProviderContext | undefined = InspectionHelpers.getContextForInspected(
+                inspected,
+            );
+            assert.isDefined(maybeContext);
+            const context: SignatureProviderContext = maybeContext!;
 
-describe("Inspection - Identifiers in Scope", () => {
-    it("section foo; a = 1; b = 2; c = let d = 2 in |", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection(
-            "section foo; a = 1; b = 2; c = let d = 2 in |",
-        );
+            expect(context.maybeFunctionName).to.equal("Date.AddDays");
+            expect(context.maybeArgumentOrdinal).to.equal(1);
+        });
 
-        expectScope(inspected, ["d", "c", "b", "a"]);
-    });
+        describe("file", () => {
+            it("DirectQueryForSQL file", () => {
+                const document: Utils.MockDocument = Utils.createDocumentFromFile("DirectQueryForSQL.pq");
+                const triedInspect: PQP.Inspection.TriedInspection | undefined = WorkspaceCache.getTriedInspection(
+                    document,
+                    {
+                        line: 68,
+                        character: 23,
+                    },
+                );
 
-    it("section foo; a = 1; b = 2; c = let d = 2 in |d; e = () => true;", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection(
-            "section foo; a = 1; b = 2; c = let d = 2 in |d; e = () => true;",
-        );
+                if (triedInspect === undefined) {
+                    throw new Error("triedInspect should not be undefined");
+                }
 
-        expectScope(inspected, ["a", "b", "d", "e"]);
-    });
+                expect(triedInspect.kind).equals(PQP.ResultKind.Ok);
 
-    it("section foo; a = 1; b = 2; c = let d = 2 in d; e = |", () => {
-        const inspected: PQP.Inspection.Inspected = Utils.getInspection(
-            "section foo; a = 1; b = 2; c = let d = 2 in d; e = |",
-        );
+                if (triedInspect && triedInspect.kind === PQP.ResultKind.Ok) {
+                    const inspected: PQP.Inspection.Inspected = triedInspect.value;
 
-        // TODO: e should not be in scope
-        expectScope(inspected, ["a", "b", "c", "e"]);
+                    expectScope(inspected, [
+                        "ConnectionString",
+                        "Credential",
+                        "CredentialConnectionString",
+                        "DirectSQL",
+                        "DirectSQL.Icons",
+                        "DirectSQL.UI",
+                        "OdbcDataSource",
+                        "database",
+                        "server",
+                    ]);
+
+                    assert.isDefined(inspected.maybePositionIdentifier, "position identifier should be defined");
+
+                    expect(inspected.maybePositionIdentifier!.identifier.kind).equals(
+                        PQP.Ast.NodeKind.Identifier,
+                        "expecting identifier",
+                    );
+
+                    const identifier: PQP.Ast.Identifier = inspected.maybePositionIdentifier!
+                        .identifier as PQP.Ast.Identifier;
+
+                    expect(identifier.literal).equals("OdbcDataSource");
+                    expect(identifier.tokenRange.positionStart.lineNumber).equals(40);
+                }
+            });
+        });
     });
 });

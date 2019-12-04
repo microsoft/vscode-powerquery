@@ -68,7 +68,7 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
     }
 
     public async getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp> {
-        const member: string | undefined = this.getMember(context.functionName);
+        const member: string | undefined = this.getMember(context.maybeFunctionName);
         if (member) {
             return {
                 signatures: [
@@ -78,7 +78,7 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
                     },
                 ],
                 // tslint:disable-next-line: no-null-keyword
-                activeParameter: context.argumentOrdinal ? context.argumentOrdinal : null,
+                activeParameter: context.maybeArgumentOrdinal ? context.maybeArgumentOrdinal : null,
                 activeSignature: 0,
             };
         }
@@ -90,7 +90,11 @@ export class SimpleLibraryProvider implements LibrarySymbolProvider {
         throw new Error("Method not implemented.");
     }
 
-    private getMember(value: string): string | undefined {
+    private getMember(value: undefined | string): undefined | string {
+        if (value === undefined) {
+            return undefined;
+        }
+
         return this.members.find((member: string) => {
             return value === member;
         });

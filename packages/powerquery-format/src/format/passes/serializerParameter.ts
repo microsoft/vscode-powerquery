@@ -448,7 +448,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                 };
             }
 
-            setWorkspace(state, node.constant, otherWorkspace);
+            setWorkspace(state, node.operatorConstant, otherWorkspace);
             setWorkspace(state, node.right, otherWorkspace);
             break;
         }

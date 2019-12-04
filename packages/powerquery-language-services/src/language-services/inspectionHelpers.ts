@@ -7,36 +7,28 @@ import { DocumentSymbol, SymbolKind } from "vscode-languageserver-types";
 import * as Common from "./common";
 import { SignatureProviderContext } from "./providers";
 
-export function getContextForInvokeExpression(
-    expression: PQP.Inspection.InvokeExpression,
-): SignatureProviderContext | undefined {
-    const functionName: string | undefined = expression.maybeName;
-    if (functionName) {
-        let argumentOrdinal: number | undefined;
-        if (expression.maybeArguments) {
-            argumentOrdinal = expression.maybeArguments.positionArgumentIndex;
-        }
-
-        return {
-            argumentOrdinal,
-            functionName,
-        };
-    }
-
-    return undefined;
+export function getContextForInspected(inspected: PQP.Inspection.Inspected): undefined | SignatureProviderContext {
+    return inspected.maybeInvokeExpression !== undefined
+        ? getContextForInvokeExpression(inspected.maybeInvokeExpression)
+        : undefined;
 }
 
-export function getCurrentNodeAsInvokeExpression(
-    inspected: PQP.Inspection.Inspected,
-): PQP.Inspection.InvokeExpression | undefined {
-    if (inspected.nodes.length > 0) {
-        const node: PQP.Inspection.TNode = inspected.nodes[0];
-        if (node.kind === PQP.Inspection.NodeKind.InvokeExpression) {
-            return node;
-        }
-    }
+export function getContextForInvokeExpression(
+    maybeExpression: PQP.Inspection.InspectedInvokeExpression,
+): undefined | SignatureProviderContext {
+    const functionName: undefined | string =
+        maybeExpression.maybeName !== undefined ? maybeExpression.maybeName : undefined;
+    const argumentOrdinal: undefined | number =
+        maybeExpression.maybeArguments !== undefined ? maybeExpression.maybeArguments.positionArgumentIndex : undefined;
 
-    return undefined;
+    if (functionName !== undefined || argumentOrdinal !== undefined) {
+        return {
+            maybeArgumentOrdinal: argumentOrdinal,
+            maybeFunctionName: functionName,
+        };
+    } else {
+        return undefined;
+    }
 }
 
 export function getSymbolKindForLiteralExpression(node: PQP.Ast.LiteralExpression): SymbolKind {
