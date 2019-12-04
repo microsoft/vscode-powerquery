@@ -31,20 +31,6 @@ export function getContextForInvokeExpression(
     }
 }
 
-export function getCurrentNodeAsInvokeExpression(
-    inspected: PQP.Inspection.Inspected,
-): PQP.Inspection.InspectedInvokeExpression | undefined {
-    const visitedNodes: ReadonlyArray<PQP.Inspection.IInspectedNode> = inspected.visitedNodes;
-    if (visitedNodes.length) {
-        const node: PQP.Inspection.IInspectedNode = visitedNodes[0];
-        if (node.kind === PQP.Ast.NodeKind.InvokeExpression) {
-            return node as PQP.Inspection.InspectedInvokeExpression;
-        }
-    }
-
-    return undefined;
-}
-
 export function getSymbolKindForLiteralExpression(node: PQP.Ast.LiteralExpression): SymbolKind {
     switch (node.literalKind) {
         case PQP.Ast.LiteralKind.List:
