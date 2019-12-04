@@ -82,11 +82,11 @@ class DocumentAnalysis implements Analysis {
         const getKeywords: Promise<CompletionItem[]> = this.keywordProvider.getCompletionItems(context).catch(() => {
             return Common.EmptyCompletionItems;
         });
-        const getEnvironmentCompletionItems: Promise<
-            CompletionItem[]
-        > = this.environmentSymbolProvider.getCompletionItems(context).catch(() => {
-            return Common.EmptyCompletionItems;
-        });
+        const getEnvironmentCompletionItems: Promise<CompletionItem[]> = this.environmentSymbolProvider
+            .getCompletionItems(context)
+            .catch(() => {
+                return Common.EmptyCompletionItems;
+            });
         const getLocalCompletionItems: Promise<CompletionItem[]> = this.localSymbolProvider
             .getCompletionItems(context)
             .catch(() => {

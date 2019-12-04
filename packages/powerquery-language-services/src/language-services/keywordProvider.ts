@@ -15,7 +15,7 @@ export class KeywordProvider implements CompletionItemProvider {
 
     constructor() {
         PQP.Keywords.forEach(keyword => {
-            if (excludedKeywords.indexOf(keyword) !== -1) {
+            if (excludedKeywords.indexOf(keyword) === -1) {
                 this.keywordCompletionItems.push({
                     kind: CompletionItemKind.Keyword,
                     label: keyword,
