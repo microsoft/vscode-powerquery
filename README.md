@@ -32,6 +32,14 @@ lerna run build
 lerna run test
 ```
 
+## How to clean
+
+**Warning:** Because of the symlinks created by lerna, you should not run `git clean` commands to remove package dependencies. Instead, you should use lerna's [`clean`](https://github.com/lerna/lerna/tree/master/commands/clean#readme) command.
+
+```cmd
+lerna clean
+```
+
 ## Generate vscode extension
 
 Install the [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) CLI utility.
