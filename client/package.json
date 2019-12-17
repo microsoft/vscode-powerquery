@@ -24,7 +24,9 @@
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run build",
-        "test-disabled": "node ./out/test/runTest.js"
+        "test-disabled": "node ./out/test/runTest.js",
+        "webpack-prod": "node_modules\\.bin\\webpack --mode production",
+        "webpack-dev": "node_modules\\.bin\\webpack  --mode development --watch"
     },
     "dependencies": {
         "vscode-languageclient": "6.0.0-next.8"
@@ -44,7 +46,7 @@
         "tslint-plugin-prettier": "^2.0.1",
         "typescript": "^3.6.4",
         "vscode-test": "1.2.3",
-        "webpack": "^4.41.2",
-        "webpack-cli": "^3.3.9"
+        "webpack": "^4.41.3",
+        "webpack-cli": "^3.3.10"
     }
 }
