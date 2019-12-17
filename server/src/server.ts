@@ -7,11 +7,12 @@ import {
     FormatRequest,
     IndentationLiteral,
     NewlineLiteral,
+    Result,
+    ResultKind,
     SerializerOptions,
 } from "@microsoft/powerquery-format";
 import * as LanguageServices from "@microsoft/powerquery-language-services";
 import * as Library from "@microsoft/powerquery-library";
-import { Result, ResultKind } from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
