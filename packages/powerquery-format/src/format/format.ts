@@ -20,6 +20,8 @@ import { tryTraverse as tryTraverseIsMultilineMap } from "./passes/isMultiline/i
 import { SerializerParameterMap, tryTraverse as tryTraverseSerializerParameter } from "./passes/serializerParameter";
 import { Serializer, SerializerOptions, SerializerPassthroughMaps, SerializerRequest } from "./serializer";
 
+export { Result, ResultKind } from "@microsoft/powerquery-parser";
+
 export interface FormatRequest {
     readonly text: string;
     readonly options: SerializerOptions;

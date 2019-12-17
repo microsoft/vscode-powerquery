@@ -48,16 +48,21 @@ class StaticLibrarySymbolProvider implements LibrarySymbolProvider {
     }
 
     public async getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp | null> {
-        const definition: LibraryDefinition | undefined = this.activeLibrary.get(context.functionName);
-        if (definition) {
-            const signatures: SignatureInformation[] = Utils.signaturesToSignatureInformation(definition.signatures);
+        const functionName: string | undefined = context.maybeFunctionName;
+        if (functionName) {
+            const definition: LibraryDefinition | undefined = this.activeLibrary.get(functionName);
+            if (definition) {
+                const signatures: SignatureInformation[] = Utils.signaturesToSignatureInformation(
+                    definition.signatures,
+                );
 
-            return {
-                signatures: signatures,
-                // tslint:disable-next-line: no-null-keyword
-                activeParameter: context.argumentOrdinal ? context.argumentOrdinal : null,
-                activeSignature: signatures.length - 1,
-            };
+                return {
+                    signatures: signatures,
+                    // tslint:disable-next-line: no-null-keyword
+                    activeParameter: context.maybeArgumentOrdinal ? context.maybeArgumentOrdinal : null,
+                    activeSignature: signatures.length - 1,
+                };
+            }
         }
 
         // tslint:disable-next-line: no-null-keyword
