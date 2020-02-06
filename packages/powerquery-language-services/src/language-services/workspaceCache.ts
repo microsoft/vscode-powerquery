@@ -92,7 +92,7 @@ function getOrCreate<T>(
 }
 
 function createLexerState(textDocument: TextDocument): PQP.Lexer.State {
-    return PQP.Lexer.stateFrom(textDocument.getText());
+    return PQP.Lexer.stateFrom(PQP.DefaultSettings, textDocument.getText());
 }
 
 function createTriedLexerSnapshot(textDocument: TextDocument): PQP.TriedLexerSnapshot {
@@ -107,7 +107,7 @@ function createTriedLexParse(textDocument: TextDocument): PQP.TriedLexParse {
     }
     const lexerSnapshot: PQP.LexerSnapshot = triedLexerSnapshot.value;
 
-    const triedParse: PQP.TriedParse = PQP.tryParse(lexerSnapshot, PQP.Parser.CombinatorialParser);
+    const triedParse: PQP.TriedParse = PQP.tryParse(PQP.DefaultSettings, lexerSnapshot);
     if (triedParse.kind === PQP.ResultKind.Err) {
         return triedParse;
     }
@@ -131,6 +131,7 @@ function createTriedInspection(
     const triedLexParse: PQP.TriedLexParse = getTriedLexParse(textDocument);
     let nodeIdMapCollection: PQP.NodeIdMap.Collection;
     let leafNodeIds: ReadonlyArray<number>;
+    let maybeParseError: PQP.ParseError.ParseError | undefined;
 
     if (triedLexParse.kind === PQP.ResultKind.Err) {
         // You can't inspect something that was never parsed
@@ -140,6 +141,7 @@ function createTriedInspection(
         const context: PQP.ParserContext.State = triedLexParse.error.context;
         nodeIdMapCollection = context.nodeIdMapCollection;
         leafNodeIds = context.leafNodeIds;
+        maybeParseError = triedLexParse.error;
     } else {
         const parseOk: PQP.ParseOk = triedLexParse.value;
         nodeIdMapCollection = parseOk.nodeIdMapCollection;
@@ -151,5 +153,11 @@ function createTriedInspection(
         lineCodeUnit: position.character,
     };
 
-    return PQP.Inspection.tryFrom(inspectionPosition, nodeIdMapCollection, leafNodeIds);
+    return PQP.Inspection.tryFrom(
+        PQP.DefaultSettings,
+        inspectionPosition,
+        nodeIdMapCollection,
+        leafNodeIds,
+        maybeParseError,
+    );
 }

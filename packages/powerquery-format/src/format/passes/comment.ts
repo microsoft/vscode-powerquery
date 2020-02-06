@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, NodeIdMap, Option, TComment, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, ILocalizationTemplates, NodeIdMap, TComment, Traverse } from "@microsoft/powerquery-parser";
 
 export type CommentCollectionMap = Map<number, CommentCollection>;
 
@@ -11,11 +11,13 @@ export interface CommentCollection {
 }
 
 export function tryTraverse(
+    localizationTemplates: ILocalizationTemplates,
     root: Ast.TNode,
     nodeIdMapCollection: NodeIdMap.Collection,
     comments: ReadonlyArray<TComment>,
 ): Traverse.TriedTraverse<CommentCollectionMap> {
     const state: State = {
+        localizationTemplates,
         result: new Map(),
         comments,
         commentsIndex: 0,
@@ -36,11 +38,11 @@ export function tryTraverse(
 interface State extends Traverse.IState<CommentCollectionMap> {
     readonly comments: ReadonlyArray<TComment>;
     commentsIndex: number;
-    maybeCurrentComment: Option<TComment>;
+    maybeCurrentComment: TComment | undefined;
 }
 
 function earlyExit(state: State, node: Ast.TNode): boolean {
-    const maybeCurrentComment: Option<TComment> = state.maybeCurrentComment;
+    const maybeCurrentComment: TComment | undefined = state.maybeCurrentComment;
     if (maybeCurrentComment === undefined) {
         return true;
     } else if (node.tokenRange.positionEnd.codeUnit < maybeCurrentComment.positionStart.codeUnit) {
@@ -55,12 +57,12 @@ function visitNode(state: State, node: Ast.TNode): void {
         return;
     }
 
-    let maybeCurrentComment: Option<TComment> = state.maybeCurrentComment;
+    let maybeCurrentComment: TComment | undefined = state.maybeCurrentComment;
     while (maybeCurrentComment && maybeCurrentComment.positionStart.codeUnit < node.tokenRange.positionStart.codeUnit) {
         const currentComment: TComment = maybeCurrentComment;
         const commentMap: CommentCollectionMap = state.result;
         const nodeId: number = node.id;
-        const maybeCommentCollection: Option<CommentCollection> = commentMap.get(nodeId);
+        const maybeCommentCollection: CommentCollection | undefined = commentMap.get(nodeId);
 
         // It's the first comment for the TNode
         if (maybeCommentCollection === undefined) {

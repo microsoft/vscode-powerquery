@@ -1,7 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, CommonError, isNever, NodeIdMap, Option, Result, ResultKind } from "@microsoft/powerquery-parser";
+import {
+    Ast,
+    CommonError,
+    isNever,
+    NodeIdMap,
+    NodeIdMapUtils,
+    Result,
+    ResultKind,
+    CommonSettings,
+} from "@microsoft/powerquery-parser";
 import { CommentCollectionMap } from "./passes/comment";
 import {
     getSerializerWriteKind,
@@ -37,12 +46,12 @@ export class Serializer {
         this.expandIndentationCache(10);
     }
 
-    public static run(request: SerializerRequest): Result<string, CommonError.CommonError> {
+    public static run(settings: SerializerSettings): Result<string, CommonError.CommonError> {
         const serializer: Serializer = new Serializer(
-            request.document,
-            request.nodeIdMapCollection,
-            request.maps,
-            request.options,
+            settings.document,
+            settings.nodeIdMapCollection,
+            settings.maps,
+            settings.options,
         );
 
         try {
@@ -53,7 +62,7 @@ export class Serializer {
         } catch (err) {
             return {
                 kind: ResultKind.Err,
-                error: CommonError.ensureCommonError(err),
+                error: CommonError.ensureCommonError(settings.localizationTemplates, err),
             };
         }
     }
@@ -111,7 +120,7 @@ export class Serializer {
 
     private serializePadded(str: string, padLeft: boolean, padRight: boolean): void {
         if (padLeft && this.currentLine) {
-            const lastWrittenCharacter: Option<string> = this.currentLine[this.currentLine.length - 1];
+            const lastWrittenCharacter: string | undefined = this.currentLine[this.currentLine.length - 1];
             if (lastWrittenCharacter !== " " && lastWrittenCharacter !== "\t") {
                 this.append(" ");
             }
@@ -126,17 +135,17 @@ export class Serializer {
 
     private visitNode(node: Ast.TNode): void {
         const nodeId: number = node.id;
-        const maybeIndentationChange: Option<
-            IndentationChange
-        > = this.passthroughMaps.serializerParameterMap.indentationChange.get(nodeId);
+        const maybeIndentationChange:
+            | IndentationChange
+            | undefined = this.passthroughMaps.serializerParameterMap.indentationChange.get(nodeId);
         if (maybeIndentationChange) {
             this.indentationLevel += 1;
         }
 
         if (node.isLeaf) {
-            const maybeComments: Option<
-                ReadonlyArray<SerializeCommentParameter>
-            > = this.passthroughMaps.serializerParameterMap.comments.get(nodeId);
+            const maybeComments:
+                | ReadonlyArray<SerializeCommentParameter>
+                | undefined = this.passthroughMaps.serializerParameterMap.comments.get(nodeId);
             if (maybeComments) {
                 this.visitComments(maybeComments);
             }
@@ -148,7 +157,7 @@ export class Serializer {
                     node,
                     this.passthroughMaps.serializerParameterMap,
                 );
-                this.serialize(node.literal, writeKind);
+                this.serialize(node.constantKind, writeKind);
                 break;
             }
 
@@ -172,7 +181,7 @@ export class Serializer {
             }
 
             default:
-                const maybeChildren: Option<ReadonlyArray<Ast.TNode>> = NodeIdMap.maybeAstChildren(
+                const maybeChildren: ReadonlyArray<Ast.TNode> | undefined = NodeIdMapUtils.maybeAstChildren(
                     this.nodeIdMapCollection,
                     node.id,
                 );
@@ -199,7 +208,7 @@ export class Serializer {
     }
 
     private currentIndentation(): string {
-        const maybeIndentationLiteral: Option<string> = this.indentationCache[this.indentationLevel];
+        const maybeIndentationLiteral: string | undefined = this.indentationCache[this.indentationLevel];
         if (maybeIndentationLiteral === undefined) {
             return this.expandIndentationCache(this.indentationLevel);
         } else {
@@ -217,7 +226,7 @@ export class Serializer {
     }
 }
 
-export interface SerializerRequest {
+export interface SerializerSettings extends CommonSettings {
     readonly document: Ast.TDocument;
     readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly maps: SerializerPassthroughMaps;

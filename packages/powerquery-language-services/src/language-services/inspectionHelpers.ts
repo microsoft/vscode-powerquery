@@ -120,7 +120,7 @@ export function getSymbolsForInspectionScope(inspected: PQP.Inspection.Inspected
     const documentSymbols: DocumentSymbol[] = [];
 
     inspected.scope.forEach((value, key) => {
-        if (value.kind === PQP.NodeIdMap.XorNodeKind.Ast) {
+        if (value.kind === PQP.XorNodeKind.Ast) {
             if (value.node.kind === PQP.Ast.NodeKind.IdentifierPairedExpression) {
                 documentSymbols.push(getSymbolForIdentifierPairedExpression(value.node));
             } else {

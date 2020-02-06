@@ -1,7 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, CommonError, isNever, NodeIdMap, Option, TComment, Traverse } from "@microsoft/powerquery-parser";
+import {
+    Ast,
+    CommonError,
+    ILocalizationTemplates,
+    isNever,
+    NodeIdMap,
+    NodeIdMapUtils,
+    TComment,
+    Traverse,
+} from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "./comment";
 import { maybeGetParent } from "./common";
 import { expectGetIsMultiline, IsMultilineMap } from "./isMultiline/common";
@@ -34,6 +43,7 @@ export interface SerializeCommentParameter {
 }
 
 export function tryTraverse(
+    localizationTemplates: ILocalizationTemplates,
     ast: Ast.TNode,
     nodeIdMapCollection: NodeIdMap.Collection,
     commentCollectionMap: CommentCollectionMap,
@@ -45,6 +55,7 @@ export function tryTraverse(
             indentationChange: new Map(),
             comments: new Map(),
         },
+        localizationTemplates,
         nodeIdMapCollection,
         commentCollectionMap,
         isMultilineMap,
@@ -65,7 +76,7 @@ export function getSerializerWriteKind(
     node: Ast.TNode,
     serializerParametersMap: SerializerParameterMap,
 ): SerializerWriteKind {
-    const maybeWriteKind: Option<SerializerWriteKind> = serializerParametersMap.writeKind.get(node.id);
+    const maybeWriteKind: SerializerWriteKind | undefined = serializerParametersMap.writeKind.get(node.id);
     if (maybeWriteKind) {
         return maybeWriteKind;
     } else {
@@ -75,6 +86,7 @@ export function getSerializerWriteKind(
 }
 
 interface State extends Traverse.IState<SerializerParameterMap> {
+    readonly localizationTemplates: ILocalizationTemplates;
     readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly commentCollectionMap: CommentCollectionMap;
     readonly isMultilineMap: IsMultilineMap;
@@ -95,7 +107,7 @@ const DefaultWorkspace: Workspace = {
 function visitNode(state: State, node: Ast.TNode): void {
     switch (node.kind) {
         case Ast.NodeKind.ArrayWrapper: {
-            const parent: Ast.TNode = NodeIdMap.expectParentAstNode(state.nodeIdMapCollection, node.id);
+            const parent: Ast.TNode = NodeIdMapUtils.expectParentAstNode(state.nodeIdMapCollection, node.id);
 
             switch (parent.kind) {
                 case Ast.NodeKind.Section:
@@ -176,7 +188,7 @@ function visitNode(state: State, node: Ast.TNode): void {
 
         case Ast.NodeKind.Csv: {
             const workspace: Workspace = getWorkspace(state, node);
-            const maybeWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
+            const maybeWriteKind: SerializerWriteKind | undefined = workspace.maybeWriteKind;
             propagateWriteKind(state, node, node.node);
 
             if (node.maybeCommaConstant && maybeWriteKind !== SerializerWriteKind.Indented) {
@@ -253,7 +265,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
 
         case Ast.NodeKind.FieldSpecification: {
-            const maybeOptionalConstant: Option<Ast.Constant> = node.maybeOptionalConstant;
+            const maybeOptionalConstant: Ast.Constant | undefined = node.maybeOptionalConstant;
 
             if (maybePropagateWriteKind(state, node, maybeOptionalConstant)) {
                 setWorkspace(state, node.name, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
@@ -261,9 +273,10 @@ function visitNode(state: State, node: Ast.TNode): void {
                 propagateWriteKind(state, node, node.name);
             }
 
-            const maybeFieldTypeSpeification: Option<Ast.FieldTypeSpecification> = node.maybeFieldTypeSpeification;
-            if (maybeFieldTypeSpeification) {
-                const fieldTypeSpecification: Ast.FieldTypeSpecification = maybeFieldTypeSpeification;
+            const maybeFieldTypeSpecification: Ast.FieldTypeSpecification | undefined =
+                node.maybeFieldTypeSpecification;
+            if (maybeFieldTypeSpecification) {
+                const fieldTypeSpecification: Ast.FieldTypeSpecification = maybeFieldTypeSpecification;
                 const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, fieldTypeSpecification);
                 let typeWorkspace: Workspace;
 
@@ -540,7 +553,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             const isMultilineMap: IsMultilineMap = state.isMultilineMap;
 
             let sectionConstantWriteKind: SerializerWriteKind = SerializerWriteKind.Any;
-            const maybeLiteralAttributes: Option<Ast.RecordLiteral> = node.maybeLiteralAttributes;
+            const maybeLiteralAttributes: Ast.RecordLiteral | undefined = node.maybeLiteralAttributes;
             if (maybeLiteralAttributes) {
                 const literalAttributes: Ast.RecordLiteral = maybeLiteralAttributes;
 
@@ -552,7 +565,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             }
             setWorkspace(state, node.sectionConstant, { maybeWriteKind: sectionConstantWriteKind });
 
-            const maybeName: Option<Ast.Identifier> = node.maybeName;
+            const maybeName: Ast.Identifier | undefined = node.maybeName;
             if (maybeName) {
                 const name: Ast.Identifier = maybeName;
                 setWorkspace(state, name, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
@@ -563,7 +576,7 @@ function visitNode(state: State, node: Ast.TNode): void {
 
         case Ast.NodeKind.SectionMember: {
             const isMultilineMap: IsMultilineMap = state.isMultilineMap;
-            let maybeSharedConstantWriteKind: Option<SerializerWriteKind>;
+            let maybeSharedConstantWriteKind: SerializerWriteKind | undefined;
             let isNameExpressionPairWorkspaceSet: boolean = false;
 
             if (node.maybeLiteralAttributes) {
@@ -643,7 +656,7 @@ function visitNode(state: State, node: Ast.TNode): void {
 
             const operators: ReadonlyArray<Ast.Constant> = node.operators.elements;
             const lastOperator: Ast.Constant = operators[operators.length - 1];
-            if (lastOperator.literal === Ast.UnaryOperator.Not) {
+            if (lastOperator.constantKind === Ast.UnaryOperatorKind.Not) {
                 setWorkspace(state, node.typeExpression, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
             break;
@@ -659,7 +672,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             const workspace: Workspace = getWorkspace(state, node);
             maybeSetIndentationChange(state, node, workspace.maybeIndentationChange);
 
-            let maybeWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
+            let maybeWriteKind: SerializerWriteKind | undefined = workspace.maybeWriteKind;
             maybeWriteKind = visitComments(state, node, maybeWriteKind);
             if (!maybeWriteKind) {
                 const details: {} = {
@@ -679,7 +692,7 @@ function visitNode(state: State, node: Ast.TNode): void {
 }
 
 function getWorkspace(state: State, node: Ast.TNode, fallback: Workspace = DefaultWorkspace): Workspace {
-    const maybeWorkspace: Option<Workspace> = state.workspaceMap.get(node.id);
+    const maybeWorkspace: Workspace | undefined = state.workspaceMap.get(node.id);
 
     if (maybeWorkspace !== undefined) {
         return maybeWorkspace;
@@ -698,13 +711,13 @@ function propagateWriteKind(state: State, parent: Ast.TNode, firstChild: Ast.TNo
     const workspace: Workspace = getWorkspace(state, parent);
     maybeSetIndentationChange(state, parent, workspace.maybeIndentationChange);
 
-    const maybeWriteKind: Option<SerializerWriteKind> = workspace.maybeWriteKind;
+    const maybeWriteKind: SerializerWriteKind | undefined = workspace.maybeWriteKind;
     if (maybeWriteKind) {
         setWorkspace(state, firstChild, { maybeWriteKind: maybeWriteKind });
     }
 }
 
-function maybePropagateWriteKind(state: State, parent: Ast.TNode, maybeFirstChild: Option<Ast.TNode>): boolean {
+function maybePropagateWriteKind(state: State, parent: Ast.TNode, maybeFirstChild: Ast.TNode | undefined): boolean {
     if (maybeFirstChild) {
         const firstChild: Ast.TNode = maybeFirstChild;
         propagateWriteKind(state, parent, firstChild);
@@ -717,7 +730,7 @@ function maybePropagateWriteKind(state: State, parent: Ast.TNode, maybeFirstChil
 function maybeSetIndentationChange(
     state: State,
     node: Ast.TNode,
-    maybeIndentationChange: Option<IndentationChange>,
+    maybeIndentationChange: IndentationChange | undefined,
 ): void {
     if (maybeIndentationChange) {
         state.result.indentationChange.set(node.id, maybeIndentationChange);
@@ -736,10 +749,10 @@ function maybeSetIndentationChange(
 function visitComments(
     state: State,
     node: Ast.TNode,
-    maybeWriteKind: Option<SerializerWriteKind>,
-): Option<SerializerWriteKind> {
+    maybeWriteKind: SerializerWriteKind | undefined,
+): SerializerWriteKind | undefined {
     const nodeId: number = node.id;
-    const maybeComments: Option<CommentCollection> = state.commentCollectionMap.get(nodeId);
+    const maybeComments: CommentCollection | undefined = state.commentCollectionMap.get(nodeId);
     if (!maybeComments) {
         return maybeWriteKind;
     }
@@ -754,7 +767,7 @@ function visitComments(
 
     for (let index: number = 0; index < numComments; index += 1) {
         const comment: TComment = comments[index];
-        const previousComment: Option<TComment> = comments[index - 1];
+        const previousComment: TComment | undefined = comments[index - 1];
 
         let writeKind: SerializerWriteKind;
         if (index === 0) {
@@ -814,8 +827,8 @@ function visitKeyValuePair(state: State, node: Ast.TKeyValuePair): void {
 function visitArrayWrapper(state: State, node: Ast.TArrayWrapper): void {
     const isMultiline: boolean = expectGetIsMultiline(state.isMultilineMap, node);
 
-    let maybeWriteKind: Option<SerializerWriteKind>;
-    let maybeIndentationChange: Option<IndentationChange>;
+    let maybeWriteKind: SerializerWriteKind | undefined;
+    let maybeIndentationChange: IndentationChange | undefined;
     if (isMultiline) {
         maybeWriteKind = SerializerWriteKind.Indented;
         maybeIndentationChange = 1;
@@ -832,7 +845,7 @@ function visitArrayWrapper(state: State, node: Ast.TArrayWrapper): void {
 }
 
 function visitArrayWrapperForSectionMembers(state: State, node: Ast.IArrayWrapper<Ast.SectionMember>): void {
-    let maybePreviousSectionMember: Option<Ast.SectionMember>;
+    let maybePreviousSectionMember: Ast.SectionMember | undefined;
     for (const member of node.elements) {
         if (member.kind !== Ast.NodeKind.SectionMember) {
             const details: {} = { nodeKind: member.kind };
@@ -858,14 +871,14 @@ function visitArrayWrapperForUnaryExpression(state: State, node: Ast.IArrayWrapp
     const numElements: number = node.elements.length;
 
     propagateWriteKind(state, node, elements[0]);
-    let previousWasNotOperator: boolean = elements[0].literal === Ast.UnaryOperator.Not;
+    let previousWasNotOperator: boolean = elements[0].constantKind === Ast.UnaryOperatorKind.Not;
     for (let index: number = 1; index < numElements; index += 1) {
         const operatorConstant: Ast.Constant = elements[index];
 
-        if (previousWasNotOperator || operatorConstant.literal === Ast.UnaryOperator.Not) {
+        if (previousWasNotOperator || operatorConstant.constantKind === Ast.UnaryOperatorKind.Not) {
             setWorkspace(state, operatorConstant, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
         }
-        previousWasNotOperator = operatorConstant.literal === Ast.UnaryOperator.Not;
+        previousWasNotOperator = operatorConstant.constantKind === Ast.UnaryOperatorKind.Not;
     }
 }
 
@@ -956,7 +969,7 @@ function wrapperOpenWriteKind(state: State, wrapped: Ast.TWrapped): SerializerWr
     }
 
     const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
-    let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, wrapped.id);
+    let maybeParent: Ast.TNode | undefined = maybeGetParent(nodeIdMapCollection, wrapped.id);
     if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
         maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
     }

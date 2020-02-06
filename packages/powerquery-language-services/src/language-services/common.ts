@@ -95,6 +95,6 @@ export function tokenPositionToRange(
     return undefined;
 }
 
-export function tokenRangeToRange(tokenRange: PQP.Ast.TokenRange): Range {
+export function tokenRangeToRange(tokenRange: PQP.TokenRange): Range {
     return tokenPositionToRange(tokenRange.positionStart, tokenRange.positionEnd) as Range;
 }

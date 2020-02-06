@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, NodeIdMap, Option, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, AstUtils, ILocalizationTemplates, NodeIdMap, Traverse } from "@microsoft/powerquery-parser";
 import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 
 export function tryTraverse(
+    localizationTemplates: ILocalizationTemplates,
     ast: Ast.TNode,
     isMultilineMap: IsMultilineMap,
     nodeIdMapCollection: NodeIdMap.Collection,
 ): Traverse.TriedTraverse<IsMultilineMap> {
     const state: State = {
+        localizationTemplates,
         result: isMultilineMap,
         nodeIdMapCollection,
     };
@@ -40,10 +42,10 @@ function visitNode(state: State, node: Ast.TNode): void {
         case Ast.NodeKind.LogicalExpression:
         case Ast.NodeKind.RelationalExpression: {
             const isMultilineMap: IsMultilineMap = state.result;
-            const maybeParent: Option<Ast.TNode> = maybeGetParent(state.nodeIdMapCollection, node.id);
+            const maybeParent: Ast.TNode | undefined = maybeGetParent(state.nodeIdMapCollection, node.id);
             if (
                 maybeParent &&
-                Ast.isTBinOpExpression(maybeParent) &&
+                AstUtils.isTBinOpExpression(maybeParent) &&
                 expectGetIsMultiline(isMultilineMap, maybeParent)
             ) {
                 setIsMultiline(isMultilineMap, node, true);
@@ -60,9 +62,9 @@ function visitNode(state: State, node: Ast.TNode): void {
             if (node.content.elements.length) {
                 const nodeIdMapCollection: NodeIdMap.Collection = state.nodeIdMapCollection;
 
-                let maybeParent: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
-                let maybeCsv: Option<Ast.TCsv>;
-                let maybeArrayWrapper: Option<Ast.TArrayWrapper>;
+                let maybeParent: Ast.TNode | undefined = maybeGetParent(nodeIdMapCollection, node.id);
+                let maybeCsv: Ast.TCsv | undefined;
+                let maybeArrayWrapper: Ast.TArrayWrapper | undefined;
                 if (maybeParent && maybeParent.kind === Ast.NodeKind.Csv) {
                     maybeCsv = maybeParent;
                     maybeParent = maybeGetParent(nodeIdMapCollection, maybeParent.id);
