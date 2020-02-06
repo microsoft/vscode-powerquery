@@ -4,7 +4,7 @@
 import {
     format,
     FormatError,
-    FormatRequest,
+    FormatSettings,
     IndentationLiteral,
     NewlineLiteral,
     Result,
@@ -94,12 +94,12 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
         newlineLiteral: NewlineLiteral.Windows,
     };
 
-    const formatRequest: FormatRequest = {
+    const formatSettings: FormatSettings = {
         text: document.getText(),
         options: serializerOptions,
     };
 
-    const formatResult: Result<string, FormatError.TFormatError> = format(formatRequest);
+    const formatResult: Result<string, FormatError.TFormatError> = format(formatSettings);
     if (formatResult.kind === ResultKind.Ok) {
         textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
     } else {

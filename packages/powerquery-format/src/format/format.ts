@@ -3,13 +3,12 @@
 
 import {
     Ast,
-    CommonSettings,
-    DefaultSettings,
     ILocalizationTemplates,
     LexParseOk,
     NodeIdMap,
     Result,
     ResultKind,
+    Settings,
     TComment,
     Traverse,
     TriedLexParse,
@@ -20,17 +19,23 @@ import { CommentCollectionMap, tryTraverse as tryTraverseComment } from "./passe
 import { IsMultilineMap } from "./passes/isMultiline/common";
 import { tryTraverse as tryTraverseIsMultilineMap } from "./passes/isMultiline/isMultiline";
 import { SerializerParameterMap, tryTraverse as tryTraverseSerializerParameter } from "./passes/serializerParameter";
-import { Serializer, SerializerOptions, SerializerPassthroughMaps, SerializerSettings } from "./serializer";
+import {
+    IndentationLiteral,
+    NewlineLiteral,
+    Serializer,
+    SerializerPassthroughMaps,
+    SerializerSettings,
+} from "./serializer";
 
 export { Result, ResultKind } from "@microsoft/powerquery-parser";
 
-export interface FormatSettings extends CommonSettings {
-    readonly text: string;
-    readonly options: SerializerOptions;
+export interface FormatSettings extends Settings {
+    readonly indentationLiteral: IndentationLiteral;
+    readonly newlineLiteral: NewlineLiteral;
 }
 
-export function format(formatSettings: FormatSettings): Result<string, FormatError.TFormatError> {
-    const triedLexParse: TriedLexParse = tryLexParse(DefaultSettings, formatSettings.text);
+export function format(formatSettings: FormatSettings, text: string): Result<string, FormatError.TFormatError> {
+    const triedLexParse: TriedLexParse = tryLexParse(formatSettings, text);
     if (triedLexParse.kind === ResultKind.Err) {
         return triedLexParse;
     }
@@ -88,7 +93,8 @@ export function format(formatSettings: FormatSettings): Result<string, FormatErr
         document: lexParseOk.ast,
         nodeIdMapCollection,
         maps,
-        options: formatSettings.options,
+        indentationLiteral: formatSettings.indentationLiteral,
+        newlineLiteral: formatSettings.newlineLiteral,
     };
 
     return Serializer.run(serializeRequest);

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 /* tslint:disable:no-console */
-import { DefaultTemplates, Result, ResultKind } from "@microsoft/powerquery-parser";
+import { DefaultSettings, Result, ResultKind } from "@microsoft/powerquery-parser";
 import { format, FormatSettings, IndentationLiteral, NewlineLiteral } from "./format";
 import { TFormatError } from "./format/error";
 
@@ -39,15 +39,12 @@ let
 in
     fastPow(2, 8)`;
 const settings: FormatSettings = {
-    localizationTemplates: DefaultTemplates,
-    text,
-    options: {
-        indentationLiteral: IndentationLiteral.SpaceX4,
-        newlineLiteral: NewlineLiteral.Unix,
-    },
+    ...DefaultSettings,
+    indentationLiteral: IndentationLiteral.SpaceX4,
+    newlineLiteral: NewlineLiteral.Unix,
 };
 
-const formatResult: Result<string, TFormatError> = format(settings);
+const formatResult: Result<string, TFormatError> = format(settings, text);
 if (formatResult.kind === ResultKind.Ok) {
     console.log(formatResult.value);
 } else {

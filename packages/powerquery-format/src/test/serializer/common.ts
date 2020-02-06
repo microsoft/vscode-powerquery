@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Result, ResultKind } from "@microsoft/powerquery-parser";
+import { DefaultTemplates, Result, ResultKind } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 import "mocha";
 import { TFormatError } from "../../format/error";
-import { format, FormatRequest } from "../../format/format";
+import { format, FormatSettings } from "../../format/format";
 import { IndentationLiteral, NewlineLiteral, SerializerOptions } from "../../format/serializer";
 
 const DefaultSerializerOptions: SerializerOptions = {
@@ -41,14 +41,14 @@ export function compare(expected: string, actual: string, options: SerializerOpt
 // attempts to format text twice to ensure the formatter emits the same tokens.
 export function runFormat(text: string, serializerOptions: SerializerOptions = DefaultSerializerOptions): string {
     text = text.trim();
-    const firstFormatRequest: FormatRequest = createFormatRequest(text, serializerOptions);
+    const firstFormatRequest: FormatSettings = createFormatSettings(text, serializerOptions);
     const firstFormatResult: Result<string, TFormatError> = format(firstFormatRequest);
     if (firstFormatResult.kind === ResultKind.Err) {
         throw firstFormatResult.error;
     }
     const firstOk: string = firstFormatResult.value;
 
-    const secondFormatRequest: FormatRequest = createFormatRequest(firstOk, serializerOptions);
+    const secondFormatRequest: FormatSettings = createFormatSettings(firstOk, serializerOptions);
     const secondFormatResult: Result<string, TFormatError> = format(secondFormatRequest);
     if (secondFormatResult.kind === ResultKind.Err) {
         throw secondFormatResult.error;
@@ -59,11 +59,12 @@ export function runFormat(text: string, serializerOptions: SerializerOptions = D
     return firstOk;
 }
 
-function createFormatRequest(
+function createFormatSettings(
     text: string,
     serializerOptions: SerializerOptions = DefaultSerializerOptions,
-): FormatRequest {
+): FormatSettings {
     return {
+        localizationTemplates: DefaultTemplates,
         text,
         options: serializerOptions,
     };

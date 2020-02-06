@@ -35,7 +35,8 @@ export class Serializer {
         private readonly document: Ast.TDocument,
         private readonly nodeIdMapCollection: NodeIdMap.Collection,
         private readonly passthroughMaps: SerializerPassthroughMaps,
-        private readonly serializerOptions: SerializerOptions,
+        private readonly indentationLiteral: IndentationLiteral,
+        private readonly newlineLiteral: NewlineLiteral,
 
         private formatted: string = "",
         private currentLine: string = "",
@@ -51,7 +52,8 @@ export class Serializer {
             settings.document,
             settings.nodeIdMapCollection,
             settings.maps,
-            settings.options,
+            settings.indentationLiteral,
+            settings.newlineLiteral,
         );
 
         try {
@@ -74,7 +76,7 @@ export class Serializer {
 
     private append(str: string): void {
         this.formatted += str;
-        if (str === this.serializerOptions.newlineLiteral) {
+        if (str === this.newlineLiteral) {
             this.currentLine = "";
         } else {
             this.currentLine += str;
@@ -88,8 +90,8 @@ export class Serializer {
                 break;
 
             case SerializerWriteKind.DoubleNewline:
-                this.append(this.serializerOptions.newlineLiteral);
-                this.append(this.serializerOptions.newlineLiteral);
+                this.append(this.newlineLiteral);
+                this.append(this.newlineLiteral);
                 this.append(str);
                 break;
 
@@ -112,7 +114,7 @@ export class Serializer {
 
     private serializeIndented(str: string): void {
         if (this.currentLine !== "") {
-            this.append(this.serializerOptions.newlineLiteral);
+            this.append(this.newlineLiteral);
         }
         this.append(this.currentIndentation());
         this.append(str);
@@ -219,7 +221,7 @@ export class Serializer {
     private expandIndentationCache(level: number): string {
         for (let index: number = this.indentationCache.length; index <= level; index += 1) {
             const previousIndentation: string = this.indentationCache[index - 1] || "";
-            this.indentationCache[index] = previousIndentation + this.serializerOptions.indentationLiteral;
+            this.indentationCache[index] = previousIndentation + this.indentationLiteral;
         }
 
         return this.indentationCache[this.indentationCache.length - 1];
@@ -230,15 +232,11 @@ export interface SerializerSettings extends CommonSettings {
     readonly document: Ast.TDocument;
     readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly maps: SerializerPassthroughMaps;
-    readonly options: SerializerOptions;
+    readonly indentationLiteral: IndentationLiteral;
+    readonly newlineLiteral: NewlineLiteral;
 }
 
 export interface SerializerPassthroughMaps {
     readonly commentCollectionMap: CommentCollectionMap;
     readonly serializerParameterMap: SerializerParameterMap;
-}
-
-export interface SerializerOptions {
-    readonly indentationLiteral: IndentationLiteral;
-    readonly newlineLiteral: NewlineLiteral;
 }
