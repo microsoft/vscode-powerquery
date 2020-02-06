@@ -1,22 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { DefaultTemplates, Result, ResultKind } from "@microsoft/powerquery-parser";
+import { DefaultTemplates, Parser, Result, ResultKind } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 import "mocha";
 import { TFormatError } from "../../format/error";
 import { format, FormatSettings } from "../../format/format";
-import { IndentationLiteral, NewlineLiteral, SerializerOptions } from "../../format/serializer";
+import { IndentationLiteral, NewlineLiteral } from "../../format/serializer";
 
-const DefaultSerializerOptions: SerializerOptions = {
+const DefaultFormatSettings: FormatSettings = {
+    parser: Parser.CombinatorialParser,
+    localizationTemplates: DefaultTemplates,
     indentationLiteral: IndentationLiteral.SpaceX4,
     newlineLiteral: NewlineLiteral.Unix,
 };
 
-export function compare(expected: string, actual: string, options: SerializerOptions = DefaultSerializerOptions): void {
+export function compare(expected: string, actual: string, newlineLiteral: NewlineLiteral = NewlineLiteral.Unix): void {
     expected = expected.trim();
-    const actualLines: ReadonlyArray<string> = actual.split(options.newlineLiteral);
-    const expectedLines: ReadonlyArray<string> = expected.split(options.newlineLiteral);
+    const actualLines: ReadonlyArray<string> = actual.split(newlineLiteral);
+    const expectedLines: ReadonlyArray<string> = expected.split(newlineLiteral);
 
     const minLength: number = Math.min(actualLines.length, expectedLines.length);
     for (let lineNumber: number = 0; lineNumber < minLength; lineNumber += 1) {
@@ -39,17 +41,15 @@ export function compare(expected: string, actual: string, options: SerializerOpt
 }
 
 // attempts to format text twice to ensure the formatter emits the same tokens.
-export function runFormat(text: string, serializerOptions: SerializerOptions = DefaultSerializerOptions): string {
+export function runFormat(text: string, formatSettings: FormatSettings = DefaultFormatSettings): string {
     text = text.trim();
-    const firstFormatRequest: FormatSettings = createFormatSettings(text, serializerOptions);
-    const firstFormatResult: Result<string, TFormatError> = format(firstFormatRequest);
+    const firstFormatResult: Result<string, TFormatError> = format(formatSettings, text);
     if (firstFormatResult.kind === ResultKind.Err) {
         throw firstFormatResult.error;
     }
     const firstOk: string = firstFormatResult.value;
 
-    const secondFormatRequest: FormatSettings = createFormatSettings(firstOk, serializerOptions);
-    const secondFormatResult: Result<string, TFormatError> = format(secondFormatRequest);
+    const secondFormatResult: Result<string, TFormatError> = format(formatSettings, firstOk);
     if (secondFormatResult.kind === ResultKind.Err) {
         throw secondFormatResult.error;
     }
@@ -57,15 +57,4 @@ export function runFormat(text: string, serializerOptions: SerializerOptions = D
 
     compare(firstOk, secondOk);
     return firstOk;
-}
-
-function createFormatSettings(
-    text: string,
-    serializerOptions: SerializerOptions = DefaultSerializerOptions,
-): FormatSettings {
-    return {
-        localizationTemplates: DefaultTemplates,
-        text,
-        options: serializerOptions,
-    };
 }

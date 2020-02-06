@@ -92,6 +92,7 @@ function getOrCreate<T>(
 }
 
 function createLexerState(textDocument: TextDocument): PQP.Lexer.State {
+    // TODO (Localization): update settings based on locale
     return PQP.Lexer.stateFrom(PQP.DefaultSettings, textDocument.getText());
 }
 
@@ -107,6 +108,7 @@ function createTriedLexParse(textDocument: TextDocument): PQP.TriedLexParse {
     }
     const lexerSnapshot: PQP.LexerSnapshot = triedLexerSnapshot.value;
 
+    // TODO (Localization): update settings based on locale
     const triedParse: PQP.TriedParse = PQP.tryParse(PQP.DefaultSettings, lexerSnapshot);
     if (triedParse.kind === PQP.ResultKind.Err) {
         return triedParse;

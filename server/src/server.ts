@@ -89,6 +89,7 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     }
 
     const formatSettings: FormatSettings = {
+        // TODO (Localization): update settings based on locale
         ...DefaultSettings,
         indentationLiteral,
         // TODO: get the newline terminator for the document/workspace
