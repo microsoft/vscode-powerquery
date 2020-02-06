@@ -25,6 +25,7 @@
         "webpack-dev": "node_modules\\.bin\\webpack  --mode development --watch"
     },
     "dependencies": {
+        "@microsoft/powerquery-parser": "0.1.33",
         "@microsoft/powerquery-format": "0.0.31",
         "@microsoft/powerquery-language-services": "0.0.31",
         "@microsoft/powerquery-library": "0.0.31",
