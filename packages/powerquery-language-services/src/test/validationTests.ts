@@ -18,11 +18,11 @@ describe("validation", () => {
     });
 
     it("single line query with error", () => {
-        const document: TextDocument = Utils.createDocument("let a = 1,");
+        const document: TextDocument = Utils.createDocument("let 1");
         const validationResult: ValidationResult = validate(document);
         expect(validationResult.hasErrors).to.equal(true, "validation result is expected to have errors");
         expect(validationResult.diagnostics.length).to.equal(1);
-        Utils.validateError(validationResult.diagnostics[0], { line: 0, character: 9 });
+        Utils.validateError(validationResult.diagnostics[0], { line: 0, character: 4 });
     });
 });
 
