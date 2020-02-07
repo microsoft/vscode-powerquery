@@ -140,7 +140,7 @@ function createTriedInspection(
         if (!(triedLexParse.error instanceof PQP.ParseError.ParseError)) {
             return undefined;
         }
-        const context: PQP.ParserContext.State = triedLexParse.error.context;
+        const context: PQP.ParseContext.State = triedLexParse.error.context;
         nodeIdMapCollection = context.nodeIdMapCollection;
         leafNodeIds = context.leafNodeIds;
         maybeParseError = triedLexParse.error;

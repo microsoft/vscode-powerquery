@@ -56,7 +56,7 @@ export function getSymbolKindForLiteralExpression(node: PQP.Ast.LiteralExpressio
     }
 }
 
-export function getSymbolKindFromNode(node: PQP.Ast.INode | PQP.ParserContext.Node): SymbolKind {
+export function getSymbolKindFromNode(node: PQP.Ast.INode | PQP.ParseContext.Node): SymbolKind {
     switch (node.kind) {
         case PQP.Ast.NodeKind.Constant:
             return SymbolKind.Constant;
