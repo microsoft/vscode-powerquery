@@ -4,15 +4,15 @@
 import {
     format,
     FormatError,
-    FormatRequest,
+    FormatSettings,
     IndentationLiteral,
     NewlineLiteral,
     Result,
     ResultKind,
-    SerializerOptions,
 } from "@microsoft/powerquery-format";
 import * as LanguageServices from "@microsoft/powerquery-language-services";
 import * as Library from "@microsoft/powerquery-library";
+import { DefaultSettings } from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
@@ -88,18 +88,15 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
         indentationLiteral = IndentationLiteral.Tab;
     }
 
-    // TODO: get the newline terminator for the document/workspace
-    const serializerOptions: SerializerOptions = {
+    const formatSettings: FormatSettings = {
+        // TODO (Localization): update settings based on locale
+        ...DefaultSettings,
         indentationLiteral,
+        // TODO: get the newline terminator for the document/workspace
         newlineLiteral: NewlineLiteral.Windows,
     };
 
-    const formatRequest: FormatRequest = {
-        text: document.getText(),
-        options: serializerOptions,
-    };
-
-    const formatResult: Result<string, FormatError.TFormatError> = format(formatRequest);
+    const formatResult: Result<string, FormatError.TFormatError> = format(formatSettings, document.getText());
     if (formatResult.kind === ResultKind.Ok) {
         textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
     } else {

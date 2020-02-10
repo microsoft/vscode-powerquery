@@ -3,11 +3,12 @@
 
 import {
     Ast,
+    ILocalizationTemplates,
     LexParseOk,
     NodeIdMap,
-    Parser,
     Result,
     ResultKind,
+    Settings,
     TComment,
     Traverse,
     TriedLexParse,
@@ -18,17 +19,23 @@ import { CommentCollectionMap, tryTraverse as tryTraverseComment } from "./passe
 import { IsMultilineMap } from "./passes/isMultiline/common";
 import { tryTraverse as tryTraverseIsMultilineMap } from "./passes/isMultiline/isMultiline";
 import { SerializerParameterMap, tryTraverse as tryTraverseSerializerParameter } from "./passes/serializerParameter";
-import { Serializer, SerializerOptions, SerializerPassthroughMaps, SerializerRequest } from "./serializer";
+import {
+    IndentationLiteral,
+    NewlineLiteral,
+    Serializer,
+    SerializerPassthroughMaps,
+    SerializerSettings,
+} from "./serializer";
 
 export { Result, ResultKind } from "@microsoft/powerquery-parser";
 
-export interface FormatRequest {
-    readonly text: string;
-    readonly options: SerializerOptions;
+export interface FormatSettings extends Settings {
+    readonly indentationLiteral: IndentationLiteral;
+    readonly newlineLiteral: NewlineLiteral;
 }
 
-export function format(formatRequest: FormatRequest): Result<string, FormatError.TFormatError> {
-    const triedLexParse: TriedLexParse = tryLexParse(formatRequest.text, Parser.CombinatorialParser);
+export function format(formatSettings: FormatSettings, text: string): Result<string, FormatError.TFormatError> {
+    const triedLexParse: TriedLexParse = tryLexParse(formatSettings, text);
     if (triedLexParse.kind === ResultKind.Err) {
         return triedLexParse;
     }
@@ -37,10 +44,12 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
     const ast: Ast.TDocument = lexParseOk.ast;
     const comments: ReadonlyArray<TComment> = lexParseOk.lexerSnapshot.comments;
     const nodeIdMapCollection: NodeIdMap.Collection = lexParseOk.nodeIdMapCollection;
+    const localizationTemplates: ILocalizationTemplates = formatSettings.localizationTemplates;
 
     let commentCollectionMap: CommentCollectionMap = new Map();
     if (comments.length) {
         const triedCommentPass: Traverse.TriedTraverse<CommentCollectionMap> = tryTraverseComment(
+            localizationTemplates,
             ast,
             nodeIdMapCollection,
             comments,
@@ -53,6 +62,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
     }
 
     const triedIsMultilineMap: Traverse.TriedTraverse<IsMultilineMap> = tryTraverseIsMultilineMap(
+        localizationTemplates,
         ast,
         commentCollectionMap,
         nodeIdMapCollection,
@@ -63,6 +73,7 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
     const isMultilineMap: IsMultilineMap = triedIsMultilineMap.value;
 
     const triedSerializerParameter: Traverse.TriedTraverse<SerializerParameterMap> = tryTraverseSerializerParameter(
+        localizationTemplates,
         ast,
         nodeIdMapCollection,
         commentCollectionMap,
@@ -77,11 +88,13 @@ export function format(formatRequest: FormatRequest): Result<string, FormatError
         commentCollectionMap,
         serializerParameterMap,
     };
-    const serializeRequest: SerializerRequest = {
+    const serializeRequest: SerializerSettings = {
+        localizationTemplates: localizationTemplates,
         document: lexParseOk.ast,
         nodeIdMapCollection,
         maps,
-        options: formatRequest.options,
+        indentationLiteral: formatSettings.indentationLiteral,
+        newlineLiteral: formatSettings.newlineLiteral,
     };
 
     return Serializer.run(serializeRequest);

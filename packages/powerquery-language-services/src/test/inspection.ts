@@ -87,14 +87,14 @@ describe("InspectedInvokeExpression", () => {
                         "server",
                     ]);
 
-                    assert.isDefined(inspected.maybePositionIdentifier, "position identifier should be defined");
+                    assert.isDefined(inspected.maybeIdentifierUnderPosition, "position identifier should be defined");
 
-                    expect(inspected.maybePositionIdentifier!.identifier.kind).equals(
+                    expect(inspected.maybeIdentifierUnderPosition!.identifier.kind).equals(
                         PQP.Ast.NodeKind.Identifier,
                         "expecting identifier",
                     );
 
-                    const identifier: PQP.Ast.Identifier = inspected.maybePositionIdentifier!
+                    const identifier: PQP.Ast.Identifier = inspected.maybeIdentifierUnderPosition!
                         .identifier as PQP.Ast.Identifier;
 
                     expect(identifier.literal).equals("OdbcDataSource");

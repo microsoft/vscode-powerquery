@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, NodeIdMap, Option } from "@microsoft/powerquery-parser";
+import { Ast, NodeIdMap, NodeIdMapUtils } from "@microsoft/powerquery-parser";
 
-export function maybeGetParent(nodeIdMapCollection: NodeIdMap.Collection, nodeId: number): Option<Ast.TNode> {
-    const maybeParentNodeId: Option<number> = nodeIdMapCollection.parentIdById.get(nodeId);
+export function maybeGetParent(nodeIdMapCollection: NodeIdMap.Collection, nodeId: number): Ast.TNode | undefined {
+    const maybeParentNodeId: number | undefined = nodeIdMapCollection.parentIdById.get(nodeId);
     if (maybeParentNodeId === undefined) {
         return undefined;
     }
     const parentNodeId: number = maybeParentNodeId;
-    return NodeIdMap.expectAstNode(nodeIdMapCollection.astNodeById, parentNodeId);
+    return NodeIdMapUtils.expectAstNode(nodeIdMapCollection.astNodeById, parentNodeId);
 }

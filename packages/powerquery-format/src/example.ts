@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 /* tslint:disable:no-console */
-import { Result, ResultKind } from "@microsoft/powerquery-parser";
-import { format, FormatRequest, IndentationLiteral, NewlineLiteral } from "./format";
+import { DefaultSettings, Result, ResultKind } from "@microsoft/powerquery-parser";
+import { format, FormatSettings, IndentationLiteral, NewlineLiteral } from "./format";
 import { TFormatError } from "./format/error";
 
 const text: string = `
@@ -38,15 +38,13 @@ let
                 x * @fastPow(x * x, (p - 1) / 2)
 in
     fastPow(2, 8)`;
-const request: FormatRequest = {
-    text,
-    options: {
-        indentationLiteral: IndentationLiteral.SpaceX4,
-        newlineLiteral: NewlineLiteral.Unix,
-    },
+const settings: FormatSettings = {
+    ...DefaultSettings,
+    indentationLiteral: IndentationLiteral.SpaceX4,
+    newlineLiteral: NewlineLiteral.Unix,
 };
 
-const formatResult: Result<string, TFormatError> = format(request);
+const formatResult: Result<string, TFormatError> = format(settings, text);
 if (formatResult.kind === ResultKind.Ok) {
     console.log(formatResult.value);
 } else {

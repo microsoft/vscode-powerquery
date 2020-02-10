@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, isNever, NodeIdMap, Option, ResultKind, Traverse } from "@microsoft/powerquery-parser";
+import { Ast, ILocalizationTemplates, isNever, NodeIdMap, ResultKind, Traverse } from "@microsoft/powerquery-parser";
 
 export type LinearLengthMap = Map<number, number>;
 
@@ -9,15 +9,21 @@ export type LinearLengthMap = Map<number, number>;
 // Returns the text length of the node if IsMultiline is set to false.
 // Nodes which can't ever have a linear length (such as IfExpressions) will evaluate to NaN.
 export function getLinearLength(
+    localizationTemplates: ILocalizationTemplates,
     linearLengthMap: LinearLengthMap,
     nodeIdMapCollection: NodeIdMap.Collection,
     node: Ast.TNode,
 ): number {
     const nodeId: number = node.id;
-    const maybeLinearLength: Option<number> = linearLengthMap.get(nodeId);
+    const maybeLinearLength: number | undefined = linearLengthMap.get(nodeId);
 
     if (maybeLinearLength === undefined) {
-        const linearLength: number = calculateLinearLength(node, nodeIdMapCollection, linearLengthMap);
+        const linearLength: number = calculateLinearLength(
+            localizationTemplates,
+            node,
+            nodeIdMapCollection,
+            linearLengthMap,
+        );
         linearLengthMap.set(nodeId, linearLength);
         return linearLength;
     } else {
@@ -31,11 +37,13 @@ interface State extends Traverse.IState<number> {
 }
 
 function calculateLinearLength(
+    localizationTemplates: ILocalizationTemplates,
     node: Ast.TNode,
     nodeIdMapCollection: NodeIdMap.Collection,
     linearLengthMap: LinearLengthMap,
 ): number {
     const state: State = {
+        localizationTemplates,
         result: 0,
         nodeIdMapCollection,
         linearLengthMap,
@@ -118,7 +126,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
 
         case Ast.NodeKind.Constant:
-            linearLength = node.literal.length;
+            linearLength = node.constantKind.length;
             break;
 
         case Ast.NodeKind.Csv:
@@ -168,7 +176,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                 0,
                 node.maybeOptionalConstant,
                 node.name,
-                node.maybeFieldTypeSpeification,
+                node.maybeFieldTypeSpecification,
             );
             break;
 
@@ -285,7 +293,12 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
 
         case Ast.NodeKind.PrimitiveType:
-            linearLength = getLinearLength(state.linearLengthMap, state.nodeIdMapCollection, node.primitiveType);
+            linearLength = getLinearLength(
+                state.localizationTemplates,
+                state.linearLengthMap,
+                state.nodeIdMapCollection,
+                node.primitiveType,
+            );
             break;
 
         case Ast.NodeKind.RangeExpression:
@@ -368,11 +381,12 @@ function visitNode(state: State, node: Ast.TNode): void {
     state.result = linearLength;
 }
 
-function sumLinearLengths(state: State, initialLength: number, ...maybeNodes: Option<Ast.TNode>[]): number {
+function sumLinearLengths(state: State, initialLength: number, ...maybeNodes: (Ast.TNode | undefined)[]): number {
     let summedLinearLength: number = initialLength;
     for (const maybeNode of maybeNodes) {
         if (maybeNode) {
             const nodeLinearLength: number = getLinearLength(
+                state.localizationTemplates,
                 state.linearLengthMap,
                 state.nodeIdMapCollection,
                 maybeNode,

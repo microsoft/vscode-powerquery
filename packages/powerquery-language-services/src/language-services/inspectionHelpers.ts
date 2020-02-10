@@ -56,7 +56,7 @@ export function getSymbolKindForLiteralExpression(node: PQP.Ast.LiteralExpressio
     }
 }
 
-export function getSymbolKindFromNode(node: PQP.Ast.INode | PQP.ParserContext.Node): SymbolKind {
+export function getSymbolKindFromNode(node: PQP.Ast.INode | PQP.ParseContext.Node): SymbolKind {
     switch (node.kind) {
         case PQP.Ast.NodeKind.Constant:
             return SymbolKind.Constant;
@@ -120,7 +120,7 @@ export function getSymbolsForInspectionScope(inspected: PQP.Inspection.Inspected
     const documentSymbols: DocumentSymbol[] = [];
 
     inspected.scope.forEach((value, key) => {
-        if (value.kind === PQP.NodeIdMap.XorNodeKind.Ast) {
+        if (value.kind === PQP.XorNodeKind.Ast) {
             if (value.node.kind === PQP.Ast.NodeKind.IdentifierPairedExpression) {
                 documentSymbols.push(getSymbolForIdentifierPairedExpression(value.node));
             } else {

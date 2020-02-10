@@ -1,18 +1,30 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Ast, CommonError, isNever, NodeIdMap, Option, StringUtils, Traverse } from "@microsoft/powerquery-parser";
+import {
+    Ast,
+    AstUtils,
+    CommonError,
+    ILocalizationTemplates,
+    isNever,
+    NodeIdMap,
+    NodeIdMapUtils,
+    StringUtils,
+    Traverse,
+} from "@microsoft/powerquery-parser";
 import { CommentCollection, CommentCollectionMap } from "../comment";
 import { maybeGetParent } from "../common";
 import { expectGetIsMultiline, IsMultilineMap, setIsMultiline } from "./common";
 import { getLinearLength, LinearLengthMap } from "./linearLength";
 
 export function tryTraverse(
+    localizationTemplates: ILocalizationTemplates,
     ast: Ast.TNode,
     commentCollectionMap: CommentCollectionMap,
     nodeIdMapCollection: NodeIdMap.Collection,
 ): Traverse.TriedTraverse<IsMultilineMap> {
     const state: State = {
+        localizationTemplates,
         result: new Map(),
         commentCollectionMap,
         nodeIdMapCollection,
@@ -31,6 +43,7 @@ export function tryTraverse(
 }
 
 export interface State extends Traverse.IState<IsMultilineMap> {
+    readonly localizationTemplates: ILocalizationTemplates;
     readonly commentCollectionMap: CommentCollectionMap;
     readonly nodeIdMapCollection: NodeIdMap.Collection;
     readonly linearLengthMap: LinearLengthMap;
@@ -74,12 +87,17 @@ function visitNode(state: State, node: Ast.TNode): void {
             const right: Ast.TNode = node.right;
 
             if (
-                (Ast.isTBinOpExpression(left) && containsLogicalExpression(left)) ||
-                (Ast.isTBinOpExpression(right) && containsLogicalExpression(right))
+                (AstUtils.isTBinOpExpression(left) && containsLogicalExpression(left)) ||
+                (AstUtils.isTBinOpExpression(right) && containsLogicalExpression(right))
             ) {
                 isMultiline = true;
             }
-            const linearLength: number = getLinearLength(state.linearLengthMap, state.nodeIdMapCollection, node);
+            const linearLength: number = getLinearLength(
+                state.localizationTemplates,
+                state.linearLengthMap,
+                state.nodeIdMapCollection,
+                node,
+            );
             if (linearLength > TBinOpExpressionLinearLengthThreshold) {
                 isMultiline = true;
             } else {
@@ -166,7 +184,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                 isMultilineMap,
                 node.maybeOptionalConstant,
                 node.name,
-                node.maybeFieldTypeSpeification,
+                node.maybeFieldTypeSpecification,
             );
             break;
 
@@ -205,15 +223,20 @@ function visitNode(state: State, node: Ast.TNode): void {
 
             if (args.length > 1) {
                 const linearLengthMap: LinearLengthMap = state.linearLengthMap;
-                const linearLength: number = getLinearLength(linearLengthMap, nodeIdMapCollection, node);
+                const linearLength: number = getLinearLength(
+                    state.localizationTemplates,
+                    linearLengthMap,
+                    nodeIdMapCollection,
+                    node,
+                );
 
-                const maybeArrayWrapper: Option<Ast.TNode> = maybeGetParent(nodeIdMapCollection, node.id);
+                const maybeArrayWrapper: Ast.TNode | undefined = maybeGetParent(nodeIdMapCollection, node.id);
                 if (maybeArrayWrapper === undefined || maybeArrayWrapper.kind !== Ast.NodeKind.ArrayWrapper) {
                     throw new CommonError.InvariantError("InvokeExpression must have ArrayWrapper as a parent");
                 }
                 const arrayWrapper: Ast.IArrayWrapper<Ast.TNode> = maybeArrayWrapper;
 
-                const maybeRecursivePrimaryExpression: Option<Ast.TNode> = maybeGetParent(
+                const maybeRecursivePrimaryExpression: Ast.TNode | undefined = maybeGetParent(
                     nodeIdMapCollection,
                     arrayWrapper.id,
                 );
@@ -228,6 +251,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                 const recursivePrimaryExpression: Ast.RecursivePrimaryExpression = maybeRecursivePrimaryExpression;
 
                 const headLinearLength: number = getLinearLength(
+                    state.localizationTemplates,
                     linearLengthMap,
                     nodeIdMapCollection,
                     recursivePrimaryExpression.head,
@@ -237,7 +261,10 @@ function visitNode(state: State, node: Ast.TNode): void {
                 // if it's beyond the threshold check if it's a long literal
                 // ex. `#datetimezone(2013,02,26, 09,15,00, 09,00)`
                 if (compositeLinearLength > InvokeExpressionLinearLengthThreshold) {
-                    const maybeName: Option<string> = NodeIdMap.maybeInvokeExpressionName(nodeIdMapCollection, node.id);
+                    const maybeName: string | undefined = NodeIdMapUtils.maybeInvokeExpressionName(
+                        nodeIdMapCollection,
+                        node.id,
+                    );
                     if (maybeName) {
                         const name: string = maybeName;
                         isMultiline = InvokeExpressionIdentifierLinearLengthExclusions.indexOf(name) === -1;
@@ -391,7 +418,7 @@ function isAnyListOrRecord(nodes: ReadonlyArray<Ast.TNode>): boolean {
     return false;
 }
 
-function isAnyMultiline(isMultilineMap: IsMultilineMap, ...maybeNodes: Option<Ast.TNode>[]): boolean {
+function isAnyMultiline(isMultilineMap: IsMultilineMap, ...maybeNodes: (Ast.TNode | undefined)[]): boolean {
     for (const maybeNode of maybeNodes) {
         if (maybeNode && expectGetIsMultiline(isMultilineMap, maybeNode)) {
             return true;
@@ -410,7 +437,7 @@ function setIsMultilineWithCommentCheck(state: State, node: Ast.TNode, isMultili
 }
 
 function precededByMultilineComment(state: State, node: Ast.TNode): boolean {
-    const maybeCommentCollection: Option<CommentCollection> = state.commentCollectionMap.get(node.id);
+    const maybeCommentCollection: CommentCollection | undefined = state.commentCollectionMap.get(node.id);
     if (maybeCommentCollection) {
         return maybeCommentCollection.prefixedCommentsContainsNewline;
     } else {
@@ -430,7 +457,7 @@ function containsNewline(text: string): boolean {
 }
 
 function containsLogicalExpression(node: Ast.TBinOpExpression): boolean {
-    if (!Ast.isTBinOpExpression(node)) {
+    if (!AstUtils.isTBinOpExpression(node)) {
         return false;
     }
     const left: Ast.TNode = node.left;
@@ -438,7 +465,7 @@ function containsLogicalExpression(node: Ast.TBinOpExpression): boolean {
 
     return (
         node.kind === Ast.NodeKind.LogicalExpression ||
-        (Ast.isTBinOpExpression(left) && containsLogicalExpression(left)) ||
-        (Ast.isTBinOpExpression(right) && containsLogicalExpression(right))
+        (AstUtils.isTBinOpExpression(left) && containsLogicalExpression(left)) ||
+        (AstUtils.isTBinOpExpression(right) && containsLogicalExpression(right))
     );
 }
