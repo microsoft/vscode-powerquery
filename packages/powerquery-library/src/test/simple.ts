@@ -37,4 +37,20 @@ describe("Library export", () => {
         expect(libraryDefinition.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
         expect(libraryDefinition.signatures[0].parameters[0].type).eq("list");
     });
+
+    it("#date constructor", () => {
+        const exportKey: string = "#date";
+        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(exportKey);
+        if (maybeLibraryDefinition === undefined) {
+            throw new Error(`expected constant '${exportKey}' was not found`);
+        }
+        const libraryDefinition: LibraryDefinition = maybeLibraryDefinition;
+
+        expect(libraryDefinition.label !== null);
+        expect(libraryDefinition.signatures !== null);
+        expect(libraryDefinition.kind).eq(LibraryDefinitionKind.Constructor);
+        expect(libraryDefinition.signatures[0].parameters.length).eq(3, "expecting 3 parameters in first signature");
+        expect(libraryDefinition.signatures[0].parameters[0].label).eq("year");
+        expect(libraryDefinition.signatures[0].parameters[0].type).eq("number");
+    });
 });
