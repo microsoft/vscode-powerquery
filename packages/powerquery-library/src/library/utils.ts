@@ -71,8 +71,7 @@ export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): Com
         case LibraryDefinitionKind.Function:
             return CompletionItemKind.Function;
         case LibraryDefinitionKind.Type:
-            // Currently the best match for type
-            return CompletionItemKind.Struct;
+            return CompletionItemKind.TypeParameter;
         default:
             throw new Error(`Unmapped ExportKind: ${kind}`);
     }

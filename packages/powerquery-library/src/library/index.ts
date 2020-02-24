@@ -13,7 +13,6 @@ export const AllModules: Library = loadAllModules();
 // - Export LibraryLoader and add constructor that takes in a string[] or ModuleSet
 // - Modules can be added/removed from LibraryLoader
 // - Call LibraryLoader.load() when ready to retrieve definition
-// - Generate multiple signatures for functions with optional parameters
 
 function loadAllModules(): Library {
     return loadStandardLibrary();
