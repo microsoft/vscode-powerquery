@@ -5,8 +5,8 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
-        "build": "node_modules\\.bin\\tsc",
-        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
+        "build": "..\\..\\node_modules\\.bin\\tsc",
+        "test": "..\\..\\node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
     },
     "files": [
         "lib/library/*",
@@ -21,7 +21,7 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/microsoft/vscode-powerquery.git",
-        "directory": "packages/library"
+        "directory": "packages/powerquery-library"
     },
     "prettier": {
         "trailingComma": "all",

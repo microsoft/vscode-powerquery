@@ -72,7 +72,7 @@
     "build:client": "cd client && npm run build",
     "build:server": "cd server && npm run build",
     "build": "npm run build:packages && npm run build:server && npm run build:client",
-    "watch": "node_modules\\.bin\\tsc -b -watch",
+    "watch": ".\\node_modules\\.bin\\tsc -b -watch",
     "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
     "test:packages": "npm run test:language-services && npm run test:format && npm run test:library",
     "test:language-services": "cd packages && cd powerquery-language-services && npm test",
