@@ -112,6 +112,7 @@
     "@microsoft/powerquery-format": "file:packages\\powerquery-format",
     "@microsoft/powerquery-language-services": "file:packages\\powerquery-language-services",
     "@microsoft/powerquery-library": "file:packages\\powerquery-library",
+    "@microsoft/powerquery-parser": "0.1.36",
     "vscode-powerquery-client": "file:client",
     "vscode-powerquery-server": "file:server"
   }

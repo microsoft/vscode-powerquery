@@ -5,7 +5,7 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "dependencies": {
-        "@microsoft/powerquery-parser": "0.1.36"
+        "@microsoft/powerquery-parser": "file:../../node_modules/@microsoft/powerquery-parser"
     },
     "files": [
         "lib/format/*",
