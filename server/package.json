@@ -25,23 +25,11 @@
         "webpack-dev": "node_modules\\.bin\\webpack  --mode development --watch"
     },
     "dependencies": {
+        "@microsoft/powerquery-format": "file:../packages/powerquery-format",
+        "@microsoft/powerquery-language-services": "file:../packages/powerquery-language-services",
+        "@microsoft/powerquery-library": "file:../packages/powerquery-library",
         "@microsoft/powerquery-parser": "0.1.36",
-        "@microsoft/powerquery-format": "0.0.31",
-        "@microsoft/powerquery-language-services": "0.0.31",
-        "@microsoft/powerquery-library": "0.0.31",
         "vscode-languageserver": "6.0.0-next.7",
         "vscode-languageserver-textdocument": "1.0.0-next.5"
-    },
-    "devDependencies": {
-        "@types/node": "12.12.14",
-        "prettier": "^1.18.2",
-        "ts-loader": "^6.2.0",
-        "tslint": "^5.20.0",
-        "tslint-config-prettier": "^1.18.0",
-        "tslint-microsoft-contrib": "^6.2.0",
-        "tslint-plugin-prettier": "^2.0.1",
-        "typescript": "^3.7.2",
-        "webpack": "^4.41.3",
-        "webpack-cli": "^3.3.10"
     }
 }
