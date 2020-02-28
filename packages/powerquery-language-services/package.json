@@ -15,7 +15,7 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "@microsoft/powerquery-parser": "file:../../node_modules/@microsoft/powerquery-parser",
+        "@microsoft/powerquery-parser": "file:../powerquery-format/node_modules/@microsoft/powerquery-parser",
         "vscode-languageserver-types": "^3.14.0"
     },
     "repository": {

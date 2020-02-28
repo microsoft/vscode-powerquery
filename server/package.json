@@ -28,7 +28,7 @@
         "@microsoft/powerquery-format": "file:../packages/powerquery-format",
         "@microsoft/powerquery-language-services": "file:../packages/powerquery-language-services",
         "@microsoft/powerquery-library": "file:../packages/powerquery-library",
-        "@microsoft/powerquery-parser": "file:../node_modules/@microsoft/powerquery-parser",
+        "@microsoft/powerquery-parser": "file:../packages/powerquery-format/node_modules/@microsoft/powerquery-parser",
         "vscode-languageserver": "6.0.0-next.7",
         "vscode-languageserver-textdocument": "1.0.0-next.5"
     }

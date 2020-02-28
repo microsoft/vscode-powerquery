@@ -60,6 +60,7 @@
     ]
   },
   "scripts": {
+    "setup": "cd packages/powerquery-format && npm install && lerna bootstrap",
     "vscode:prepublish": "npm run build:packages && npm run webpack-prod",
     "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
     "client:webpack-prod": "cd client && npm run webpack-prod",
@@ -112,7 +113,7 @@
     "@microsoft/powerquery-format": "file:packages\\powerquery-format",
     "@microsoft/powerquery-language-services": "file:packages\\powerquery-language-services",
     "@microsoft/powerquery-library": "file:packages\\powerquery-library",
-    "@microsoft/powerquery-parser": "0.1.36",
+    "@microsoft/powerquery-parser": "file:packages\\powerquery-format\\node_modules\\@microsoft\\powerquery-parser",
     "vscode-powerquery-client": "file:client",
     "vscode-powerquery-server": "file:server"
   }
