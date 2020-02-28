@@ -21,32 +21,14 @@
         "vscode": "1.40.0"
     },
     "scripts": {
-        "build": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
+        "build": "..\\node_modules\\.bin\\tsc -p ./",
+        "watch": "..\\node_modules\\.bin\\tsc -watch -p ./",
         "pretest": "npm run build",
         "test-disabled": "node ./out/test/runTest.js",
-        "webpack-prod": "node_modules\\.bin\\webpack --mode production",
-        "webpack-dev": "node_modules\\.bin\\webpack  --mode development --watch"
+        "webpack-prod": "..\\node_modules\\.bin\\webpack --mode production",
+        "webpack-dev": "..\\node_modules\\.bin\\webpack  --mode development --watch"
     },
     "dependencies": {
         "vscode-languageclient": "6.0.0-next.8"
-    },
-    "devDependencies": {
-        "@types/glob": "^7.1.1",
-        "@types/mocha": "^5.2.6",
-        "@types/vscode": "1.40.0",
-        "glob": "^7.1.4",
-        "mocha": "^6.1.4",
-        "prettier": "^1.18.2",
-        "source-map-support": "^0.5.12",
-        "ts-loader": "^6.2.0",
-        "tslint": "^5.20.0",
-        "tslint-config-prettier": "^1.18.0",
-        "tslint-microsoft-contrib": "^6.2.0",
-        "tslint-plugin-prettier": "^2.0.1",
-        "typescript": "^3.6.4",
-        "vscode-test": "1.2.3",
-        "webpack": "^4.41.3",
-        "webpack-cli": "^3.3.10"
     }
 }
