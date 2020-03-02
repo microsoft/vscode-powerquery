@@ -192,7 +192,7 @@ function visitNode(state: State, node: Ast.TNode): void {
             propagateWriteKind(state, node, node.node);
 
             if (node.maybeCommaConstant && maybeWriteKind !== SerializerWriteKind.Indented) {
-                const commaConstant: Ast.Constant = node.maybeCommaConstant;
+                const commaConstant: Ast.IConstant<Ast.MiscConstantKind.Comma> = node.maybeCommaConstant;
                 setWorkspace(state, commaConstant, { maybeWriteKind: SerializerWriteKind.PaddedRight });
             }
             break;
@@ -265,7 +265,8 @@ function visitNode(state: State, node: Ast.TNode): void {
             break;
 
         case Ast.NodeKind.FieldSpecification: {
-            const maybeOptionalConstant: Ast.Constant | undefined = node.maybeOptionalConstant;
+            const maybeOptionalConstant: Ast.IConstant<Ast.IdentifierConstantKind.Optional> | undefined =
+                node.maybeOptionalConstant;
 
             if (maybePropagateWriteKind(state, node, maybeOptionalConstant)) {
                 setWorkspace(state, node.name, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
@@ -299,7 +300,8 @@ function visitNode(state: State, node: Ast.TNode): void {
             visitWrapped(state, node);
 
             if (node.maybeOpenRecordMarkerConstant) {
-                const openRecordMarkerConstant: Ast.Constant = node.maybeOpenRecordMarkerConstant;
+                const openRecordMarkerConstant: Ast.IConstant<Ast.MiscConstantKind.Ellipsis> =
+                    node.maybeOpenRecordMarkerConstant;
                 let workspace: Workspace;
 
                 if (isMultiline) {
@@ -472,7 +474,7 @@ function visitNode(state: State, node: Ast.TNode): void {
 
         case Ast.NodeKind.Parameter: {
             if (node.maybeOptionalConstant) {
-                const optionalConstant: Ast.Constant = node.maybeOptionalConstant;
+                const optionalConstant: Ast.IConstant<Ast.IdentifierConstantKind.Optional> = node.maybeOptionalConstant;
                 setWorkspace(state, optionalConstant, { maybeWriteKind: SerializerWriteKind.PaddedRight });
             }
 
@@ -589,7 +591,7 @@ function visitNode(state: State, node: Ast.TNode): void {
                     maybeSharedConstantWriteKind = SerializerWriteKind.PaddedLeft;
                 }
             } else if (node.maybeSharedConstant) {
-                const sharedConstant: Ast.Constant = node.maybeSharedConstant;
+                const sharedConstant: Ast.IConstant<Ast.KeywordConstantKind.Shared> = node.maybeSharedConstant;
                 propagateWriteKind(state, node, sharedConstant);
             } else {
                 propagateWriteKind(state, node, node.namePairedExpression);
@@ -597,14 +599,14 @@ function visitNode(state: State, node: Ast.TNode): void {
             }
 
             if (node.maybeSharedConstant && maybeSharedConstantWriteKind) {
-                const sharedConstant: Ast.Constant = node.maybeSharedConstant;
+                const sharedConstant: Ast.IConstant<Ast.KeywordConstantKind.Shared> = node.maybeSharedConstant;
                 setWorkspace(state, sharedConstant, { maybeWriteKind: maybeSharedConstantWriteKind });
             }
 
             if (!isNameExpressionPairWorkspaceSet) {
                 let isNameExpressionPairIndented: boolean = false;
                 if (node.maybeSharedConstant) {
-                    const sharedConstant: Ast.Constant = node.maybeSharedConstant;
+                    const sharedConstant: Ast.IConstant<Ast.KeywordConstantKind.Shared> = node.maybeSharedConstant;
 
                     if (expectGetIsMultiline(isMultilineMap, sharedConstant)) {
                         isNameExpressionPairIndented = true;
@@ -654,8 +656,8 @@ function visitNode(state: State, node: Ast.TNode): void {
         case Ast.NodeKind.UnaryExpression: {
             propagateWriteKind(state, node, node.operators);
 
-            const operators: ReadonlyArray<Ast.Constant> = node.operators.elements;
-            const lastOperator: Ast.Constant = operators[operators.length - 1];
+            const operators: ReadonlyArray<Ast.IConstant<Ast.UnaryOperatorKind>> = node.operators.elements;
+            const lastOperator: Ast.IConstant<Ast.UnaryOperatorKind> = operators[operators.length - 1];
             if (lastOperator.constantKind === Ast.UnaryOperatorKind.Not) {
                 setWorkspace(state, node.typeExpression, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
             }
@@ -864,16 +866,19 @@ function visitArrayWrapperForSectionMembers(state: State, node: Ast.IArrayWrappe
     }
 }
 
-function visitArrayWrapperForUnaryExpression(state: State, node: Ast.IArrayWrapper<Ast.Constant>): void {
+function visitArrayWrapperForUnaryExpression(
+    state: State,
+    node: Ast.IArrayWrapper<Ast.IConstant<Ast.UnaryOperatorKind>>,
+): void {
     // `not` is an unary operator which needs to be padded.
     // The default Any write kind is fine for the other operators (`+` and `-`).
-    const elements: ReadonlyArray<Ast.Constant> = node.elements;
+    const elements: ReadonlyArray<Ast.IConstant<Ast.UnaryOperatorKind>> = node.elements;
     const numElements: number = node.elements.length;
 
     propagateWriteKind(state, node, elements[0]);
     let previousWasNotOperator: boolean = elements[0].constantKind === Ast.UnaryOperatorKind.Not;
     for (let index: number = 1; index < numElements; index += 1) {
-        const operatorConstant: Ast.Constant = elements[index];
+        const operatorConstant: Ast.IConstant<Ast.UnaryOperatorKind> = elements[index];
 
         if (previousWasNotOperator || operatorConstant.constantKind === Ast.UnaryOperatorKind.Not) {
             setWorkspace(state, operatorConstant, { maybeWriteKind: SerializerWriteKind.PaddedLeft });
