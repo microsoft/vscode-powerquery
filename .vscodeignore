@@ -12,6 +12,7 @@ contributing.md
 scripts/
 packages/
 client/**
+node_modules/
 !client/dist/**/*.js
 server/**
 !server/dist/**/*.js
