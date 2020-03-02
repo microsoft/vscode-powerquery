@@ -5,8 +5,8 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
-        "build": "node_modules\\.bin\\tsc",
-        "test": "node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
+        "build": "..\\..\\node_modules\\.bin\\tsc",
+        "test": "..\\..\\node_modules\\.bin\\mocha -r ts-node/register src/test/**/*.ts"
     },
     "files": [
         "lib/language-services/*",
@@ -15,28 +15,13 @@
         "lib/index.js.map"
     ],
     "dependencies": {
-        "@microsoft/powerquery-parser": "0.1.36",
+        "@microsoft/powerquery-parser": "file:../powerquery-format/node_modules/@microsoft/powerquery-parser",
         "vscode-languageserver-types": "^3.14.0"
-    },
-    "devDependencies": {
-        "@types/chai": "^4.2.3",
-        "@types/mocha": "^5.2.7",
-        "@types/node": "12.12.14",
-        "chai": "^4.2.0",
-        "mocha": "^6.2.2",
-        "prettier": "^1.18.2",
-        "ts-loader": "^6.2.1",
-        "ts-node": "^8.5.2",
-        "tslint": "^5.20.0",
-        "tslint-config-prettier": "^1.18.0",
-        "tslint-microsoft-contrib": "^6.2.0",
-        "tslint-plugin-prettier": "^2.0.1",
-        "typescript": "^3.7.2"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/microsoft/vscode-powerquery.git",
-        "directory": "packages/language-services"
+        "directory": "packages/powerquery-language-services"
     },
     "prettier": {
         "trailingComma": "all",
