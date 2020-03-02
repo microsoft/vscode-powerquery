@@ -54,6 +54,7 @@ class StaticLibrarySymbolProvider implements LibrarySymbolProvider {
             if (definition) {
                 const signatures: SignatureInformation[] = Utils.signaturesToSignatureInformation(
                     definition.signatures,
+                    definition.summary,
                 );
 
                 return {

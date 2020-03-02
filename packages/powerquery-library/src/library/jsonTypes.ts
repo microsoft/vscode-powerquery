@@ -11,11 +11,14 @@ export const enum LibraryDefinitionKind {
 export interface Module {
     readonly name: string;
     readonly version: string | undefined;
+    readonly visibility: Visibility;
 }
 
 export interface LibraryDefinition {
     readonly label: string;
     readonly kind: LibraryDefinitionKind;
+    // TODO: should this be a string enum?
+    readonly primitiveType: string;
     readonly summary: string;
     // tslint:disable-next-line: no-reserved-keywords
     readonly module: Module;
@@ -24,13 +27,20 @@ export interface LibraryDefinition {
 
 export interface Signature {
     readonly label: string;
-    readonly documentation: string | undefined;
     readonly parameters: ReadonlyArray<Parameter>;
 }
 
 export interface Parameter {
+    readonly documentation: string | undefined | null;
     readonly label: string;
-    readonly documentation: string | undefined;
-    readonly labelOffsetStart: number;
-    readonly labelOffsetEnd: number;
+    readonly signatureLabelOffset: number;
+    readonly signatureLabelEnd: number;
+    // tslint:disable-next-line: no-reserved-keywords
+    readonly type: string;
+}
+
+export interface Visibility {
+    readonly isInternal: boolean;
+    readonly isSdkOnly: boolean;
+    readonly isSdkVisible: boolean;
 }

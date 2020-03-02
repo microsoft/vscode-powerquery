@@ -71,18 +71,20 @@ export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): Com
         case LibraryDefinitionKind.Function:
             return CompletionItemKind.Function;
         case LibraryDefinitionKind.Type:
-            // Currently the best match for type
-            return CompletionItemKind.Struct;
+            return CompletionItemKind.TypeParameter;
         default:
             throw new Error(`Unmapped ExportKind: ${kind}`);
     }
 }
 
-export function signaturesToSignatureInformation(signatures: ReadonlyArray<Signature>): SignatureInformation[] {
+export function signaturesToSignatureInformation(
+    signatures: ReadonlyArray<Signature>,
+    summary: string | undefined,
+): SignatureInformation[] {
     return signatures.map(signature => {
         return {
             label: signature.label,
-            documentation: signature.documentation,
+            documentation: summary ?? "",
             parameters: parametersToParameterInformation(signature.parameters),
         };
     });
@@ -91,8 +93,8 @@ export function signaturesToSignatureInformation(signatures: ReadonlyArray<Signa
 export function parametersToParameterInformation(parameters: ReadonlyArray<Parameter>): ParameterInformation[] {
     return parameters.map(parameter => {
         return {
-            label: [parameter.labelOffsetStart, parameter.labelOffsetEnd],
-            documentation: parameter.documentation,
+            label: [parameter.signatureLabelOffset, parameter.signatureLabelEnd],
+            documentation: parameter.documentation ?? parameter.type,
         };
     });
 }
@@ -112,6 +114,7 @@ function formatConstantDefinition(definition: LibraryDefinition): MarkupContent 
 }
 
 function formatFunctionDefinition(definition: LibraryDefinition): MarkupContent {
+    // TODO: assert that we have at least one signature
     return {
         kind: MarkupKind.Markdown,
         value: [

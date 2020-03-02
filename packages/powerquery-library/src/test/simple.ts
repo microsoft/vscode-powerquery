@@ -4,7 +4,7 @@
 import { expect } from "chai";
 import "mocha";
 import { AllModules, Library } from "../library";
-import { LibraryDefinition } from "../library/jsonTypes";
+import { LibraryDefinition, LibraryDefinitionKind } from "../library/jsonTypes";
 
 const PowerQueryLibrary: Library = AllModules;
 
@@ -19,6 +19,8 @@ describe("Library export", () => {
 
         expect(libraryDefinition.label).eq(definitionKey, "unexpected label");
         expect(libraryDefinition.summary.length).greaterThan(0, "summary should not be empty");
+        expect(libraryDefinition.kind).eq(LibraryDefinitionKind.Constant);
+        expect(libraryDefinition.primitiveType).eq("number");
     });
 
     it("index function by name", () => {
@@ -33,5 +35,22 @@ describe("Library export", () => {
         expect(libraryDefinition.signatures !== null);
         expect(libraryDefinition.signatures.length).eq(2, "expecting 2 signatures");
         expect(libraryDefinition.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
+        expect(libraryDefinition.signatures[0].parameters[0].type).eq("list");
+    });
+
+    it("#date constructor", () => {
+        const exportKey: string = "#date";
+        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(exportKey);
+        if (maybeLibraryDefinition === undefined) {
+            throw new Error(`expected constant '${exportKey}' was not found`);
+        }
+        const libraryDefinition: LibraryDefinition = maybeLibraryDefinition;
+
+        expect(libraryDefinition.label !== null);
+        expect(libraryDefinition.signatures !== null);
+        expect(libraryDefinition.kind).eq(LibraryDefinitionKind.Constructor);
+        expect(libraryDefinition.signatures[0].parameters.length).eq(3, "expecting 3 parameters in first signature");
+        expect(libraryDefinition.signatures[0].parameters[0].label).eq("year");
+        expect(libraryDefinition.signatures[0].parameters[0].type).eq("number");
     });
 });
