@@ -14,6 +14,7 @@
         "lib/index.js.map"
     ],
     "scripts": {
+        "check": "..\\..\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
         "build": "..\\..\\node_modules\\.bin\\tsc",
         "test": "..\\..\\node_modules\\.bin\\mocha -r ts-node/register ./src/test/**/*.ts"
     },
@@ -30,12 +31,5 @@
     "bugs": {
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
-    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/format/#readme",
-    "prettier": {
-        "trailingComma": "all",
-        "tabWidth": 4,
-        "semi": true,
-        "singleQuote": false,
-        "printWidth": 120
-    }
+    "homepage": "https://github.com/microsoft/vscode-powerquery/packages/format/#readme"
 }

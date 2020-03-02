@@ -10,17 +10,11 @@
         "url": "git+https://github.com/microsoft/vscode-powerquery.git",
         "directory": "client"
     },
-    "prettier": {
-        "trailingComma": "all",
-        "tabWidth": 4,
-        "semi": true,
-        "singleQuote": false,
-        "printWidth": 120
-    },
     "engines": {
         "vscode": "1.40.0"
     },
     "scripts": {
+        "check": "..\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
         "build": "..\\node_modules\\.bin\\tsc -p ./",
         "watch": "..\\node_modules\\.bin\\tsc -watch -p ./",
         "pretest": "npm run build",
