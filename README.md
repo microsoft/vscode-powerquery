@@ -17,7 +17,7 @@ npm install --global lerna
 2. install package dependencies and create symlinks:
 
 ```cmd
-lerna bootstrap
+npm run setup
 ```
 
 3. build all packages:
