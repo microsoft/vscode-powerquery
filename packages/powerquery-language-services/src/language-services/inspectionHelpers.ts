@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import { DocumentSymbol, SymbolKind } from "vscode-languageserver-types";
+import { DocumentSymbol, Range, SymbolKind } from "vscode-languageserver-types";
 
 import * as Common from "./common";
 import { SignatureProviderContext } from "./providers";
@@ -14,7 +14,7 @@ export function getContextForInspected(inspected: PQP.Inspection.Inspected): und
 }
 
 export function getContextForInvokeExpression(
-    maybeExpression: PQP.Inspection.InspectedInvokeExpression,
+    maybeExpression: PQP.Inspection.InvokeExpression,
 ): undefined | SignatureProviderContext {
     const functionName: undefined | string =
         maybeExpression.maybeName !== undefined ? maybeExpression.maybeName : undefined;
@@ -119,21 +119,65 @@ export function getSymbolForIdentifierPairedExpression(
 export function getSymbolsForInspectionScope(inspected: PQP.Inspection.Inspected): DocumentSymbol[] {
     const documentSymbols: DocumentSymbol[] = [];
 
-    inspected.scope.forEach((value, key) => {
-        if (value.kind === PQP.XorNodeKind.Ast) {
-            if (value.node.kind === PQP.Ast.NodeKind.IdentifierPairedExpression) {
-                documentSymbols.push(getSymbolForIdentifierPairedExpression(value.node));
-            } else {
-                documentSymbols.push({
-                    name: key,
-                    kind: getSymbolKindFromNode(value.node),
-                    deprecated: false,
-                    range: Common.tokenRangeToRange(value.node.tokenRange),
-                    selectionRange: Common.tokenRangeToRange(value.node.tokenRange),
-                });
+    for (const [key, scopeItem] of inspected.scope.entries()) {
+        let kind: SymbolKind;
+        let range: Range;
+
+        switch (scopeItem.kind) {
+            case PQP.Inspection.ScopeItemKind.Each: {
+                if (scopeItem.each.kind !== PQP.XorNodeKind.Ast) {
+                    continue;
+                }
+
+                kind = SymbolKind.Variable;
+                range = Common.tokenRangeToRange(scopeItem.each.node.tokenRange);
+                break;
             }
+
+            case PQP.Inspection.ScopeItemKind.KeyValuePair: {
+                if (scopeItem.maybeValue === undefined || scopeItem.maybeValue.kind !== PQP.XorNodeKind.Ast) {
+                    continue;
+                }
+
+                kind = SymbolKind.Variable;
+                range = Common.tokenRangeToRange(scopeItem.key.tokenRange);
+                break;
+            }
+
+            case PQP.Inspection.ScopeItemKind.Parameter: {
+                kind = SymbolKind.Variable;
+                range = Common.tokenRangeToRange(scopeItem.name.tokenRange);
+                break;
+            }
+
+            case PQP.Inspection.ScopeItemKind.SectionMember: {
+                kind = SymbolKind.Variable;
+                range = Common.tokenRangeToRange(scopeItem.key.tokenRange);
+                break;
+            }
+
+            case PQP.Inspection.ScopeItemKind.Undefined: {
+                if (scopeItem.xorNode.kind !== PQP.XorNodeKind.Ast) {
+                    continue;
+                }
+
+                kind = SymbolKind.Variable;
+                range = Common.tokenRangeToRange(scopeItem.xorNode.node.tokenRange);
+                break;
+            }
+
+            default:
+                throw PQP.isNever(scopeItem);
         }
-    });
+
+        documentSymbols.push({
+            name: key,
+            kind,
+            deprecated: false,
+            range,
+            selectionRange: range,
+        });
+    }
 
     return documentSymbols;
 }
