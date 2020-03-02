@@ -5,7 +5,7 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "dependencies": {
-        "@microsoft/powerquery-parser": "file:../../node_modules/@microsoft/powerquery-parser"
+        "@microsoft/powerquery-parser": "0.1.36"
     },
     "files": [
         "lib/format/*",
@@ -32,7 +32,6 @@
     },
     "homepage": "https://github.com/microsoft/vscode-powerquery/packages/format/#readme",
     "prettier": {
-        
         "trailingComma": "all",
         "tabWidth": 4,
         "semi": true,
