@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { LexError, IParserState, ParseError } from "@microsoft/powerquery-parser";
+import { IParserState, LexError, ParseError } from "@microsoft/powerquery-parser";
 
 export type TFormatError<S = IParserState> = LexError.TLexError | ParseError.TParseError<S>;
 
