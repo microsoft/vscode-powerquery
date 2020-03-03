@@ -61,6 +61,7 @@
   },
   "scripts": {
     "setup": "cd packages/powerquery-format && npm install && lerna bootstrap",
+    "check": "node_modules\\.bin\\prettier --config \".prettierrc\" --list-different .\\**\\src\\**\\*.ts",
     "vscode:prepublish": "npm run build:packages && npm run webpack-prod",
     "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
     "client:webpack-prod": "cd client && npm run webpack-prod",
