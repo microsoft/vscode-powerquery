@@ -95,9 +95,25 @@ describe("InspectedInvokeExpression", () => {
                     }
                     const identifier: PQP.Ast.Identifier | PQP.Ast.GeneralizedIdentifier =
                         inspected.maybeActiveNode.maybeIdentifierUnderPosition;
-
                     expect(identifier.literal).equals("OdbcDataSource");
-                    expect(identifier.tokenRange.positionStart.lineNumber).equals(40);
+
+                    const maybeScopeItem: undefined | PQP.Inspection.TScopeItem = inspected.scope.get(
+                        identifier.literal,
+                    );
+                    if (maybeScopeItem === undefined) {
+                        throw new Error("AssertFailed: maybeScopeItem !== undefined");
+                    }
+                    const scopeItem: PQP.Inspection.TScopeItem = maybeScopeItem;
+
+                    if (scopeItem.kind !== PQP.Inspection.ScopeItemKind.KeyValuePair) {
+                        throw new Error("AssertFailed: scopeItem.kind === KeyValuePair");
+                    } else if (scopeItem.maybeValue === undefined) {
+                        throw new Error("AssertFailed: scopeItem.maybeValue !== undefined");
+                    } else if (scopeItem.maybeValue.kind !== PQP.XorNodeKind.Ast) {
+                        throw new Error("AssertFailed: scopeItem.maybeValue.kind === Ast");
+                    }
+
+                    expect(scopeItem.maybeValue.node.tokenRange.positionStart.lineNumber).equals(40);
                 }
             });
         });
