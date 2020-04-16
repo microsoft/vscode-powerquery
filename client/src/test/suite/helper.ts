@@ -37,7 +37,7 @@ async function sleep(ms: number): Promise<unknown> {
 }
 
 export const getDocPath: (p: string) => string = (p: string): string =>
-    path.resolve(__dirname, "../../../testFixture", p);
+    path.resolve(__dirname, "./testFixture", p);
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 

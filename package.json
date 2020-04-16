@@ -60,69 +60,13 @@
     ]
   },
   "scripts": {
-    "setup": "cd packages/powerquery-format && npm install && lerna bootstrap",
-    "check": "node_modules\\.bin\\prettier --config \".prettierrc\" --list-different .\\**\\src\\**\\*.ts",
-    "vscode:prepublish": "npm run build:packages && npm run webpack-prod",
-    "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
-    "client:webpack-prod": "cd client && npm run webpack-prod",
-    "client:webpack-dev": "cd client && npm run webpack-dev",
-    "server:webpack-prod": "cd server && npm run webpack-prod",
-    "server:webpack-dev": "cd server && npm run webpack-dev",
-    "build": "npm run build:packages && npm run build:server && npm run build:client",
-    "build:packages": "npm run build:language-services && npm run build:format && npm run build:library",
-    "build:language-services": "cd packages && cd powerquery-language-services && npm run build",
-    "build:format": "cd packages && cd powerquery-format && npm run build",
-    "build:library": "cd packages && cd powerquery-library && npm run build",
-    "build:client": "cd client && npm run build",
-    "build:server": "cd server && npm run build",
-    "watch": ".\\node_modules\\.bin\\tsc -b -watch",
-    "test": "node ./scripts/e2e.js",
-    "test:packages": "npm run test:language-services && npm run test:format && npm run test:library",
-    "test:language-services": "cd packages && cd powerquery-language-services && npm test",
-    "test:format": "cd packages && cd powerquery-format && npm test",
-    "test:library": "cd packages && cd powerquery-library && npm test"
+    "build:client": ".\\node_modules\\.bin\\tsc -p client\\tsconfig.json"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/microsoft/vscode-powerquery.git"
   },
   "license": "MIT",
-  "dependencies": {
-    "@microsoft/powerquery-language-services": "0.1.0"
-    /*
-    "@microsoft/powerquery-format": "file:packages\\powerquery-format",
-    "@microsoft/powerquery-language-services": "file:packages\\powerquery-language-services",
-    "@microsoft/powerquery-library": "file:packages\\powerquery-library",
-    "@microsoft/powerquery-parser": "file:packages\\powerquery-format\\node_modules\\@microsoft\\powerquery-parser",
-    "vscode-powerquery-client": "file:client",
-    "vscode-powerquery-server": "file:server"
-    */
-  },
-  "devDependencies": {
-    "typescript": "^3.8.3"
-  }
-  /*
-  "devDependencies": {
-    "@types/chai": "^4.2.3",
-    "@types/glob": "^7.1.1",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "12.12.14",
-    "@types/vscode": "1.40.0",
-    "chai": "^4.2.0",
-    "glob": "^7.1.4",
-    "mocha": "^6.2.2",
-    "prettier": "^1.18.2",
-    "source-map-support": "^0.5.12",
-    "ts-loader": "^6.2.0",
-    "ts-node": "^8.4.1",
-    "tslint": "^5.20.0",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-microsoft-contrib": "^6.2.0",
-    "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.7.2",
-    "vscode-test": "1.2.3",
-    "webpack": "^4.41.3",
-    "webpack-cli": "^3.3.10"
-  }
-  */
+  "dependencies": {},
+  "devDependencies": {}
 }

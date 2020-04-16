@@ -17,8 +17,7 @@
         "check": ".\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch -p",
-        "pretest": "npm run build",
-        "test-disabled": "node ./out/test/runTest.js",
+        "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=src/test/mochaConfig.json -r ts-node/register src/test/**/*.ts",
         "webpack-prod": "..\\node_modules\\.bin\\webpack --mode production",
         "webpack-dev": "..\\node_modules\\.bin\\webpack  --mode development --watch"
     },
@@ -26,6 +25,20 @@
         "vscode-languageclient": "6.0.0-next.8"
     },
     "devDependencies": {
-        "typescript": "^3.8.3"
+        "@types/glob": "7.1.1",
+        "@types/mocha": "7.0.2",
+        "@types/node": "12.12.2",
+        "@types/vscode": "1.40.0",
+        "chai": "4.2.0",
+        "glob": "7.1.6",
+        "mocha": "7.1.1",
+        "mocha-junit-reporter": "1.23.3",
+        "mocha-multi-reporters": "1.1.7",
+        "tslint-config-prettier": "1.18.0",
+        "tslint-microsoft-contrib": "6.2.0",
+        "tslint-plugin-prettier": "2.3.0",
+        "ts-node": "8.8.2",
+        "typescript": "3.8.3",
+        "vscode-test": "1.2.3"
     }
 }
