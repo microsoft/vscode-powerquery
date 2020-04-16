@@ -87,6 +87,21 @@
     "url": "git+https://github.com/microsoft/vscode-powerquery.git"
   },
   "license": "MIT",
+  "dependencies": {
+    "@microsoft/powerquery-language-services": "0.1.0"
+    /*
+    "@microsoft/powerquery-format": "file:packages\\powerquery-format",
+    "@microsoft/powerquery-language-services": "file:packages\\powerquery-language-services",
+    "@microsoft/powerquery-library": "file:packages\\powerquery-library",
+    "@microsoft/powerquery-parser": "file:packages\\powerquery-format\\node_modules\\@microsoft\\powerquery-parser",
+    "vscode-powerquery-client": "file:client",
+    "vscode-powerquery-server": "file:server"
+    */
+  },
+  "devDependencies": {
+    "typescript": "^3.8.3"
+  }
+  /*
   "devDependencies": {
     "@types/chai": "^4.2.3",
     "@types/glob": "^7.1.1",
@@ -95,7 +110,6 @@
     "@types/vscode": "1.40.0",
     "chai": "^4.2.0",
     "glob": "^7.1.4",
-    "lerna": "^3.19.0",
     "mocha": "^6.2.2",
     "prettier": "^1.18.2",
     "source-map-support": "^0.5.12",
@@ -109,13 +123,6 @@
     "vscode-test": "1.2.3",
     "webpack": "^4.41.3",
     "webpack-cli": "^3.3.10"
-  },
-  "dependencies": {
-    "@microsoft/powerquery-format": "file:packages\\powerquery-format",
-    "@microsoft/powerquery-language-services": "file:packages\\powerquery-language-services",
-    "@microsoft/powerquery-library": "file:packages\\powerquery-library",
-    "@microsoft/powerquery-parser": "file:packages\\powerquery-format\\node_modules\\@microsoft\\powerquery-parser",
-    "vscode-powerquery-client": "file:client",
-    "vscode-powerquery-server": "file:server"
   }
+  */
 }

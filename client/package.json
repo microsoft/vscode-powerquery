@@ -14,9 +14,9 @@
         "vscode": "1.40.0"
     },
     "scripts": {
-        "check": "..\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
-        "build": "..\\node_modules\\.bin\\tsc -p ./",
-        "watch": "..\\node_modules\\.bin\\tsc -watch -p ./",
+        "check": ".\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
+        "build": ".\\node_modules\\.bin\\tsc",
+        "watch": ".\\node_modules\\.bin\\tsc -watch -p",
         "pretest": "npm run build",
         "test-disabled": "node ./out/test/runTest.js",
         "webpack-prod": "..\\node_modules\\.bin\\webpack --mode production",
@@ -24,5 +24,8 @@
     },
     "dependencies": {
         "vscode-languageclient": "6.0.0-next.8"
+    },
+    "devDependencies": {
+        "typescript": "^3.8.3"
     }
 }
