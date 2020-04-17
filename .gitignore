@@ -70,3 +70,4 @@ client/lib/
 dist/
 *.zip
 .vs/
+test-results.xml
