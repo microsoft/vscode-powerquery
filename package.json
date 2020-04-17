@@ -23,7 +23,7 @@
         "check": "npm run check:client && npm run check:server",
         "check:client": "cd client && npm run check",
         "check:server": "cd server && npm run check",
-        "webpack-dev": "npm run server:webpack-dev && npm run client:webpack-dev",
+        "webpack-dev": "npm run webpack-dev:client && npm run webpack-dev:server",
         "webpack-dev:client": "cd client && npm run webpack-dev",
         "webpack-dev:server:": "cd server && npm run webpack-dev",
         "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
