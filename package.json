@@ -1,56 +1,61 @@
 {
-    "name":"vscode-powerquery",
-    "version":"0.0.11",
-    "description":"TODO",
-    "author":"Microsoft Corporation",
-    "license":"MIT",
-    "homepage":"https://github.com/microsoft/vscode-powerquery#readme",
-    "repository":{
-        "type":"git",
-        "url":"git+https://github.com/microsoft/vscode-powerquery.git",
-        "directory":"client"
+    "name": "vscode-powerquery",
+    "version": "0.0.11",
+    "description": "TODO",
+    "author": "Microsoft Corporation",
+    "license": "MIT",
+    "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/microsoft/vscode-powerquery.git",
+        "directory": "client"
     },
-    "issues":{
-        "url":"https://github.com/microsoft/vscode-powerquery/issues"
+    "issues": {
+        "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
-    "scripts":{
-        "build:client":".\\node_modules\\.bin\\tsc -p client\\tsconfig.json"
+    "scripts": {
+        "init": "npm install && npm run init:client && npm run init:server",
+        "init:client": "cd client && npm run init",
+        "init:server": "cd server && npm run init",
+        "build": "npm run build:client && npm run build:server && .\\node_modules\\.bin\\tsc",
+        "build:client": "cd client && npm run build",
+        "build:server": "cd server && npm run build"
     },
-    "main":"./client/dist/extension",
-    "types":"./client/dist/extension",
-    "engines":{
-        "vscode":"^1.40.0"
+    "main": "./client/dist/extension",
+    "types": "./client/dist/extension",
+    "engines": {
+        "vscode": "^1.40.0"
     },
-    "categories":[
+    "categories": [
         "Other",
         "Programming Languages"
     ],
-    "activationEvents":[
+    "activationEvents": [
         "onLanguage:powerquery"
     ],
-    "publisher":"powerquery",
-    "contributes":{
-        "configuration":{
-            "type":"object",
-            "title":"Power Query configuration",
-            "properties":{
-                "powerquery.trace.server":{
-                    "scope":"window",
-                    "type":"string",
-                    "enum":[
+    "publisher": "powerquery",
+    "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Power Query configuration",
+            "properties": {
+                "powerquery.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
                         "off",
                         "messages",
                         "verbose"
                     ],
-                    "default":"off",
-                    "description":"Traces the communication between VS Code and the language server."
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the language server."
                 }
             }
         },
-        "languages":[
+        "languages": [
             {
-                "id":"powerquery",
-                "aliases":[
+                "id": "powerquery",
+                "aliases": [
                     "Power Query Formula Language",
                     "Power Query/M",
                     "Power Query",
@@ -58,27 +63,25 @@
                     "pq",
                     "M"
                 ],
-                "extensions":[
+                "extensions": [
                     ".pq",
                     ".pqm",
                     ".m",
                     ".mout"
                 ],
-                "configuration":"./language-configuration.json"
+                "configuration": "./language-configuration.json"
             }
         ],
-        "grammars":[
+        "grammars": [
             {
-                "language":"powerquery",
-                "scopeName":"source.powerquery",
-                "path":"./syntaxes/powerquery.tmLanguage.json"
+                "language": "powerquery",
+                "scopeName": "source.powerquery",
+                "path": "./syntaxes/powerquery.tmLanguage.json"
             }
         ]
     },
-    "dependencies":{
-
-    },
-    "devDependencies":{
-
+    "dependencies": {},
+    "devDependencies": {
+        "typescript": "3.4.3"
     }
 }
