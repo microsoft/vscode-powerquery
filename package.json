@@ -20,6 +20,9 @@
         "build": "npm run build:client && npm run build:server",
         "build:client": "cd client && npm run build",
         "build:server": "cd server && npm run build",
+        "check": "npm run check:client && npm run check:server",
+        "check:client": "cd client && npm run check",
+        "check:server": "cd server && npm run check",
         "webpack-dev": "npm run server:webpack-dev && npm run client:webpack-dev",
         "webpack-dev:client": "cd client && npm run webpack-dev",
         "webpack-dev:server:": "cd server && npm run webpack-dev",
@@ -88,6 +91,11 @@
     },
     "dependencies": {},
     "devDependencies": {
+        "prettier": "2.0.4",
+        "tslint": "6.1.1",
+        "tslint-config-prettier": "1.18.0",
+        "tslint-microsoft-contrib": "6.2.0",
+        "tslint-plugin-prettier": "2.3.0",
         "typescript": "3.4.3",
         "webpack": "4.42.1",
         "webpack-cli": "3.3.11"

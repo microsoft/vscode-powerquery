@@ -1,21 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// import {
-//     format,
-//     FormatError,
-//     FormatSettings,
-//     IndentationLiteral,
-//     NewlineLiteral,
-//     Result,
-//     ResultKind,
-// } from "@microsoft/powerquery-format";
 import * as LanguageServices from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { Library } from ".";
 import { DefaultSettings } from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { Library } from ".";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -48,17 +39,17 @@ connection.onInitialized(() => {
     };
 });
 
-documents.onDidClose((event) => {
+documents.onDidClose(event => {
     LanguageServices.documentClosed(event.document);
 });
 
 // TODO: Support incremental lexing.
 // TextDocuments uses the connection's onDidChangeTextDocument, and I can't see a way to provide a second
 // one to intercept incremental changes. TextDocuments.OnDidChangeContent only provides the full document.
-documents.onDidChangeContent((event) => {
+documents.onDidChangeContent(event => {
     LanguageServices.documentUpdated(event.document);
 
-    validateDocument(event.document).catch((err) =>
+    validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
@@ -140,7 +131,7 @@ connection.onCompletion(
                 analysisOptions,
             );
 
-            return analysis.getCompletionItems().catch((err) => {
+            return analysis.getCompletionItems().catch(err => {
                 connection.console.error(`onCompletion error ${JSON.stringify(err, undefined, 4)}`);
                 return [];
             });
@@ -165,7 +156,7 @@ connection.onHover(
                 analysisOptions,
             );
 
-            return analysis.getHover().catch((err) => {
+            return analysis.getHover().catch(err => {
                 connection.console.error(`onHover error ${JSON.stringify(err, undefined, 4)}`);
                 return emptyHover;
             });
@@ -195,7 +186,7 @@ connection.onSignatureHelp(
                 analysisOptions,
             );
 
-            return analysis.getSignatureHelp().catch((err) => {
+            return analysis.getSignatureHelp().catch(err => {
                 connection.console.error(`onSignatureHelp error ${JSON.stringify(err, undefined, 4)}`);
                 return emptySignatureHelp;
             });

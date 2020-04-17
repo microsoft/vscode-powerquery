@@ -15,6 +15,6 @@
         "incremental": true,
         "resolveJsonModule": true
     },
-    "include": ["src/client/src/**/*.ts", "src/server/src/**/*.ts", "src/server/src/library/standard.json"],
+    "include": [],
     "exclude": ["node_modules"]
 }
