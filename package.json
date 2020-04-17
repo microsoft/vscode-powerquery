@@ -14,9 +14,9 @@
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
     "scripts": {
-        "init": "npm install && npm run init:client && npm run init:server",
-        "init:client": "cd client && npm run init",
-        "init:server": "cd server && npm run init",
+        "postinstall": "npm run install:client && npm run install:server",
+        "install:client": "cd client && npm install",
+        "install:server": "cd server && npm install",
         "build": "npm run build:client && npm run build:server",
         "build:client": "cd client && npm run build",
         "build:server": "cd server && npm run build",
