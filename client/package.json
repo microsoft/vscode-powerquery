@@ -1,25 +1,28 @@
 {
     "name": "vscode-powerquery-client",
+    "version": "0.0.31",
     "description": "VS Code part of language server",
     "author": "Microsoft Corporation",
     "license": "MIT",
-    "version": "0.0.31",
-    "publisher": "powerquery",
+    "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/microsoft/vscode-powerquery.git",
         "directory": "client"
     },
-    "engines": {
-        "vscode": "1.40.0"
+    "issues": {
+        "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
-    "main": "out\\extension.d.ts",
-    "types": "out\\extension.d.ts",
     "scripts": {
         "check": ".\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch -p",
         "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=src/test/mochaConfig.json -r ts-node/register src/test/**/*.ts"
+    },
+    "main": "lib\\extension.d.ts",
+    "types": "lib\\extension.d.ts",
+    "engines": {
+        "vscode": "1.40.0"
     },
     "dependencies": {
         "vscode-languageclient": "6.0.0-next.8"

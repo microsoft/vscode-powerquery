@@ -3,7 +3,7 @@
         "target": "es6",
         "module": "commonjs",
         "sourceMap": true,
-        "outDir": "out",
+        "outDir": "lib",
         "strict": true,
         "noFallthroughCasesInSwitch": true,
         "noEmitOnError": true,

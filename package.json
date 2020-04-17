@@ -1,72 +1,84 @@
 {
-  "name": "vscode-powerquery",
-  "version": "0.0.11",
-  "engines": {
-    "vscode": "^1.40.0"
-  },
-  "categories": [
-    "Other",
-    "Programming Languages"
-  ],
-  "activationEvents": [
-    "onLanguage:powerquery"
-  ],
-  "publisher": "powerquery",
-  "main": "./client/dist/extension",
-  "contributes": {
-    "configuration": {
-      "type": "object",
-      "title": "Power Query configuration",
-      "properties": {
-        "powerquery.trace.server": {
-          "scope": "window",
-          "type": "string",
-          "enum": [
-            "off",
-            "messages",
-            "verbose"
-          ],
-          "default": "off",
-          "description": "Traces the communication between VS Code and the language server."
-        }
-      }
+    "name":"vscode-powerquery",
+    "version":"0.0.11",
+    "description":"TODO",
+    "author":"Microsoft Corporation",
+    "license":"MIT",
+    "homepage":"https://github.com/microsoft/vscode-powerquery#readme",
+    "repository":{
+        "type":"git",
+        "url":"git+https://github.com/microsoft/vscode-powerquery.git",
+        "directory":"client"
     },
-    "languages": [
-      {
-        "id": "powerquery",
-        "aliases": [
-          "Power Query Formula Language",
-          "Power Query/M",
-          "Power Query",
-          "powerquery",
-          "pq",
-          "M"
-        ],
-        "extensions": [
-          ".pq",
-          ".pqm",
-          ".m",
-          ".mout"
-        ],
-        "configuration": "./language-configuration.json"
-      }
+    "issues":{
+        "url":"https://github.com/microsoft/vscode-powerquery/issues"
+    },
+    "scripts":{
+        "build:client":".\\node_modules\\.bin\\tsc -p client\\tsconfig.json"
+    },
+    "main":"./client/dist/extension",
+    "types":"./client/dist/extension",
+    "engines":{
+        "vscode":"^1.40.0"
+    },
+    "categories":[
+        "Other",
+        "Programming Languages"
     ],
-    "grammars": [
-      {
-        "language": "powerquery",
-        "scopeName": "source.powerquery",
-        "path": "./syntaxes/powerquery.tmLanguage.json"
-      }
-    ]
-  },
-  "scripts": {
-    "build:client": ".\\node_modules\\.bin\\tsc -p client\\tsconfig.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/microsoft/vscode-powerquery.git"
-  },
-  "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {}
+    "activationEvents":[
+        "onLanguage:powerquery"
+    ],
+    "publisher":"powerquery",
+    "contributes":{
+        "configuration":{
+            "type":"object",
+            "title":"Power Query configuration",
+            "properties":{
+                "powerquery.trace.server":{
+                    "scope":"window",
+                    "type":"string",
+                    "enum":[
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default":"off",
+                    "description":"Traces the communication between VS Code and the language server."
+                }
+            }
+        },
+        "languages":[
+            {
+                "id":"powerquery",
+                "aliases":[
+                    "Power Query Formula Language",
+                    "Power Query/M",
+                    "Power Query",
+                    "powerquery",
+                    "pq",
+                    "M"
+                ],
+                "extensions":[
+                    ".pq",
+                    ".pqm",
+                    ".m",
+                    ".mout"
+                ],
+                "configuration":"./language-configuration.json"
+            }
+        ],
+        "grammars":[
+            {
+                "language":"powerquery",
+                "scopeName":"source.powerquery",
+                "path":"./syntaxes/powerquery.tmLanguage.json"
+            }
+        ]
+    },
+    "dependencies":{
+
+    },
+    "devDependencies":{
+
+    }
 }

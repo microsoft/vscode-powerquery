@@ -1,21 +1,28 @@
 {
     "name": "vscode-powerquery-server",
-    "description": "Power Query language server implementation.",
     "version": "0.0.31",
+    "description": "Power Query language server implementation.",
     "author": "Microsoft Corporation",
     "license": "MIT",
-    "engines": {
-        "node": "*"
-    },
+    "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
     "repository": {
         "type": "git",
-        "url": "https://github.com/microsoft/vscode-powerquery/"
+        "url": "git+https://github.com/microsoft/vscode-powerquery.git",
+        "directory": "server"
+    },
+    "issues": {
+        "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
     "scripts": {
         "check": ".\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch -p",
         "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=src/test/mochaConfig.json -r ts-node/register src/test/**/*.ts"
+    },
+    "main": "lib\\server.d.ts",
+    "types": "lib\\server.d.ts",
+    "engines": {
+        "node": "*"
     },
     "dependencies": {
         "@microsoft/powerquery-parser": "0.1.48",
