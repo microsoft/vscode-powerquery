@@ -11,7 +11,7 @@
             "outFiles": ["${workspaceRoot}/client/dist/**/*.js"],
             "preLaunchTask": {
                 "type": "npm",
-                "script": "client:webpack"
+                "script": "webpack-prod:client"
             }
         },
         {
@@ -22,7 +22,7 @@
             "restart": true,
             "preLaunchTask": {
                 "type": "npm",
-                "script": "server:webpack"
+                "script": "webpack-prod:server"
             },
             "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
         },
@@ -34,10 +34,10 @@
             "args": [
                 "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceRoot}",
-                "--extensionTestsPath=${workspaceRoot}/client/out/test",
+                "--extensionTestsPath=${workspaceRoot}/client/lib/test",
                 "${workspaceRoot}/client/testFixture"
             ],
-            "outFiles": ["${workspaceRoot}/client/out/test/**/*.js"],
+            "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"],
             "preLaunchTask": {
                 "type": "npm",
                 "script": "build:client"
