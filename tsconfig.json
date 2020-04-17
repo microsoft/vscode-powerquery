@@ -1,20 +1,20 @@
 {
-  "compilerOptions": {
-      "target": "es6",
-      "module": "commonjs",
-      "sourceMap": true,
-      "outDir": "out",
-      "strict": true,
-      "noFallthroughCasesInSwitch": true,
-      "noEmitOnError": true,
-      "noImplicitReturns": true,
-      "noUnusedLocals": true,
-      "noUnusedParameters": true,
-      "declaration": true,
-      "rootDir": "src",
-      "incremental": true,
-      "resolveJsonModule": true
-  },
-  "include": ["src/client/src/**/*.ts", "src/server/src/**/*.ts", "src/server/src/library/standard.json"],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "sourceMap": true,
+        "outDir": "out",
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "noEmitOnError": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "declaration": true,
+        "rootDir": "src",
+        "incremental": true,
+        "resolveJsonModule": true
+    },
+    "include": ["src/client/src/**/*.ts", "src/server/src/**/*.ts", "src/server/src/library/standard.json"],
+    "exclude": ["node_modules"]
 }
