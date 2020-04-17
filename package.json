@@ -17,9 +17,15 @@
         "init": "npm install && npm run init:client && npm run init:server",
         "init:client": "cd client && npm run init",
         "init:server": "cd server && npm run init",
-        "build": "npm run build:client && npm run build:server && .\\node_modules\\.bin\\tsc",
+        "build": "npm run build:client && npm run build:server",
         "build:client": "cd client && npm run build",
-        "build:server": "cd server && npm run build"
+        "build:server": "cd server && npm run build",
+        "webpack-dev": "npm run server:webpack-dev && npm run client:webpack-dev",
+        "webpack-dev:client": "cd client && npm run webpack-dev",
+        "webpack-dev:server:": "cd server && npm run webpack-dev",
+        "webpack-prod": "npm run server:webpack-prod && npm run client:webpack-prod",
+        "webpack-prod:client": "cd client && npm run webpack-prod",
+        "webpack-prod:server": "cd server && npm run webpack-prod"
     },
     "main": "./client/dist/extension",
     "types": "./client/dist/extension",
@@ -82,6 +88,8 @@
     },
     "dependencies": {},
     "devDependencies": {
-        "typescript": "3.4.3"
+        "typescript": "3.4.3",
+        "webpack": "4.42.1",
+        "webpack-cli": "3.3.11"
     }
 }
