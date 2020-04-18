@@ -20,10 +20,6 @@
             "name": "Attach to Server",
             "port": 6009,
             "restart": true,
-            "preLaunchTask": {
-                "type": "npm",
-                "script": "webpack-prod:server"
-            },
             "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
         },
         {
@@ -38,16 +34,13 @@
                 "${workspaceRoot}/client/testFixture"
             ],
             "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"],
-            "preLaunchTask": {
-                "type": "npm",
-                "script": "build:client"
-            }
-        }
+        },
     ],
     "compounds": [
         {
             "name": "Client + Server",
-            "configurations": ["Launch Client", "Attach to Server"]
+            "configurations": ["Launch Client", "Attach to Server"],
+            "preLaunchTask": "npm: build"
         }
     ]
 }
