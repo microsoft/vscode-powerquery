@@ -6,21 +6,13 @@ Provides a language service for the [Power Query / M formula language](https://p
 
 ## How to build
 
-This repo uses [Lerna](https://lerna.js.org/) to manage sub-package dependencies.
-
-1. install lerna globally:
+1. install dependencies:
 
 ```cmd
-npm install --global lerna
+npm install
 ```
 
-2. install package dependencies and create symlinks:
-
-```cmd
-npm run setup
-```
-
-3. build all packages:
+2. build all packages:
 
 ```cmd
 lerna run build
@@ -29,15 +21,13 @@ lerna run build
 ## How to run tests
 
 ```cmd
-lerna run test
+npm run test
 ```
 
 ## How to clean
 
-**Warning:** Because of the symlinks created by lerna, you should not run `git clean` commands to remove package dependencies. Instead, you should use lerna's [`clean`](https://github.com/lerna/lerna/tree/master/commands/clean#readme) command.
-
 ```cmd
-lerna clean
+git clean -xdf
 ```
 
 ## Generate vscode extension
