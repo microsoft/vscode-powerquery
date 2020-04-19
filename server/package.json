@@ -1,29 +1,57 @@
 {
     "name": "vscode-powerquery-server",
-    "description": "Power Query language server implementation.",
     "version": "0.0.31",
+    "description": "Power Query language server implementation.",
     "author": "Microsoft Corporation",
     "license": "MIT",
-    "engines": {
-        "node": "*"
-    },
+    "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
     "repository": {
         "type": "git",
-        "url": "https://github.com/microsoft/vscode-powerquery/"
+        "url": "git+https://github.com/microsoft/vscode-powerquery.git",
+        "directory": "server"
+    },
+    "issues": {
+        "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
     "scripts": {
-        "check": "..\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
-        "build": "node_modules\\.bin\\tsc -p ./",
-        "watch": "node_modules\\.bin\\tsc -watch -p ./",
+        "init": "npm install",
+        "lint": "npm run lint:prettier && npm run lint:tslint",
+        "lint:prettier": ".\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
+        "lint:tslint": ".\\node_modules\\.bin\\tslint src/*.ts",
+        "build": ".\\node_modules\\.bin\\tsc",
+        "watch": ".\\node_modules\\.bin\\tsc -watch -p",
+        "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=src/test/mochaConfig.json -r ts-node/register src/test/**/*.ts",
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
         "webpack-dev": "node_modules\\.bin\\webpack  --mode development --watch"
     },
+    "main": "lib\\server.d.ts",
+    "types": "lib\\server.d.ts",
+    "engines": {
+        "node": "*"
+    },
     "dependencies": {
-        "@microsoft/powerquery-format": "file:../packages/powerquery-format",
-        "@microsoft/powerquery-language-services": "file:../packages/powerquery-language-services",
-        "@microsoft/powerquery-library": "file:../packages/powerquery-library",
-        "@microsoft/powerquery-parser": "file:../packages/powerquery-format/node_modules/@microsoft/powerquery-parser",
+        "@microsoft/powerquery-parser": "0.1.48",
+        "@microsoft/powerquery-language-services": "0.1.1",
         "vscode-languageserver": "6.0.0-next.7",
         "vscode-languageserver-textdocument": "1.0.0-next.5"
+    },
+    "devDependencies": {
+        "@types/chai": "4.1.3",
+        "@types/mocha": "5.2.7",
+        "@types/node": "12.12.2",
+        "chai": "4.2.0",
+        "prettier": "2.0.4",
+        "mocha": "7.1.1",
+        "mocha-junit-reporter": "1.23.3",
+        "mocha-multi-reporters": "1.1.7",
+        "tslint": "6.1.1",
+        "tslint-config-prettier": "1.18.0",
+        "tslint-microsoft-contrib": "6.2.0",
+        "tslint-plugin-prettier": "2.3.0",
+        "ts-node": "8.8.2",
+        "ts-loader": "6.2.2",
+        "typescript": "3.8.3",
+        "webpack": "4.42.1",
+        "webpack-cli": "3.3.11"
     }
 }

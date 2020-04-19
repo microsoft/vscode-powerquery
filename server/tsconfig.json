@@ -2,12 +2,8 @@
     "compilerOptions": {
         "target": "es6",
         "module": "commonjs",
-        "moduleResolution": "node",
         "sourceMap": true,
-        "outDir": "out",
-        "rootDir": "src",
-        "lib": ["es6"],
-        "composite": true,
+        "outDir": "lib",
         "strict": true,
         "noFallthroughCasesInSwitch": true,
         "noEmitOnError": true,
@@ -15,8 +11,11 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "declaration": true,
-        "incremental": true
+        "rootDir": "src",
+        "incremental": true,
+        "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+        "resolveJsonModule": true
     },
-    "include": ["src"],
-    "exclude": ["node_modules", ".vscode-test"]
+    "include": ["src/**/*.ts", "src/library/standard.json"],
+    "exclude": ["node_modules"]
 }

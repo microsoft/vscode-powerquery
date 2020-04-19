@@ -1,20 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import {
-    format,
-    FormatError,
-    FormatSettings,
-    IndentationLiteral,
-    NewlineLiteral,
-    Result,
-    ResultKind,
-} from "@microsoft/powerquery-format";
 import * as LanguageServices from "@microsoft/powerquery-language-services";
-import * as Library from "@microsoft/powerquery-library";
+import * as PQP from "@microsoft/powerquery-parser";
 import { DefaultSettings } from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { Library } from ".";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -81,29 +73,29 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     const options: LS.FormattingOptions = documentfomattingParams.options;
     const textEditResult: LS.TextEdit[] = [];
 
-    let indentationLiteral: IndentationLiteral;
+    let indentationLiteral: LanguageServices.IndentationLiteral;
     if (options.insertSpaces) {
-        indentationLiteral = IndentationLiteral.SpaceX4;
+        indentationLiteral = LanguageServices.IndentationLiteral.SpaceX4;
     } else {
-        indentationLiteral = IndentationLiteral.Tab;
+        indentationLiteral = LanguageServices.IndentationLiteral.Tab;
     }
 
-    const formatSettings: FormatSettings = {
+    const formatSettings: LanguageServices.FormatSettings = {
         // TODO (Localization): update settings based on locale
         ...DefaultSettings,
         indentationLiteral,
         // TODO: get the newline terminator for the document/workspace
-        newlineLiteral: NewlineLiteral.Windows,
+        newlineLiteral: LanguageServices.NewlineLiteral.Windows,
     };
 
-    const formatResult: Result<string, FormatError.TFormatError> = format(formatSettings, document.getText());
-    if (formatResult.kind === ResultKind.Ok) {
+    const formatResult: LanguageServices.TriedFormat = LanguageServices.tryFormat(formatSettings, document.getText());
+    if (PQP.ResultUtils.isOk(formatResult)) {
         textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
     } else {
         // TODO: should this go in the failed promise path?
-        const error: FormatError.TFormatError = formatResult.error;
+        const error: LanguageServices.FormatError.TFormatError = formatResult.error;
         let message: string;
-        if (FormatError.isTFormatError(error)) {
+        if (LanguageServices.FormatError.isTFormatError(error)) {
             message = error.innerError.message;
         } else {
             message = "An unknown error occured during formatting.";

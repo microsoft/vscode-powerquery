@@ -1,13 +1,20 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es6",
-    "outDir": "out",
-    "rootDir": "src",
-    "lib": ["es6"],
-    "sourceMap": true
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", ".vscode-test", "packages"],
-  "references": [{ "path": "./client" }, { "path": "./server" }]
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "sourceMap": true,
+        "outDir": "out",
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "noEmitOnError": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "declaration": true,
+        "rootDir": "src",
+        "incremental": true,
+        "resolveJsonModule": true
+    },
+    "include": [],
+    "exclude": ["node_modules"]
 }

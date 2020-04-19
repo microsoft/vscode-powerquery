@@ -2,42 +2,30 @@
 
 Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/), and (eventually) feature parity with the [Power Query SDK for Visual Studio](https://marketplace.visualstudio.com/items?itemName=Dakahn.PowerQuerySDK).
 
-[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lerna.js.org/)
-
 ## How to build
 
-This repo uses [Lerna](https://lerna.js.org/) to manage sub-package dependencies.
-
-1. install lerna globally:
+1. install dependencies:
 
 ```cmd
-npm install --global lerna
+npm install
 ```
 
-2. install package dependencies and create symlinks:
+2. build all packages:
 
 ```cmd
-npm run setup
-```
-
-3. build all packages:
-
-```cmd
-lerna run build
+npm run build
 ```
 
 ## How to run tests
 
 ```cmd
-lerna run test
+npm run test
 ```
 
 ## How to clean
 
-**Warning:** Because of the symlinks created by lerna, you should not run `git clean` commands to remove package dependencies. Instead, you should use lerna's [`clean`](https://github.com/lerna/lerna/tree/master/commands/clean#readme) command.
-
 ```cmd
-lerna clean
+git clean -xdf
 ```
 
 ## Generate vscode extension

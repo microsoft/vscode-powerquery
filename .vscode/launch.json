@@ -1,104 +1,46 @@
 // A launch configuration that compiles the extension and then opens it inside a new window
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "extensionHost",
-      "request": "launch",
-      "name": "Launch Client",
-      "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-      "outFiles": ["${workspaceRoot}/client/dist/**/*.js"],
-      "preLaunchTask": {
-        "type": "npm",
-        "script": "client:webpack"
-      }
-    },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Attach to Server",
-      "port": 6009,
-      "restart": true,
-      "preLaunchTask": {
-        "type": "npm",
-        "script": "server:webpack"
-      },
-      "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
-    },
-    {
-      "name": "Language Server E2E Test",
-      "type": "extensionHost",
-      "request": "launch",
-      "runtimeExecutable": "${execPath}",
-      "args": [
-        "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceRoot}",
-        "--extensionTestsPath=${workspaceRoot}/client/out/test",
-        "${workspaceRoot}/client/testFixture"
-      ],
-      "outFiles": ["${workspaceRoot}/client/out/test/**/*.js"],
-      "preLaunchTask": {
-        "type": "npm",
-        "script": "build:client"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Mocha Tests - Format",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "cwd": "${workspaceFolder}/packages/powerquery-format",
-      "args": [
-        "--debug",
-        "--colors",
-        "--timeout",
-        "999999",
-        "-r",
-        "ts-node/register",
-        "${workspaceFolder}/packages/powerquery-format/src/test/**/*.ts"
-      ],
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Mocha Tests - Language Services",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "cwd": "${workspaceFolder}/packages/powerquery-language-services",
-      "args": [
-        "--debug",
-        "--colors",
-        "--timeout",
-        "999999",
-        "-r",
-        "ts-node/register",
-        "${workspaceFolder}/packages/powerquery-language-services/src/test/**/*.ts"
-      ],
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Mocha Tests - Library",
-      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-      "cwd": "${workspaceFolder}/packages/powerquery-library",
-      "args": [
-        "--debug",
-        "--colors",
-        "--timeout",
-        "999999",
-        "-r",
-        "ts-node/register",
-        "${workspaceFolder}/packages/powerquery-library/src/test/**/*.ts"
-      ],
-      "internalConsoleOptions": "openOnSessionStart"
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Client + Server",
-      "configurations": ["Launch Client", "Attach to Server"]
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "Launch Client",
+            "runtimeExecutable": "${execPath}",
+            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+            "outFiles": ["${workspaceRoot}/client/dist/**/*.js"],
+            "preLaunchTask": {
+                "type": "npm",
+                "script": "webpack-prod:client"
+            }
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to Server",
+            "port": 6009,
+            "restart": true,
+            "outFiles": ["${workspaceRoot}/server/dist/**/*.js"]
+        },
+        {
+            "name": "Language Server E2E Test",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceRoot}",
+                "--extensionTestsPath=${workspaceRoot}/client/lib/test",
+                "${workspaceRoot}/client/testFixture"
+            ],
+            "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"],
+        },
+    ],
+    "compounds": [
+        {
+            "name": "Client + Server",
+            "configurations": ["Launch Client", "Attach to Server"],
+            "preLaunchTask": "npm: build"
+        }
+    ]
 }

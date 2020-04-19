@@ -1,8 +1,0 @@
-{
-    "tabWidth": 4,
-    "trailingComma": "all",
-    "parser": "typescript",
-    "printWidth": 120,
-    "semi": true,
-    "singleQuote": false
-}
