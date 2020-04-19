@@ -2,8 +2,6 @@
 
 Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/), and (eventually) feature parity with the [Power Query SDK for Visual Studio](https://marketplace.visualstudio.com/items?itemName=Dakahn.PowerQuerySDK).
 
-[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lerna.js.org/)
-
 ## How to build
 
 1. install dependencies:
@@ -15,7 +13,7 @@ npm install
 2. build all packages:
 
 ```cmd
-lerna run build
+npm run build
 ```
 
 ## How to run tests
