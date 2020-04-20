@@ -17,8 +17,7 @@
             "name": "Attach to Server",
             "port": 6009,
             "restart": true,
-            "outFiles": ["${workspaceRoot}/server/dist/server.js"],
-            "preLaunchTask": "Webpack Server"
+            "outFiles": ["${workspaceRoot}/server/dist/server.js"]
         },
         {
             "name": "Language Server E2E Test",
@@ -37,7 +36,8 @@
     "compounds": [
         {
             "name": "Client + Server",
-            "configurations": ["Launch Client", "Attach to Server"]
+            "configurations": ["Launch Client", "Attach to Server"],
+            "preLaunchTask": "Webpack Server"
         }
     ]
 }

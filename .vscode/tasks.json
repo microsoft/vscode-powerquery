@@ -3,18 +3,20 @@
     "tasks": [
         {
             "type": "npm",
-            "script": "webpack-prod",
+            "script": "webpack-dev",
             "path": "server/",
             "group": "build",
-            "problemMatcher": [],
+            "isBackground": true,
+            "problemMatcher": ["$ts-webpack-watch", "$tslint-webpack-watch"],
             "label": "Webpack Server"
         },
         {
             "type": "npm",
-            "script": "build",
+            "script": "watch",
             "path": "client/",
             "group": "build",
-            "problemMatcher": ["$tsc"],
+            "isBackground": true,
+            "problemMatcher": ["$tsc-watch"],
             "label": "Build Client"
         }
     ]
