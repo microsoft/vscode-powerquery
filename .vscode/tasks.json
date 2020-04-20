@@ -3,30 +3,19 @@
     "tasks": [
         {
             "type": "npm",
-            "script": "build",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "panel": "dedicated",
-                "reveal": "never"
-            },
-            "problemMatcher": ["$tsc"],
-            "label": "npm: build",
-            "detail": "npm run build"
+            "script": "webpack-prod",
+            "path": "server/",
+            "group": "build",
+            "problemMatcher": [],
+            "label": "Webpack Server"
         },
         {
             "type": "npm",
-            "script": "watch",
-            "isBackground": true,
+            "script": "build",
+            "path": "client/",
             "group": "build",
-            "presentation": {
-                "panel": "dedicated",
-                "reveal": "never"
-            },
-            "problemMatcher": ["$tsc-watch"],
-            "label": "npm: watch"
+            "problemMatcher": ["$tsc"],
+            "label": "Build Client"
         }
     ]
 }
