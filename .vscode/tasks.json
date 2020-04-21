@@ -12,12 +12,12 @@
         },
         {
             "type": "npm",
-            "script": "watch",
+            "script": "webpack-dev",
             "path": "client/",
             "group": "build",
             "isBackground": true,
-            "problemMatcher": ["$tsc-watch"],
-            "label": "Build Client"
+            "problemMatcher": ["$ts-webpack-watch", "$tslint-webpack-watch"],
+            "label": "Webpack Client"
         }
     ]
 }

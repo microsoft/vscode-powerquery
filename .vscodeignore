@@ -8,9 +8,7 @@
 **/tslint.json
 **/package-lock.json
 contributing.md
-.travis.yml
 scripts/
-packages/
 client/**
 node_modules/
 !client/dist/**/*.js
