@@ -19,10 +19,10 @@
         "lint:prettier": ".\\node_modules\\.bin\\prettier --config \".prettierrc\" --list-different src\\**\\*.ts",
         "lint:tslint": ".\\node_modules\\.bin\\tslint src/*.ts",
         "build": ".\\node_modules\\.bin\\tsc",
-        "watch": ".\\node_modules\\.bin\\tsc -watch -p",
+        "watch": ".\\node_modules\\.bin\\tsc -watch",
         "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=src/test/mochaConfig.json -r ts-node/register src/test/**/*.ts",
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
-        "webpack-dev": "node_modules\\.bin\\webpack  --mode development --watch"
+        "webpack-dev": "node_modules\\.bin\\webpack --mode development --watch --info-verbosity verbose"
     },
     "main": "lib\\server.d.ts",
     "types": "lib\\server.d.ts",

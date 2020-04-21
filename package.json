@@ -1,7 +1,7 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.0.11",
-    "description": "TODO",
+    "version": "0.0.12",
+    "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
     "license": "MIT",
     "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
@@ -28,10 +28,10 @@
         "webpack-dev:server:": "cd server && npm run webpack-dev",
         "webpack-prod": "npm run webpack-prod:server && npm run webpack-prod:client",
         "webpack-prod:client": "cd client && npm run webpack-prod",
-        "webpack-prod:server": "cd server && npm run webpack-prod"
+        "webpack-prod:server": "cd server && npm run webpack-prod",
+        "vscode:prepublish": "npm run webpack-prod"
     },
     "main": "./client/dist/extension",
-    "types": "./client/dist/extension",
     "engines": {
         "vscode": "^1.40.0"
     },
@@ -96,8 +96,6 @@
         "tslint-config-prettier": "1.18.0",
         "tslint-microsoft-contrib": "6.2.0",
         "tslint-plugin-prettier": "2.3.0",
-        "typescript": "3.4.3",
-        "webpack": "4.42.1",
-        "webpack-cli": "3.3.11"
+        "typescript": "3.4.3"
     }
 }
