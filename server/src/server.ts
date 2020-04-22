@@ -64,7 +64,7 @@ async function validateDocument(document: LS.TextDocument): Promise<void> {
 }
 
 connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
-    const maybeDocument: undefined | LS.TextDocument = documents.get(documentfomattingParams.textDocument.uri);
+    const maybeDocument: LS.TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
     if (maybeDocument === undefined) {
         return [];
     }

@@ -11,7 +11,7 @@ const PowerQueryLibrary: Library = AllModules;
 describe("Library export", () => {
     it("index const by name", () => {
         const definitionKey: string = "BinaryOccurrence.Required";
-        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(definitionKey);
+        const maybeLibraryDefinition: LibraryDefinition | undefined = PowerQueryLibrary.get(definitionKey);
         if (maybeLibraryDefinition === undefined) {
             throw new Error(`expected constant '${definitionKey}' was not found`);
         }
@@ -25,7 +25,7 @@ describe("Library export", () => {
 
     it("index function by name", () => {
         const exportKey: string = "List.Distinct";
-        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(exportKey);
+        const maybeLibraryDefinition: LibraryDefinition | undefined = PowerQueryLibrary.get(exportKey);
         if (maybeLibraryDefinition === undefined) {
             throw new Error(`expected constant '${exportKey}' was not found`);
         }
@@ -40,7 +40,7 @@ describe("Library export", () => {
 
     it("#date constructor", () => {
         const exportKey: string = "#date";
-        const maybeLibraryDefinition: undefined | LibraryDefinition = PowerQueryLibrary.get(exportKey);
+        const maybeLibraryDefinition: LibraryDefinition | undefined = PowerQueryLibrary.get(exportKey);
         if (maybeLibraryDefinition === undefined) {
             throw new Error(`expected constant '${exportKey}' was not found`);
         }
