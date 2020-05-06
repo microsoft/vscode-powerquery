@@ -2,8 +2,6 @@
 // Licensed under the MIT license.
 
 import * as LanguageServices from "@microsoft/powerquery-language-services";
-import * as PQP from "@microsoft/powerquery-parser";
-import { DefaultSettings } from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Library } from ".";
@@ -70,53 +68,29 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     }
     const document: LS.TextDocument = maybeDocument;
 
-    const options: LS.FormattingOptions = documentfomattingParams.options;
-    const textEditResult: LS.TextEdit[] = [];
+    try {
+        return LanguageServices.tryFormat(
+            document,
+            documentfomattingParams.options,
+            // TODO: find a way to query for a user's current localization
+            "en-US",
+        );
+    } catch (err) {
+        const error: Error = err;
+        const errorMessage: string = error.message;
 
-    let indentationLiteral: LanguageServices.IndentationLiteral;
-    if (options.insertSpaces) {
-        indentationLiteral = LanguageServices.IndentationLiteral.SpaceX4;
-    } else {
-        indentationLiteral = LanguageServices.IndentationLiteral.Tab;
-    }
-
-    const formatSettings: LanguageServices.FormatSettings = {
-        // TODO (Localization): update settings based on locale
-        ...DefaultSettings,
-        indentationLiteral,
-        // TODO: get the newline terminator for the document/workspace
-        newlineLiteral: LanguageServices.NewlineLiteral.Windows,
-    };
-
-    const formatResult: LanguageServices.TriedFormat = LanguageServices.tryFormat(formatSettings, document.getText());
-    if (PQP.ResultUtils.isOk(formatResult)) {
-        textEditResult.push(LS.TextEdit.replace(fullDocumentRange(document), formatResult.value));
-    } else {
-        // TODO: should this go in the failed promise path?
-        const error: LanguageServices.FormatError.TFormatError = formatResult.error;
-        let message: string;
-        if (LanguageServices.FormatError.isTFormatError(error)) {
-            message = error.innerError.message;
+        let userMessage: string;
+        // An already localized message was returned.
+        if (errorMessage) {
+            userMessage = errorMessage;
         } else {
-            message = "An unknown error occured during formatting.";
+            userMessage = "An unknown error occured during formatting.";
         }
 
-        connection.window.showErrorMessage(message);
+        connection.window.showErrorMessage(userMessage);
+        return [];
     }
-
-    return textEditResult;
 });
-
-// TODO: is there a better way to do this?
-function fullDocumentRange(document: LS.TextDocument): LS.Range {
-    return {
-        start: document.positionAt(0),
-        end: {
-            line: document.lineCount - 1,
-            character: Number.MAX_VALUE,
-        },
-    };
-}
 
 connection.onCompletion(
     async (
