@@ -11,9 +11,18 @@ import * as path from "path";
 export function run(): Promise<void> {
     // Create the mocha test
     const mocha: Mocha = new Mocha({
+        color: true,
         ui: "tdd",
+        reporter: "mocha-multi-reporters",
+        reporterOptions: {
+            reporterEnabled: "spec, mocha-junit-reporter",
+            mochaJunitReporterReporterOptions: {
+                // Emit the test results to the /client directory
+                mochaFile: path.resolve(__dirname, "..", "..", "..", "test-results.xml"),
+            },
+        },
+        slow: 10000,
     });
-    mocha.useColors(true);
 
     const testsRoot: string = path.resolve(__dirname, "..");
 
