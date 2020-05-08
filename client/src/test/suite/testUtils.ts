@@ -19,7 +19,7 @@ export const extensionId: string = "powerquery.vscode-powerquery";
 export async function activate(docUri: vscode.Uri): Promise<void> {
     // The extensionId is `publisher.name` from package.json
     const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
-    if (ext === undefined) {
+    if (!ext) {
         throw new Error("Failed to load extension.");
     }
 

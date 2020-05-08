@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// tslint:disable: no-implicit-dependencies
+
 import * as glob from "glob";
 import * as Mocha from "mocha";
 import * as path from "path";
