@@ -2,10 +2,9 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
-// tslint:disable-next-line: no-implicit-dependencies
 import * as vscode from "vscode";
 
-import { activate, getDocUri } from "./helper";
+import * as TestUtils from "./testUtils";
 
 enum VertificationType {
     Exact,
@@ -19,11 +18,11 @@ enum VertificationType {
 // TODO: Add test case for identifier with trailing. ex - "Access.|"
 
 suite("Access.Dat completion", () => {
-    const docUri: vscode.Uri = getDocUri("completion.pq");
+    const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
     vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Simple completion item test", async () => {
-        await testCompletion(
+        testCompletion(
             docUri,
             new vscode.Position(0, 10),
             {
@@ -31,14 +30,15 @@ suite("Access.Dat completion", () => {
             },
             VertificationType.Contains,
         );
-    });
+    }).timeout(TestUtils.defaultTestTimeout);
 });
 
 suite("Section document", () => {
-    const docUri: vscode.Uri = getDocUri("section.pq");
+    const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
+    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Keywords", async () => {
-        await testCompletion(
+        testCompletion(
             docUri,
             new vscode.Position(12, 5),
             {
@@ -50,10 +50,10 @@ suite("Section document", () => {
             },
             VertificationType.Contains,
         );
-    });
+    }).timeout(TestUtils.defaultTestTimeout);
 
     test("Section members", async () => {
-        await testCompletion(
+        testCompletion(
             docUri,
             new vscode.Position(11, 12),
             {
@@ -65,7 +65,7 @@ suite("Section document", () => {
             },
             VertificationType.Contains,
         );
-    });
+    }).timeout(TestUtils.defaultTestTimeout);
 });
 
 async function testCompletion(
@@ -115,7 +115,7 @@ async function testCompletionBase(
     docUri: vscode.Uri,
     position: vscode.Position,
 ): Promise<vscode.CompletionList | undefined> {
-    await activate(docUri);
+    await TestUtils.activate(docUri);
 
     // Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
     return vscode.commands.executeCommand("vscode.executeCompletionItemProvider", docUri, position);

@@ -10,12 +10,15 @@ export let editor: vscode.TextEditor;
 export let documentEol: string;
 export let platformEol: string;
 
+export const defaultTestTimeout: number = 10000;
+export const extensionId: string = "powerquery.vscode-powerquery";
+
 /**
  * Activates the vscode-powerquery extension
  */
 export async function activate(docUri: vscode.Uri): Promise<void> {
     // The extensionId is `publisher.name` from package.json
-    const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension("powerquery.vscode-powerquery");
+    const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
     if (ext === undefined) {
         throw new Error("Failed to load extension.");
     }
