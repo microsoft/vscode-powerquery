@@ -35,6 +35,8 @@ export function run(): Promise<void> {
                     }
                 });
             } catch (err) {
+                // tslint:disable-next-line: no-console
+                console.error(err);
                 e(err);
             }
         });
