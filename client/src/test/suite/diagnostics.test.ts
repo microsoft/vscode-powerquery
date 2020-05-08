@@ -6,10 +6,11 @@ import * as assert from "assert";
 import * as vscode from "vscode";
 import { activate, getDocUri } from "./helper";
 
-describe("Should get diagnostics", () => {
+suite("Should get diagnostics", () => {
     const docUri: vscode.Uri = getDocUri("diagnostics.pq");
+    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
-    it("Simple test", async () => {
+    test("Simple test", async () => {
         await testDiagnostics(docUri, [
             {
                 message: "Expected to find a Equal on line 1, column 10, but a KeywordNot was found instead.",

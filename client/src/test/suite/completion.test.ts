@@ -18,10 +18,11 @@ enum VertificationType {
 // TODO: Add test mechanism that uses | notation and doesn't require use of files.
 // TODO: Add test case for identifier with trailing. ex - "Access.|"
 
-describe("Access.Dat completion", () => {
+suite("Access.Dat completion", () => {
     const docUri: vscode.Uri = getDocUri("completion.pq");
+    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
-    it("Simple completion item test", async () => {
+    test("Simple completion item test", async () => {
         await testCompletion(
             docUri,
             new vscode.Position(0, 10),
@@ -33,10 +34,10 @@ describe("Access.Dat completion", () => {
     });
 });
 
-describe("Section document", () => {
+suite("Section document", () => {
     const docUri: vscode.Uri = getDocUri("section.pq");
 
-    it("Keywords", async () => {
+    test("Keywords", async () => {
         await testCompletion(
             docUri,
             new vscode.Position(12, 5),
@@ -51,7 +52,7 @@ describe("Section document", () => {
         );
     });
 
-    it("Section members", async () => {
+    test("Section members", async () => {
         await testCompletion(
             docUri,
             new vscode.Position(11, 12),
