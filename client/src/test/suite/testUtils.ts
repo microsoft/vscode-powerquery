@@ -22,20 +22,14 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
         throw new Error("Failed to load extension.");
     }
 
-    await Promise.resolve(ext.activate());
+    await ext.activate();
     try {
-        doc = await Promise.resolve(vscode.workspace.openTextDocument(docUri));
-        editor = await Promise.resolve(vscode.window.showTextDocument(doc));
-        await sleep(2000); // Wait for server activation
+        doc = await vscode.workspace.openTextDocument(docUri);
+        editor = await vscode.window.showTextDocument(doc);
     } catch (e) {
         // tslint:disable-next-line: no-console
         console.error(e);
     }
-}
-
-async function sleep(ms: number): Promise<unknown> {
-    // tslint:disable-next-line: no-string-based-set-timeout
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export const getDocPath: (p: string) => string = (p: string): string =>
