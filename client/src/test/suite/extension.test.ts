@@ -22,5 +22,5 @@ suite("Extension Tests", () => {
         return ext!.activate().then(() => {
             assert.ok(true);
         });
-    }).timeout(10000);
+    });
 });

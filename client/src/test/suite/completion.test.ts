@@ -16,7 +16,7 @@ enum VertificationType {
 
 // See https://code.visualstudio.com/api/references/commands for full list of commands.
 
-// TODO: Add test mechanism that uses | notation and doesn't require use of files.
+// TODO: Add test mechanism that uses | notation and uses testUtils.setTestContent
 // TODO: Add test case for identifier with trailing. ex - "Access.|"
 
 suite("Access.Dat completion", () => {
@@ -32,7 +32,7 @@ suite("Access.Dat completion", () => {
             },
             VertificationType.Contains,
         );
-    }).timeout(TestUtils.defaultTestTimeout);
+    });
 });
 
 suite("Section document", () => {
@@ -52,7 +52,7 @@ suite("Section document", () => {
             },
             VertificationType.Contains,
         );
-    }).timeout(TestUtils.defaultTestTimeout);
+    });
 
     test("Section members", async () => {
         testCompletion(
@@ -67,7 +67,7 @@ suite("Section document", () => {
             },
             VertificationType.Contains,
         );
-    }).timeout(TestUtils.defaultTestTimeout);
+    });
 });
 
 async function testCompletion(

@@ -10,7 +10,6 @@ export let editor: vscode.TextEditor;
 export let documentEol: string;
 export let platformEol: string;
 
-export const defaultTestTimeout: number = 10000;
 export const extensionId: string = "powerquery.vscode-powerquery";
 
 /**
