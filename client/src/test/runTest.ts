@@ -8,7 +8,7 @@ async function main() {
         // The folder containing the Extension Manifest package.json
         // Passed to `--extensionDevelopmentPath`
         // tslint:disable-next-line: typedef
-        const extensionDevelopmentPath = path.resolve(__dirname, "../../");
+        const extensionDevelopmentPath = path.resolve(__dirname, "../../../");
 
         // The path to the extension test script
         // Passed to --extensionTestsPath
