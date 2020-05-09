@@ -1,6 +1,6 @@
-# Power Query SDK for VS Code
+# Power Query language service for VS Code
 
-Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/), and (eventually) feature parity with the [Power Query SDK for Visual Studio](https://marketplace.visualstudio.com/items?itemName=Dakahn.PowerQuerySDK).
+Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/).
 
 ## How to build
 

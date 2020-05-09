@@ -1,16 +1,19 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// tslint:disable: no-implicit-dependencies
+
 import * as assert from "assert";
-// tslint:disable-next-line: no-implicit-dependencies
 import * as vscode from "vscode";
-import { activate, getDocUri } from "./helper";
 
-describe("Should get diagnostics", () => {
-    const docUri: vscode.Uri = getDocUri("diagnostics.pq");
+import * as TestUtils from "./testUtils";
 
-    it("Simple test", async () => {
-        await testDiagnostics(docUri, [
+suite("Should get diagnostics", () => {
+    const docUri: vscode.Uri = TestUtils.getDocUri("diagnostics.pq");
+    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
+
+    test("Simple diagnostics test", async () => {
+        testDiagnostics(docUri, [
             {
                 message: "Expected to find a Equal on line 1, column 10, but a KeywordNot was found instead.",
                 range: toRange(0, 9, 0, 12),
@@ -27,7 +30,7 @@ function toRange(sLine: number, sChar: number, eLine: number, eChar: number): vs
 }
 
 async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.Diagnostic[]): Promise<void> {
-    await activate(docUri);
+    await TestUtils.activate(docUri);
 
     const actualDiagnostics: vscode.Diagnostic[] = vscode.languages.getDiagnostics(docUri);
 

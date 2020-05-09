@@ -20,17 +20,18 @@
             "outFiles": ["${workspaceRoot}/server/dist/server.js"]
         },
         {
-            "name": "Language Server E2E Test",
+            "name": "Language UI Test",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
                 "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceRoot}",
-                "--extensionTestsPath=${workspaceRoot}/client/lib/test",
-                "${workspaceRoot}/client/testFixture"
+                "--extensionTestsPath=${workspaceRoot}/client/lib/test/suite/index",
+                "${workspaceRoot}/client/src/test/testFixture"
             ],
-            "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"]
+            "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"],
+            "preLaunchTask": "Build UI Tests"
         }
     ],
     "compounds": [
