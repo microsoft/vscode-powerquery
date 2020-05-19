@@ -6,6 +6,8 @@ import * as LS from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Library } from ".";
 
+const LanguageId: string = "powerquery";
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
@@ -41,23 +43,30 @@ documents.onDidClose(event => {
     LanguageServices.documentClosed(event.document);
 });
 
-// TODO: Support incremental lexing.
-// TextDocuments uses the connection's onDidChangeTextDocument, and I can't see a way to provide a second
-// one to intercept incremental changes. TextDocuments.OnDidChangeContent only provides the full document.
-documents.onDidChangeContent(event => {
-    LanguageServices.documentUpdated(event.document);
+connection.onDidChangeTextDocument(event => {
+    const document: LS.TextDocument | undefined = documents.get(event.textDocument.uri);
+    if (document === undefined || document.languageId !== LanguageId) {
+        return;
+    }
 
+    // TODO: Language Services library updates to better support this event.
+    const version: number = event.textDocument.version ?? 0;
+
+    LanguageServices.documentUpdated(document, event.contentChanges, version);
+});
+
+documents.onDidChangeContent(event => {
     validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
 
 async function validateDocument(document: LS.TextDocument): Promise<void> {
-    const validationResult: LanguageServices.ValidationResult = LanguageServices.validate(document);
+    const diagnostics: LS.Diagnostic[] = LanguageServices.validate(document);
 
     connection.sendDiagnostics({
         uri: document.uri,
-        diagnostics: validationResult.diagnostics,
+        diagnostics,
     });
 }
 
