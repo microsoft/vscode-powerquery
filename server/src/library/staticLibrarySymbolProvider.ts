@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import {
+import type {
     CompletionItemProviderContext,
     HoverProviderContext,
     LibrarySymbolProvider,
     SignatureProviderContext,
 } from "@microsoft/powerquery-language-services";
-import { CompletionItem, Hover, SignatureHelp, SignatureInformation } from "vscode-languageserver-types";
+import type { CompletionItem, Hover, SignatureHelp, SignatureInformation } from "vscode-languageserver-types";
 
 import { AllModules, Library } from "./index";
 import { LibraryDefinition } from "./jsonTypes";
@@ -48,7 +48,7 @@ class StaticLibrarySymbolProvider implements LibrarySymbolProvider {
     }
 
     public async getSignatureHelp(context: SignatureProviderContext): Promise<SignatureHelp | null> {
-        const functionName: string | undefined = context.maybeFunctionName;
+        const functionName: string | undefined = context.functionName;
         if (functionName) {
             const definition: LibraryDefinition | undefined = this.activeLibrary.get(functionName);
             if (definition) {
@@ -58,9 +58,9 @@ class StaticLibrarySymbolProvider implements LibrarySymbolProvider {
                 );
 
                 return {
-                    signatures: signatures,
+                    signatures,
                     // tslint:disable-next-line: no-null-keyword
-                    activeParameter: context.maybeArgumentOrdinal ? context.maybeArgumentOrdinal : null,
+                    activeParameter: context.argumentOrdinal ?? null,
                     activeSignature: signatures.length - 1,
                 };
             }
