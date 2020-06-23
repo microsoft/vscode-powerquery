@@ -6,6 +6,7 @@ Provides a language service for the [Power Query / M formula language](https://p
 -   Parameter hints
 -   Hover
 -   Code formatting
+-   Syntax validation
 
 ## How to build
 
