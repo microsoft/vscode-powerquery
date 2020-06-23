@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import {
+import { CompletionItemKind, MarkupKind } from "vscode-languageserver-types";
+import type {
     CompletionItem,
-    CompletionItemKind,
     Hover,
     MarkupContent,
-    MarkupKind,
     ParameterInformation,
     Range,
     SignatureInformation,
@@ -20,7 +19,7 @@ export function cloneCompletionItemsWithRange(completionItems: CompletionItem[],
         result.push({
             ...item,
             textEdit: {
-                range: range,
+                range,
                 newText: item.label,
             },
         });
