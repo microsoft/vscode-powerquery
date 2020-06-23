@@ -1,6 +1,11 @@
 # Power Query language service for VS Code
 
-Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/).
+Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/) with the following capabilities:
+
+-   Suggestions / Auto complete (Based on M standard library functions, and keywords)
+-   Parameter hints
+-   Hover
+-   Code formatting
 
 ## How to build
 
@@ -16,17 +21,14 @@ npm install
 npm run build
 ```
 
-## How to run tests
+## How to run command line tests
 
 ```cmd
+cd server
 npm run test
 ```
 
-## How to clean
-
-```cmd
-git clean -xdf
-```
+There is also a UI test suite that can be run from VS Code.
 
 ## Generate vscode extension
 
