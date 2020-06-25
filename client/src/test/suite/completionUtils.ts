@@ -7,6 +7,7 @@ import * as assert from "assert";
 import * as vscode from "vscode";
 
 import * as TestUtils from "./testUtils";
+import { Commands } from "./testUtils";
 
 export enum VertificationType {
     Exact,
@@ -64,5 +65,5 @@ async function testCompletionBase(
     await TestUtils.activate(docUri);
 
     // Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
-    return vscode.commands.executeCommand("vscode.executeCompletionItemProvider", docUri, position);
+    return vscode.commands.executeCommand(Commands.CompletionItems, docUri, position);
 }
