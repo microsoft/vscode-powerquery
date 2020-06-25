@@ -25,6 +25,9 @@ connection.onInitialize(() => {
                 // TODO: is it better to return the first pass without documention to reduce message size?
                 resolveProvider: false,
             },
+            documentSymbolProvider: {
+                workDoneProgress: false,
+            },
             hoverProvider: true,
             signatureHelpProvider: {
                 triggerCharacters: ["(", ","],
@@ -121,6 +124,20 @@ connection.onCompletion(
         }
 
         return [];
+    },
+);
+
+connection.onDocumentSymbol(
+    async (
+        documentSymbolParams: LS.DocumentSymbolParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.DocumentSymbol[] | undefined> => {
+        const document: LS.TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
+        if (document) {
+            return LanguageServices.getDocumentSymbols(document, analysisOptions);
+        }
+
+        return undefined;
     },
 );
 
