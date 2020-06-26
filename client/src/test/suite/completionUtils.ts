@@ -21,7 +21,6 @@ export async function testCompletion(
     expectedCompletionList: vscode.CompletionList,
     vertification: VertificationType,
 ): Promise<void> {
-    // Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
     const actualCompletionList: vscode.CompletionList | undefined = await testCompletionBase(docUri, position);
     if (actualCompletionList === undefined) {
         throw new Error("CompletionList is undefined");
