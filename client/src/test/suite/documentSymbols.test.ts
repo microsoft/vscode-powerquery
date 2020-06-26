@@ -7,8 +7,6 @@ import * as vscode from "vscode";
 import * as DocumentSymbolUtils from "./documentSymbolUtils";
 import * as TestUtils from "./testUtils";
 
-// TODO: match completionUtils
-
 suite("DocumentSymbols", () => {
     test("section.pq", async () => {
         const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
