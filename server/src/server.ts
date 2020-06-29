@@ -11,7 +11,6 @@ const LanguageId: string = "powerquery";
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
-
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
 let analysisOptions: LanguageServices.AnalysisOptions;
@@ -22,7 +21,6 @@ connection.onInitialize(() => {
             textDocumentSync: LS.TextDocumentSyncKind.Incremental,
             documentFormattingProvider: true,
             completionProvider: {
-                // TODO: is it better to return the first pass without documention to reduce message size?
                 resolveProvider: false,
             },
             documentSymbolProvider: {
@@ -37,12 +35,20 @@ connection.onInitialize(() => {
 });
 
 connection.onInitialized(() => {
-    analysisOptions = {
-        librarySymbolProvider: Library.createLibraryProvider(),
-    };
+    connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
+        analysisOptions = {
+            locale: config?.general?.locale,
+            librarySymbolProvider: Library.createLibraryProvider(),
+        };
+    });
 });
 
 documents.onDidClose(event => {
+    // Clear any errors associated with this file
+    connection.sendDiagnostics({
+        uri: event.document.uri,
+        diagnostics: [],
+    });
     LanguageServices.documentClosed(event.document);
 });
 
@@ -81,12 +87,7 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     const document: LS.TextDocument = maybeDocument;
 
     try {
-        return LanguageServices.tryFormat(
-            document,
-            documentfomattingParams.options,
-            // TODO: find a way to query for a user's current localization
-            "en-US",
-        );
+        return LanguageServices.tryFormat(document, documentfomattingParams.options, analysisOptions.locale ?? "en-US");
     } catch (err) {
         const error: Error = err;
         const errorMessage: string = error.message;
