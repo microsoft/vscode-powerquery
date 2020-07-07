@@ -39,6 +39,7 @@ connection.onInitialized(() => {
         analysisOptions = {
             locale: config?.general?.locale,
             librarySymbolProvider: Library.createLibraryProvider(),
+            maintainWorkspaceCache: true,
         };
     });
 });
