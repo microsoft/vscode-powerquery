@@ -53,30 +53,25 @@ documents.onDidClose(event => {
     LanguageServices.documentClosed(event.document);
 });
 
-connection.onDidChangeTextDocument(event => {
-    const document: LS.TextDocument | undefined = documents.get(event.textDocument.uri);
-    if (document === undefined || document.languageId !== LanguageId) {
-        return;
-    }
-
-    // TODO: Language Services library updates to better support this event.
-    const version: number = event.textDocument.version ?? 0;
-
-    LanguageServices.documentUpdated(document, event.contentChanges, version);
-});
-
 documents.onDidChangeContent(event => {
+    // TODO: pass actual incremental changes into the workspace cache
+    LanguageServices.documentClosed(event.document);
+
     validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
 
 async function validateDocument(document: LS.TextDocument): Promise<void> {
-    const diagnostics: LS.Diagnostic[] = LanguageServices.validate(document);
+    const result: LanguageServices.ValidationResult = LanguageServices.validate(document, {
+        ...analysisOptions,
+        checkForDuplicateIdentifiers: true,
+        source: LanguageId,
+    });
 
     connection.sendDiagnostics({
         uri: document.uri,
-        diagnostics,
+        diagnostics: result.diagnostics,
     });
 }
 
