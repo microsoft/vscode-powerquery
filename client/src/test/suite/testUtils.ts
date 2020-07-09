@@ -41,3 +41,11 @@ export async function setTestContent(content: string): Promise<boolean> {
     const all: vscode.Range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
     return editor.edit(eb => eb.replace(all, content));
 }
+
+export enum Commands {
+    CompletionItems = "vscode.executeCompletionItemProvider",
+    DocumentSymbols = "vscode.executeDocumentSymbolProvider",
+    Format = "vscode.executeFormatDocumentProvider",
+    Hover = "vscode.executeHoverProvider",
+    SignatureHelp = "vscode.executeSignatureHelpProvider ",
+}

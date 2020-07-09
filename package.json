@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -46,7 +46,7 @@
     "contributes": {
         "configuration": {
             "type": "object",
-            "title": "Power Query configuration",
+            "title": "Power Query",
             "properties": {
                 "powerquery.trace.server": {
                     "scope": "window",
@@ -58,6 +58,56 @@
                     ],
                     "default": "off",
                     "description": "Traces the communication between VS Code and the language server."
+                },
+                "powerquery.general.locale": {
+                    "scope": "window",
+                    "type": "string",
+                    "description": "Locale to use for errors and other messages returned by the language parser.",
+                    "enum": [
+                        "bg-BG",
+                        "ca-EZ",
+                        "cs-CZ",
+                        "da-DK",
+                        "de-DE",
+                        "el-GR",
+                        "en-US",
+                        "es-ES",
+                        "et-EE",
+                        "eu-ES",
+                        "fi-FI",
+                        "fr-FR",
+                        "gl-ES",
+                        "hi-IN",
+                        "hr-HR",
+                        "hu-HU",
+                        "id-ID",
+                        "it-IT",
+                        "ja-JP",
+                        "kk-KZ",
+                        "ko-KR",
+                        "lt-LT",
+                        "lv-LV",
+                        "ms-MY",
+                        "nb-NO",
+                        "nl-NL",
+                        "pl-PL",
+                        "pt-BR",
+                        "pt-PT",
+                        "ro-RO",
+                        "ru-RU",
+                        "sk-SK",
+                        "sl-SI",
+                        "sr-Cyrl-RS",
+                        "sr-Latn-RS",
+                        "sv-SE",
+                        "th-TH",
+                        "tr-TR",
+                        "uk-UA",
+                        "vi-VN",
+                        "zh-CN",
+                        "zh-TW"
+                    ],
+                    "default": "en-US"
                 }
             }
         },

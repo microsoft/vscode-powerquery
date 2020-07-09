@@ -7,6 +7,7 @@ import * as assert from "assert";
 import * as vscode from "vscode";
 
 import * as TestUtils from "./testUtils";
+import { Commands } from "./testUtils";
 
 export enum VertificationType {
     Exact,
@@ -20,7 +21,6 @@ export async function testCompletion(
     expectedCompletionList: vscode.CompletionList,
     vertification: VertificationType,
 ): Promise<void> {
-    // Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
     const actualCompletionList: vscode.CompletionList | undefined = await testCompletionBase(docUri, position);
     if (actualCompletionList === undefined) {
         throw new Error("CompletionList is undefined");
@@ -64,5 +64,5 @@ async function testCompletionBase(
     await TestUtils.activate(docUri);
 
     // Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
-    return vscode.commands.executeCommand("vscode.executeCompletionItemProvider", docUri, position);
+    return vscode.commands.executeCommand(Commands.CompletionItems, docUri, position);
 }

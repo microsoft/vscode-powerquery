@@ -11,7 +11,6 @@ const LanguageId: string = "powerquery";
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
-
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
 let analysisOptions: LanguageServices.AnalysisOptions;
@@ -22,8 +21,10 @@ connection.onInitialize(() => {
             textDocumentSync: LS.TextDocumentSyncKind.Incremental,
             documentFormattingProvider: true,
             completionProvider: {
-                // TODO: is it better to return the first pass without documention to reduce message size?
                 resolveProvider: false,
+            },
+            documentSymbolProvider: {
+                workDoneProgress: false,
             },
             hoverProvider: true,
             signatureHelpProvider: {
@@ -34,39 +35,43 @@ connection.onInitialize(() => {
 });
 
 connection.onInitialized(() => {
-    analysisOptions = {
-        librarySymbolProvider: Library.createLibraryProvider(),
-    };
+    connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
+        analysisOptions = {
+            locale: config?.general?.locale,
+            librarySymbolProvider: Library.createLibraryProvider(),
+            maintainWorkspaceCache: true,
+        };
+    });
 });
 
 documents.onDidClose(event => {
+    // Clear any errors associated with this file
+    connection.sendDiagnostics({
+        uri: event.document.uri,
+        diagnostics: [],
+    });
     LanguageServices.documentClosed(event.document);
 });
 
-connection.onDidChangeTextDocument(event => {
-    const document: LS.TextDocument | undefined = documents.get(event.textDocument.uri);
-    if (document === undefined || document.languageId !== LanguageId) {
-        return;
-    }
-
-    // TODO: Language Services library updates to better support this event.
-    const version: number = event.textDocument.version ?? 0;
-
-    LanguageServices.documentUpdated(document, event.contentChanges, version);
-});
-
 documents.onDidChangeContent(event => {
+    // TODO: pass actual incremental changes into the workspace cache
+    LanguageServices.documentClosed(event.document);
+
     validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
 
 async function validateDocument(document: LS.TextDocument): Promise<void> {
-    const diagnostics: LS.Diagnostic[] = LanguageServices.validate(document);
+    const result: LanguageServices.ValidationResult = LanguageServices.validate(document, {
+        ...analysisOptions,
+        checkForDuplicateIdentifiers: true,
+        source: LanguageId,
+    });
 
     connection.sendDiagnostics({
         uri: document.uri,
-        diagnostics,
+        diagnostics: result.diagnostics,
     });
 }
 
@@ -78,12 +83,7 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     const document: LS.TextDocument = maybeDocument;
 
     try {
-        return LanguageServices.tryFormat(
-            document,
-            documentfomattingParams.options,
-            // TODO: find a way to query for a user's current localization
-            "en-US",
-        );
+        return LanguageServices.tryFormat(document, documentfomattingParams.options, analysisOptions.locale ?? "en-US");
     } catch (err) {
         const error: Error = err;
         const errorMessage: string = error.message;
@@ -121,6 +121,20 @@ connection.onCompletion(
         }
 
         return [];
+    },
+);
+
+connection.onDocumentSymbol(
+    async (
+        documentSymbolParams: LS.DocumentSymbolParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.DocumentSymbol[] | undefined> => {
+        const document: LS.TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
+        if (document) {
+            return LanguageServices.getDocumentSymbols(document, analysisOptions);
+        }
+
+        return undefined;
     },
 );
 
