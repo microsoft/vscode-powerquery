@@ -32,6 +32,21 @@
             ],
             "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"],
             "preLaunchTask": "Build UI Tests"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run server unit tests",
+            "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
+            "args": [
+                "--inspect",
+                "--colors",
+                "--timeout",
+                "999999",
+                "${workspaceFolder}/server/lib/test/**/*.js"
+            ],
+            "preLaunchTask": "Watch Server",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ],
     "compounds": [

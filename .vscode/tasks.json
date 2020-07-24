@@ -27,6 +27,15 @@
             "isBackground": true,
             "problemMatcher": ["$tsc-watch"],
             "label": "Build UI Tests"
+        },
+        {
+            "type": "npm",
+            "script": "watch",
+            "path": "server/",
+            "group": "build",
+            "isBackground": true,
+            "problemMatcher": ["$tsc-watch"],
+            "label": "Watch Server"
         }
     ]
 }
