@@ -66,7 +66,7 @@
       }
     },
     "TypeName": {
-      "match": "\\b(?:(optional|nullable)|(action|any|anynonnull|time|binary|date|datetime|datetimezone|duration|function|list|logical|none|null|number|record|table|text|type))\\b",
+      "match": "\\b(?:(optional|nullable)|(action|any|anynonnull|binary|date|datetime|datetimezone|duration|function|list|logical|none|null|number|record|table|text|time|type))\\b",
       "captures": {
         "1": {
           "name": "storage.modifier.powerquery"
