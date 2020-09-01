@@ -8,6 +8,8 @@ Provides a language service for the [Power Query / M formula language](https://p
 -   Code formatting
 -   Syntax validation
 
+Now available in the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery).
+
 ## How to build
 
 1. install dependencies:
