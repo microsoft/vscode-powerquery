@@ -22,7 +22,7 @@
         "watch": ".\\node_modules\\.bin\\tsc -watch",
         "test": "node ./lib/test/runTest.js",
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
-        "webpack-dev": "node_modules\\.bin\\webpack --mode development --watch --info-verbosity verbose"
+        "webpack-dev": "node_modules\\.bin\\webpack --info-verbosity verbose --mode development --watch"
     },
     "main": "lib\\extension",
     "engines": {
@@ -52,7 +52,7 @@
         "tslint-plugin-prettier": "2.3.0",
         "typescript": "4.1.2",
         "vscode-test": "1.4.1",
-        "webpack": "5.10.0",
-        "webpack-cli": "4.2.0"
+        "webpack": "4.43.0",
+        "webpack-cli": "3.3.12"
     }
 }
