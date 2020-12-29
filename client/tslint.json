@@ -6,20 +6,6 @@
         "no-namespace": true,
         "object-literal-shorthand": true,
         "prettier": true,
-        // Internal
-        "blank-lines-between-switch-cases": true,
-        "deprecated-reason": true,
-        "format-imports": true,
-        "format-string-resources": true,
-        "format-todos": true,
-        "no-jsx-element": true,
-        "no-methods-in-interfaces": true,
-        "no-partial-default-props": true,
-        "no-redux-combine-reducer": true,
-        "safe-members-for-props": true,
-        "sort-string-resources": true,
-        "use-create-error-with-stack": true,
-        "validate-imports": true,
         // tslint-microsoft-contrib rules we use with some configuration
         "comment-format": [true, "check-space"],
         /*
