@@ -1,4 +1,2 @@
-import * as Library from "./library";
-
-export { Library };
+export * as Library from "./library";
 export * from "./server";

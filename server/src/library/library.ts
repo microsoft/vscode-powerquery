@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { LibraryDefinition, LibraryDefinitionKind, Signature } from "./jsonTypes";
-import * as StandardLibrary from "./standard.json";
+import { LibraryDefinition, LibraryDefinitionKind, Signature } from "./standardLibraryTypes";
+import * as StandardLibrary from "./standardLibrary.json";
 
 export type Library = Map<string, LibraryDefinition>;
 

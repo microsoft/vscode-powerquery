@@ -9,9 +9,10 @@ import type {
 } from "@microsoft/powerquery-language-services";
 import type { CompletionItem, Hover, SignatureHelp, SignatureInformation } from "vscode-languageserver-types";
 
-import { AllModules, Library } from "./index";
-import { LibraryDefinition } from "./jsonTypes";
 import * as Utils from "./utils";
+
+import { AllModules, Library } from "./index";
+import { LibraryDefinition } from "./standardLibraryTypes";
 
 export function createLibraryProvider(): LibrarySymbolProvider {
     return new StaticLibrarySymbolProvider();

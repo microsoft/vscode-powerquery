@@ -11,7 +11,7 @@ import type {
     SignatureInformation,
 } from "vscode-languageserver-types";
 
-import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "./jsonTypes";
+import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "./standardLibraryTypes";
 
 export function cloneCompletionItemsWithRange(completionItems: CompletionItem[], range: Range): CompletionItem[] {
     const result: CompletionItem[] = [];
