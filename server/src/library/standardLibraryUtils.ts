@@ -55,6 +55,7 @@ export function libraryDefinitionToHover(definition: PQLS.Library.TLibraryDefini
 }
 
 export function signatureInformation(libraryFunction: PQLS.Library.LibraryFunction): SignatureInformation[] {
+
     return libraryFunction.signatures.map(signature => {
         return {
             label: signature.label,

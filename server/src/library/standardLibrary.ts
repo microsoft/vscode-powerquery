@@ -4,19 +4,15 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import * as StandardLibraryJson from "./standardLibrary.json";
+import * as StandardLibraryJson from "./standardLibrary.generated.json";
 import * as StandardLibraryJsonType from "./standardLibraryTypes";
 
-export function getStandardLibrary(): PQLS.Library.Library {
-    const library: PQLS.Library.Library = new Map();
+export const StandardLibrary: PQLS.Library.Library = new Map();
 
-    for (const mod of StandardLibraryJson) {
-        for (const xport of mod.exports) {
-            library.set(xport.export, mapExport(xport));
-        }
+for (const mod of StandardLibraryJson) {
+    for (const xport of mod.exports) {
+        StandardLibrary.set(xport.export, mapExport(xport));
     }
-
-    return library;
 }
 
 function mapExport(xport: StandardLibraryJsonType.Export): PQLS.Library.TLibraryDefinition {
@@ -100,10 +96,12 @@ function assertIsExportKind(text: string): asserts text is StandardLibraryJsonTy
     }
 }
 
-function assertIsTypeKind(text: string): asserts text is PQP.Language.Type.TypeKind {
-    if (!PQP.Language.TypeUtils.isTypeKind(text)) {
+function assertGetTypeKind(text: string): PQP.Language.Type.TypeKind {
+    if (!PQP.Language.ConstantUtils.isPrimitiveTypeConstantKind(text)) {
         throw new Error(`unknown type: ${text}`);
     }
+
+    return PQP.Language.TypeUtils.typeKindFromPrimitiveTypeConstantKind(text);
 }
 
 function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimitiveType {
@@ -117,9 +115,8 @@ function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimiti
             throw new Error("expected parameter.type to be nullish");
 
         case 1: {
-            assertIsTypeKind(text);
             isNullable = false;
-            typeKind = text;
+            typeKind = assertGetTypeKind(text);
             break;
         }
 
@@ -130,8 +127,7 @@ function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimiti
                 );
             }
             isNullable = true;
-            assertIsTypeKind(split[1]);
-            typeKind = split[1];
+            typeKind = assertGetTypeKind(split[1]);
             break;
         }
 
