@@ -8,19 +8,16 @@ import * as StandardLibraryJson from "./standardLibrary.json";
 import * as StandardLibraryJsonType from "./standardLibraryTypes";
 
 export function getStandardLibrary(): PQLS.Library.Library {
-    return standardLibraryFactory();
-}
+    return new Map();
+    // const library: PQLS.Library.Library = new Map();
 
-function standardLibraryFactory(): PQLS.Library.Library {
-    const library: PQLS.Library.Library = new Map();
+    // for (const mod of StandardLibraryJson) {
+    //     for (const xport of mod.exports) {
+    //         library.set(xport.export, mapExport(xport));
+    //     }
+    // }
 
-    for (const mod of StandardLibraryJson) {
-        for (const xport of mod.exports) {
-            library.set(xport.export, mapExport(xport));
-        }
-    }
-
-    return library;
+    // return library;
 }
 
 function mapExport(xport: StandardLibraryJsonType.Export): PQLS.Library.TLibraryDefinition {

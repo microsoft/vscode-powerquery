@@ -5,7 +5,7 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as LS from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { Library } from ".";
+import { createLibraryProvider } from "./library";
 
 const LanguageId: string = "powerquery";
 
@@ -39,7 +39,7 @@ connection.onInitialized(() => {
     connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
         analysisOptions = {
             locale: config?.general?.locale,
-            libraryProvider: Library.createLibraryProvider(),
+            libraryProvider: createLibraryProvider(),
             maintainWorkspaceCache: true,
         };
     });

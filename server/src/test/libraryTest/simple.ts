@@ -8,7 +8,7 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import { assertIsFunction } from "@microsoft/powerquery-language-services/lib/powerquery-language-services/library";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import { getStandardLibrary } from "../../library";
+import { getStandardLibrary } from "../../library/standardLibrary";
 
 describe("Library export", () => {
     it("index const by name", () => {
