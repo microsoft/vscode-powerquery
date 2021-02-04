@@ -2,13 +2,12 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-
-import * as Library from "./library";
+import * as PQLS from "@microsoft/powerquery-language-services";
 
 import { FunctionName } from "./functionName";
 
 export function externalTypeResolverFnFactory(
-    library: Library.Library,
+    library: PQLS.Library.Library,
 ): PQP.Language.ExternalType.TExternalTypeResolverFn {
     const libraryMap: LibraryMap = createLibraryMap(library);
 
@@ -38,7 +37,7 @@ export function externalTypeResolverFnFactory(
     };
 }
 
-function createLibraryMap(library: Library.Library): LibraryMap {
+function createLibraryMap(library: PQLS.Library.Library): LibraryMap {
     const result: Map<string, TExternalTypeTrio> = new Map();
 
     for (const exteranlTypeTrio of ExternalTypeTrios) {
@@ -50,7 +49,7 @@ function createLibraryMap(library: Library.Library): LibraryMap {
     return result;
 }
 
-function isExternalTypeTrioInLibrary(library: Library.Library, externalTypeTrio: TExternalTypeTrio): boolean {
+function isExternalTypeTrioInLibrary(library: PQLS.Library.Library, externalTypeTrio: TExternalTypeTrio): boolean {
     return library.has(externalTypeTrio.identifierLiteral);
 }
 

@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as PowerQueryLanguageServices from "@microsoft/powerquery-language-services";
-import * as LanguageServices from "vscode-languageserver";
+import * as PQLS from "@microsoft/powerquery-language-services";
+import * as LS from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { Library } from ".";
@@ -11,17 +11,15 @@ const LanguageId: string = "powerquery";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-const connection: LanguageServices.Connection = LanguageServices.createConnection(
-    LanguageServices.ProposedFeatures.all,
-);
-const documents: LanguageServices.TextDocuments<TextDocument> = new LanguageServices.TextDocuments(TextDocument);
+const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
+const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
-let analysisOptions: PowerQueryLanguageServices.AnalysisOptions;
+let analysisOptions: PQLS.AnalysisOptions;
 
 connection.onInitialize(() => {
     return {
         capabilities: {
-            textDocumentSync: LanguageServices.TextDocumentSyncKind.Incremental,
+            textDocumentSync: LS.TextDocumentSyncKind.Incremental,
             documentFormattingProvider: true,
             completionProvider: {
                 resolveProvider: false,
@@ -41,7 +39,7 @@ connection.onInitialized(() => {
     connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
         analysisOptions = {
             locale: config?.general?.locale,
-            librarySymbolProvider: Library.createLibraryProvider(),
+            libraryProvider: Library.createLibraryProvider(),
             maintainWorkspaceCache: true,
         };
     });
@@ -53,20 +51,20 @@ documents.onDidClose(event => {
         uri: event.document.uri,
         diagnostics: [],
     });
-    PowerQueryLanguageServices.documentClosed(event.document);
+    PQLS.documentClosed(event.document);
 });
 
 documents.onDidChangeContent(event => {
     // TODO: pass actual incremental changes into the workspace cache
-    PowerQueryLanguageServices.documentClosed(event.document);
+    PQLS.documentClosed(event.document);
 
     validateDocument(event.document).catch(err =>
         connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
     );
 });
 
-async function validateDocument(document: LanguageServices.TextDocument): Promise<void> {
-    const result: PowerQueryLanguageServices.ValidationResult = PowerQueryLanguageServices.validate(document, {
+async function validateDocument(document: LS.TextDocument): Promise<void> {
+    const result: PQLS.ValidationResult = PQLS.validate(document, {
         ...analysisOptions,
         checkForDuplicateIdentifiers: true,
         source: LanguageId,
@@ -78,50 +76,40 @@ async function validateDocument(document: LanguageServices.TextDocument): Promis
     });
 }
 
-connection.onDocumentFormatting(
-    (documentfomattingParams: LanguageServices.DocumentFormattingParams): LanguageServices.TextEdit[] => {
-        const maybeDocument: LanguageServices.TextDocument | undefined = documents.get(
-            documentfomattingParams.textDocument.uri,
-        );
-        if (maybeDocument === undefined) {
-            return [];
+connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
+    const maybeDocument: LS.TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
+    if (maybeDocument === undefined) {
+        return [];
+    }
+    const document: LS.TextDocument = maybeDocument;
+
+    try {
+        return PQLS.tryFormat(document, documentfomattingParams.options, analysisOptions.locale ?? "en-US");
+    } catch (err) {
+        const error: Error = err;
+        const errorMessage: string = error.message;
+
+        let userMessage: string;
+        // An already localized message was returned.
+        if (errorMessage) {
+            userMessage = errorMessage;
+        } else {
+            userMessage = "An unknown error occured during formatting.";
         }
-        const document: LanguageServices.TextDocument = maybeDocument;
 
-        try {
-            return PowerQueryLanguageServices.tryFormat(
-                document,
-                documentfomattingParams.options,
-                analysisOptions.locale ?? "en-US",
-            );
-        } catch (err) {
-            const error: Error = err;
-            const errorMessage: string = error.message;
-
-            let userMessage: string;
-            // An already localized message was returned.
-            if (errorMessage) {
-                userMessage = errorMessage;
-            } else {
-                userMessage = "An unknown error occured during formatting.";
-            }
-
-            connection.window.showErrorMessage(userMessage);
-            return [];
-        }
-    },
-);
+        connection.window.showErrorMessage(userMessage);
+        return [];
+    }
+});
 
 connection.onCompletion(
     async (
-        textDocumentPosition: LanguageServices.TextDocumentPositionParams,
-        _token: LanguageServices.CancellationToken,
-    ): Promise<LanguageServices.CompletionItem[]> => {
-        const document: LanguageServices.TextDocument | undefined = documents.get(
-            textDocumentPosition.textDocument.uri,
-        );
+        textDocumentPosition: LS.TextDocumentPositionParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.CompletionItem[]> => {
+        const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
-            const analysis: PowerQueryLanguageServices.Analysis = PowerQueryLanguageServices.AnalysisUtils.createAnalysis(
+            const analysis: PQLS.Analysis = PQLS.AnalysisUtils.createAnalysis(
                 document,
                 textDocumentPosition.position,
                 analysisOptions,
@@ -139,14 +127,12 @@ connection.onCompletion(
 
 connection.onDocumentSymbol(
     async (
-        documentSymbolParams: LanguageServices.DocumentSymbolParams,
-        _token: LanguageServices.CancellationToken,
-    ): Promise<LanguageServices.DocumentSymbol[] | undefined> => {
-        const document: LanguageServices.TextDocument | undefined = documents.get(
-            documentSymbolParams.textDocument.uri,
-        );
+        documentSymbolParams: LS.DocumentSymbolParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.DocumentSymbol[] | undefined> => {
+        const document: LS.TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
         if (document) {
-            return PowerQueryLanguageServices.getDocumentSymbols(document, analysisOptions);
+            return PQLS.getDocumentSymbols(document, analysisOptions);
         }
 
         return undefined;
@@ -154,23 +140,18 @@ connection.onDocumentSymbol(
 );
 
 connection.onHover(
-    async (
-        textDocumentPosition: LanguageServices.TextDocumentPositionParams,
-        _token: LanguageServices.CancellationToken,
-    ): Promise<LanguageServices.Hover> => {
-        const emptyHover: LanguageServices.Hover = {
+    async (textDocumentPosition: LS.TextDocumentPositionParams, _token: LS.CancellationToken): Promise<LS.Hover> => {
+        const emptyHover: LS.Hover = {
             range: undefined,
             contents: [],
         };
 
-        const document: LanguageServices.TextDocument | undefined = documents.get(
-            textDocumentPosition.textDocument.uri,
-        );
+        const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document === undefined) {
             return emptyHover;
         }
 
-        const analysis: PowerQueryLanguageServices.Analysis = PowerQueryLanguageServices.AnalysisUtils.createAnalysis(
+        const analysis: PQLS.Analysis = PQLS.AnalysisUtils.createAnalysis(
             document,
             textDocumentPosition.position,
             analysisOptions,
@@ -185,21 +166,19 @@ connection.onHover(
 
 connection.onSignatureHelp(
     async (
-        textDocumentPosition: LanguageServices.TextDocumentPositionParams,
-        _token: LanguageServices.CancellationToken,
-    ): Promise<LanguageServices.SignatureHelp> => {
-        const emptySignatureHelp: LanguageServices.SignatureHelp = {
+        textDocumentPosition: LS.TextDocumentPositionParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.SignatureHelp> => {
+        const emptySignatureHelp: LS.SignatureHelp = {
             signatures: [],
             // tslint:disable-next-line: no-null-keyword
             activeParameter: null,
             activeSignature: 0,
         };
 
-        const document: LanguageServices.TextDocument | undefined = documents.get(
-            textDocumentPosition.textDocument.uri,
-        );
+        const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
-            const analysis: PowerQueryLanguageServices.Analysis = PowerQueryLanguageServices.AnalysisUtils.createAnalysis(
+            const analysis: PQLS.Analysis = PQLS.AnalysisUtils.createAnalysis(
                 document,
                 textDocumentPosition.position,
                 analysisOptions,

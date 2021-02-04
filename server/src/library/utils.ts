@@ -11,7 +11,7 @@ import type {
     SignatureInformation,
 } from "vscode-languageserver-types";
 
-import { LibraryDefinition, LibraryDefinitionKind, Parameter, Signature } from "./standardLibraryTypes";
+import * as PQLS from "@microsoft/powerquery-language-services";
 
 export function cloneCompletionItemsWithRange(completionItems: CompletionItem[], range: Range): CompletionItem[] {
     const result: CompletionItem[] = [];
@@ -28,21 +28,21 @@ export function cloneCompletionItemsWithRange(completionItems: CompletionItem[],
     return result;
 }
 
-export function libraryDefinitionToCompletionItem(definition: LibraryDefinition): CompletionItem {
+export function libraryDefinitionToCompletionItem(definition: PQLS.Library.TLibraryDefinition): CompletionItem {
     return {
         label: definition.label,
         kind: exportKindToCompletionItemKind(definition.kind),
-        documentation: definition.summary,
+        documentation: definition.description,
     };
 }
 
-export function libraryDefinitionToHover(definition: LibraryDefinition, range?: Range): Hover {
+export function libraryDefinitionToHover(definition: PQLS.Library.TLibraryDefinition, range?: Range): Hover {
     let contents: MarkupContent;
 
     // TODO: move this into LibraryDefinition - we should be able to call ".getMarkdownFormattedString()"
-    if (isFunction(definition)) {
-        contents = formatFunctionDefinition(definition);
-    } else if (definition.kind === LibraryDefinitionKind.Type) {
+    if (PQLS.Library.isFunction(definition) || PQLS.Library.isConstructor(definition)) {
+        contents = formatConstructorOrFunctionDefinition(definition);
+    } else if (PQLS.Library.isType(definition)) {
         contents = formatTypeDefinition(definition);
     } else {
         contents = formatConstantDefinition(definition);
@@ -54,65 +54,59 @@ export function libraryDefinitionToHover(definition: LibraryDefinition, range?: 
     };
 }
 
-export function isFunction(definition: LibraryDefinition): boolean {
-    return (
-        definition &&
-        (definition.kind === LibraryDefinitionKind.Function || definition.kind === LibraryDefinitionKind.Constructor)
-    );
+export function signatureInformation(libraryFunction: PQLS.Library.LibraryFunction): SignatureInformation[] {
+    return libraryFunction.signatures.map(signature => {
+        return {
+            label: signature.label,
+            documentation: libraryFunction.label ?? "",
+            parameters: parametersToParameterInformation(signature.parameters),
+        };
+    });
 }
 
-export function exportKindToCompletionItemKind(kind: LibraryDefinitionKind): CompletionItemKind {
+function exportKindToCompletionItemKind(kind: PQLS.Library.LibraryDefinitionKind): CompletionItemKind {
     switch (kind) {
-        case LibraryDefinitionKind.Constant:
+        case PQLS.Library.LibraryDefinitionKind.Constant:
             return CompletionItemKind.Constant;
-        case LibraryDefinitionKind.Constructor:
+        case PQLS.Library.LibraryDefinitionKind.Constructor:
             return CompletionItemKind.Constructor;
-        case LibraryDefinitionKind.Function:
+        case PQLS.Library.LibraryDefinitionKind.Function:
             return CompletionItemKind.Function;
-        case LibraryDefinitionKind.Type:
+        case PQLS.Library.LibraryDefinitionKind.Type:
             return CompletionItemKind.TypeParameter;
         default:
             throw new Error(`Unmapped ExportKind: ${kind}`);
     }
 }
 
-export function signaturesToSignatureInformation(
-    signatures: ReadonlyArray<Signature>,
-    summary: string | undefined,
-): SignatureInformation[] {
-    return signatures.map(signature => {
-        return {
-            label: signature.label,
-            documentation: summary ?? "",
-            parameters: parametersToParameterInformation(signature.parameters),
-        };
-    });
-}
-
-export function parametersToParameterInformation(parameters: ReadonlyArray<Parameter>): ParameterInformation[] {
+function parametersToParameterInformation(
+    parameters: ReadonlyArray<PQLS.Library.LibraryParameter>,
+): ParameterInformation[] {
     return parameters.map(parameter => {
         return {
             label: [parameter.signatureLabelOffset, parameter.signatureLabelEnd],
-            documentation: parameter.documentation ?? parameter.type,
+            documentation: parameter.maybeDocumentation ?? parameter.typeKind,
         };
     });
 }
 
-function formatTypeDefinition(definition: LibraryDefinition): MarkupContent {
+function formatTypeDefinition(definition: PQLS.Library.LibraryType): MarkupContent {
     return {
         kind: MarkupKind.Markdown,
-        value: `(type) ${definition.label}\n\n\n${definition.summary}`,
+        value: `(type) ${definition.label}\n\n\n${definition.description}`,
     };
 }
 
-function formatConstantDefinition(definition: LibraryDefinition): MarkupContent {
+function formatConstantDefinition(definition: PQLS.Library.LibraryConstant): MarkupContent {
     return {
         kind: MarkupKind.Markdown,
-        value: `(constant) ${definition.label}\n\n\n${definition.summary}`,
+        value: `(constant) ${definition.label}\n\n\n${definition.description}`,
     };
 }
 
-function formatFunctionDefinition(definition: LibraryDefinition): MarkupContent {
+function formatConstructorOrFunctionDefinition(
+    definition: PQLS.Library.LibraryConstructor | PQLS.Library.LibraryFunction,
+): MarkupContent {
     // TODO: assert that we have at least one signature
     return {
         kind: MarkupKind.Markdown,
@@ -120,7 +114,7 @@ function formatFunctionDefinition(definition: LibraryDefinition): MarkupContent 
             "```powerquery",
             definition.signatures[definition.signatures.length - 1].label,
             "```",
-            definition.summary,
+            definition.description,
         ].join("\n"),
     };
 }

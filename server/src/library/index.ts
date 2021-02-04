@@ -1,2 +1,5 @@
-export * from "./library";
-export * from "./staticLibrarySymbolProvider";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+export * from "./standardLibrary";
+export * from "./standardLibraryProvider";

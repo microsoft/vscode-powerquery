@@ -16,6 +16,6 @@
         "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
         "resolveJsonModule": true
     },
-    "include": ["src/**/*.ts", "src/library/standard.json"],
+    "include": ["src/**/*.ts", "src/library/standard.json", "src/library/old.txt"],
     "exclude": ["node_modules"]
 }

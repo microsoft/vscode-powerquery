@@ -31,7 +31,7 @@ export interface Signature {
 }
 
 export interface Parameter {
-    readonly documentation: string | undefined | null;
+    readonly documentation: string | null;
     readonly label: string;
     readonly signatureLabelOffset: number;
     readonly signatureLabelEnd: number;

@@ -6,34 +6,35 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 
 import * as StandardLibraryJson from "./standardLibrary.json";
 import * as StandardLibraryJsonType from "./standardLibraryTypes";
-import { Type } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 
-export const StandardLibrary: PQLS.Library.Library = standardLibraryFactory();
+export function getStandardLibrary(): PQLS.Library.Library {
+    return standardLibraryFactory();
+}
 
 function standardLibraryFactory(): PQLS.Library.Library {
     const library: PQLS.Library.Library = new Map();
 
-    for (const module_ of StandardLibraryJson) {
-        for (const export_ of module_.exports) {
-            library.set(export_.export, mapExport(export_));
+    for (const mod of StandardLibraryJson) {
+        for (const xport of mod.exports) {
+            library.set(xport.export, mapExport(xport));
         }
     }
 
     return library;
 }
 
-function mapExport(export_: StandardLibraryJsonType.Export): PQLS.Library.TLibraryDefinition {
-    assertIsExportKind(export_.kind);
+function mapExport(xport: StandardLibraryJsonType.Export): PQLS.Library.TLibraryDefinition {
+    assertIsExportKind(xport.kind);
 
-    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(export_.primitiveType);
-    let name: string = export_.export;
-    let description: string | undefined = export_.summary;
+    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.primitiveType);
+    const label: string = xport.export;
+    const description: string | undefined = xport.summary;
 
-    switch (export_.kind) {
+    switch (xport.kind) {
         case StandardLibraryJsonType.ExportKind.Constant:
             return {
                 kind: PQLS.Library.LibraryDefinitionKind.Constant,
-                name,
+                label,
                 description,
                 primitiveType,
             };
@@ -42,48 +43,51 @@ function mapExport(export_: StandardLibraryJsonType.Export): PQLS.Library.TLibra
             return {
                 kind: PQLS.Library.LibraryDefinitionKind.Constructor,
                 description,
-                name,
+                label,
                 primitiveType,
+                signatures: xport.signatures?.map(mapSignature) ?? [],
             };
 
         case StandardLibraryJsonType.ExportKind.Function:
             return {
                 kind: PQLS.Library.LibraryDefinitionKind.Function,
                 description,
-                name,
-                primitiveType: assertPrimitiveTypeFromString(export_.primitiveType),
-                signatures: export_.signatures?.map(mapSignature) ?? [],
+                label,
+                primitiveType: assertPrimitiveTypeFromString(xport.primitiveType),
+                signatures: xport.signatures?.map(mapSignature) ?? [],
             };
 
         case StandardLibraryJsonType.ExportKind.Type:
             return {
                 kind: PQLS.Library.LibraryDefinitionKind.Type,
                 description,
-                name,
-                primitiveType: assertPrimitiveTypeFromString(export_.primitiveType),
+                label,
+                primitiveType: assertPrimitiveTypeFromString(xport.primitiveType),
             };
 
         default:
-            throw PQP.Assert.isNever(export_.kind);
+            throw PQP.Assert.isNever(xport.kind);
     }
 }
 
 function mapSignature(signature: StandardLibraryJsonType.Signature): PQLS.Library.LibraryFunctionSignature {
     return {
-        name: signature.label,
+        label: signature.label,
         parameters: signature.parameters.map(mapParameter),
     };
 }
 
 function mapParameter(parameter: StandardLibraryJsonType.Parameter): PQLS.Library.LibraryParameter {
-    const primitiveType: Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.type);
+    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.type);
 
     return {
         isNullable: primitiveType.isNullable,
         isOptional: false,
+        label: parameter.label,
         maybeDocumentation: parameter.documentation ?? undefined,
-        maybeType: primitiveType.kind,
-        nameLiteral: parameter.label,
+        typeKind: primitiveType.kind,
+        signatureLabelEnd: parameter.signatureLabelEnd,
+        signatureLabelOffset: parameter.signatureLabelOffset,
     };
 }
 
