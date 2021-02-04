@@ -45,7 +45,6 @@ describe("Library export", () => {
 
     it("#date constructor", () => {
         const exportKey: string = "#date";
-        console.log;
         const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = getStandardLibrary().get(exportKey);
         if (maybeLibraryDefinition === undefined) {
             throw new Error(`expected constant '${exportKey}' was not found`);

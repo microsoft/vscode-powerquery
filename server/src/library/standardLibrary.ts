@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as PQP from "@microsoft/powerquery-parser";
 import * as PQLS from "@microsoft/powerquery-language-services";
+import * as PQP from "@microsoft/powerquery-parser";
 
 import * as StandardLibraryJson from "./standardLibrary.json";
 import * as StandardLibraryJsonType from "./standardLibraryTypes";
@@ -111,7 +111,7 @@ function assertIsTypeKind(text: string): asserts text is PQP.Language.Type.TypeK
 }
 
 function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimitiveType {
-    const split = text.split(" ");
+    const split: ReadonlyArray<string> = text.split(" ");
 
     let isNullable: boolean;
     let typeKind: PQP.Language.Type.TypeKind;
