@@ -1,56 +1,47 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
 import { FunctionName } from "./functionName";
+import { StandardLibraryDefinitions } from "./standardLibrary";
 
-export function externalTypeResolverFnFactory(
-    library: PQLS.Library.Library,
-): PQP.Language.ExternalType.TExternalTypeResolverFn {
-    const libraryMap: LibraryMap = createLibraryMap(library);
-
-    return (request: PQP.Language.ExternalType.TExternalTypeRequest) => {
-        const identifierLiteral: string = request.identifierLiteral;
-
-        const maybeExteranlTypeTrio: TExternalTypeTrio | undefined = libraryMap.get(identifierLiteral);
-        if (maybeExteranlTypeTrio === undefined) {
-            return undefined;
-        }
-        const externalTypeTrio: TExternalTypeTrio = maybeExteranlTypeTrio;
-        const value: PQP.Language.Type.TType = externalTypeTrio.value;
-
-        switch (request.kind) {
-            case PQP.Language.ExternalType.ExternalTypeRequestKind.Invocation:
-                return externalTypeTrio.kind === ExternalTypeTrioKind.Invocation &&
-                    PQP.Language.TypeUtils.isValidInvocation(externalTypeTrio.value, request.args)
-                    ? externalTypeTrio.invocationResolverFn(request)
-                    : undefined;
-
-            case PQP.Language.ExternalType.ExternalTypeRequestKind.Value:
-                return value;
-
-            default:
-                throw PQP.Assert.isNever(request);
-        }
-    };
+export function standardLibraryTypeResolver(
+    request: PQP.Language.ExternalType.TExternalTypeRequest,
+): PQP.Language.Type.TType | undefined {
+    const maybeDuo: SpecializedDuo | undefined = SpecializedDuoResolvers.get(request.identifierLiteral);
+    return maybeDuo !== undefined ? resolveSpecializedDuo(request, maybeDuo) : standardLibraryResolver(request);
 }
 
-function createLibraryMap(library: PQLS.Library.Library): LibraryMap {
-    const result: Map<string, TExternalTypeTrio> = new Map();
+function resolveSpecializedDuo(
+    request: PQP.Language.ExternalType.TExternalTypeRequest,
+    specializedDuo: SpecializedDuo,
+): PQP.Language.Type.TType | undefined {
+    switch (request.kind) {
+        case PQP.Language.ExternalType.ExternalTypeRequestKind.Invocation:
+            return specializedDuo.invocationResolverFn(request);
 
-    for (const exteranlTypeTrio of ExternalTypeTrios) {
-        if (isExternalTypeTrioInLibrary(library, exteranlTypeTrio)) {
-            result.set(exteranlTypeTrio.identifierLiteral, exteranlTypeTrio);
-        }
+        case PQP.Language.ExternalType.ExternalTypeRequestKind.Value:
+            return specializedDuo.value;
+
+        default:
+            throw PQP.Assert.isNever(request);
     }
-
-    return result;
 }
 
-function isExternalTypeTrioInLibrary(library: PQLS.Library.Library, externalTypeTrio: TExternalTypeTrio): boolean {
-    return library.has(externalTypeTrio.identifierLiteral);
+function standardLibraryResolver(
+    request: PQP.Language.ExternalType.TExternalTypeRequest,
+): PQP.Language.Type.TType | undefined {
+    switch (request.kind) {
+        case PQP.Language.ExternalType.ExternalTypeRequestKind.Invocation:
+            return undefined;
+
+        case PQP.Language.ExternalType.ExternalTypeRequestKind.Value:
+            return StandardLibraryDefinitions.get(request.identifierLiteral)?.asType;
+
+        default:
+            throw PQP.Assert.isNever(request);
+    }
 }
 
 function resolveTableAddColumn(
@@ -102,31 +93,9 @@ function resolveTableAddColumn(
     }
 }
 
-type LibraryMap = Map<string, TExternalTypeTrio>;
-
-type TExternalTypeTrio = ExteranlInvocationTrio | ExteranlValueTrio;
-
-const enum ExternalTypeTrioKind {
-    Invocation = "Invocation",
-    Value = "Value",
-}
-
-interface IExternalTypeTrio {
-    readonly kind: ExternalTypeTrioKind;
-    readonly identifierLiteral: string;
+interface SpecializedDuo {
     readonly value: PQP.Language.Type.TType;
-}
-
-interface ExteranlInvocationTrio extends IExternalTypeTrio {
-    readonly kind: ExternalTypeTrioKind.Invocation;
-    readonly value: PQP.Language.Type.DefinedFunction;
-    readonly invocationResolverFn: (
-        request: PQP.Language.ExternalType.ExternalInvocationTypeRequest,
-    ) => PQP.Language.Type.TType | undefined;
-}
-
-interface ExteranlValueTrio extends IExternalTypeTrio {
-    readonly kind: ExternalTypeTrioKind.Value;
+    readonly invocationResolverFn: PQP.Language.ExternalType.TExternalInvocationTypeResolverFn;
 }
 
 const TableAddColumnType: PQP.Language.Type.DefinedFunction = PQP.Language.TypeUtils.definedFunctionFactory(
@@ -160,11 +129,12 @@ const TableAddColumnType: PQP.Language.Type.DefinedFunction = PQP.Language.TypeU
     PQP.Language.Type.TableInstance,
 );
 
-const ExternalTypeTrios: ReadonlyArray<TExternalTypeTrio> = [
-    {
-        kind: ExternalTypeTrioKind.Invocation,
-        identifierLiteral: FunctionName.TableAddColumn,
-        value: TableAddColumnType,
-        invocationResolverFn: resolveTableAddColumn,
-    },
-];
+const SpecializedDuoResolvers: ReadonlyMap<string, SpecializedDuo> = new Map([
+    [
+        FunctionName.TableAddColumn,
+        {
+            value: TableAddColumnType,
+            invocationResolverFn: resolveTableAddColumn,
+        },
+    ],
+]);

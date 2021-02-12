@@ -5,8 +5,7 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as LS from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { externalTypeResolverFnFactory } from "./externalTypeResolver";
-import { StandardLibrary, StaticLibraryProvider } from "./library";
+import { StandardLibrary } from "./library";
 
 const LanguageId: string = "powerquery";
 
@@ -16,6 +15,10 @@ const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
 let analysisOptions: PQLS.AnalysisOptions;
+
+function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.Analysis {
+    return PQLS.AnalysisUtils.createAnalysis(document, position, StandardLibrary, analysisOptions);
+}
 
 connection.onInitialize(() => {
     return {
@@ -40,9 +43,7 @@ connection.onInitialized(() => {
     connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
         analysisOptions = {
             locale: config?.general?.locale,
-            libraryProvider: new StaticLibraryProvider(),
             maintainWorkspaceCache: true,
-            typeResolverFn: externalTypeResolverFnFactory(StandardLibrary),
         };
     });
 });
@@ -111,11 +112,7 @@ connection.onCompletion(
     ): Promise<LS.CompletionItem[]> => {
         const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
-            const analysis: PQLS.Analysis = PQLS.AnalysisUtils.createAnalysis(
-                document,
-                textDocumentPosition.position,
-                analysisOptions,
-            );
+            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
             return analysis.getCompletionItems().catch(err => {
                 connection.console.error(`onCompletion error ${JSON.stringify(err, undefined, 4)}`);
@@ -153,11 +150,7 @@ connection.onHover(
             return emptyHover;
         }
 
-        const analysis: PQLS.Analysis = PQLS.AnalysisUtils.createAnalysis(
-            document,
-            textDocumentPosition.position,
-            analysisOptions,
-        );
+        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
         return analysis.getHover().catch(err => {
             connection.console.error(`onHover error ${JSON.stringify(err, undefined, 4)}`);
@@ -180,11 +173,7 @@ connection.onSignatureHelp(
 
         const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
-            const analysis: PQLS.Analysis = PQLS.AnalysisUtils.createAnalysis(
-                document,
-                textDocumentPosition.position,
-                analysisOptions,
-            );
+            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
             return analysis.getSignatureHelp().catch(err => {
                 connection.console.error(`onSignatureHelp error ${JSON.stringify(err, undefined, 4)}`);
