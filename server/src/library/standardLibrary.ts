@@ -40,22 +40,26 @@ function mapExport(xport: StandardLibraryJsonType.Export): PQLS.Library.TLibrary
             };
 
         case StandardLibraryJsonType.ExportKind.Constructor: {
-            const signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature> =
-                xport.signatures?.map(mapSignatureToLibraryFunctionSignature) ?? [];
+            const signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature> = mapSignaturesToLibraryFunctionSignatures(
+                xport.signatures,
+                description,
+            );
 
             return {
                 kind: PQLS.Library.LibraryDefinitionKind.Constructor,
                 description,
                 label,
                 primitiveType,
-                signatures: xport.signatures?.map(mapSignatureToLibraryFunctionSignature) ?? [],
+                signatures,
                 asType: mapLibraryFunctionSignatureToType(signatures, primitiveType),
             };
         }
 
         case StandardLibraryJsonType.ExportKind.Function: {
-            const signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature> =
-                xport.signatures?.map(mapSignatureToLibraryFunctionSignature) ?? [];
+            const signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature> = mapSignaturesToLibraryFunctionSignatures(
+                xport.signatures,
+                description,
+            );
 
             return {
                 kind: PQLS.Library.LibraryDefinitionKind.Function,
@@ -105,13 +109,21 @@ function mapLibraryFunctionSignatureToType(
     return PQP.Language.TypeUtils.anyUnionFactory(definedSignatures);
 }
 
-function mapSignatureToLibraryFunctionSignature(
-    signature: StandardLibraryJsonType.Signature,
-): PQLS.Library.LibraryFunctionSignature {
-    return {
-        label: signature.label,
-        parameters: signature.parameters.map(mapParameterToLibraryParameter),
-    };
+function mapSignaturesToLibraryFunctionSignatures(
+    signatures: ReadonlyArray<StandardLibraryJsonType.Signature> | null,
+    description: string | undefined,
+): ReadonlyArray<PQLS.Library.LibraryFunctionSignature> {
+    if (!signatures) {
+        return [];
+    }
+
+    return signatures.map((signature: StandardLibraryJsonType.Signature) => {
+        return {
+            label: signature.label,
+            description,
+            parameters: signature.parameters.map(mapParameterToLibraryParameter),
+        };
+    });
 }
 
 function mapParameterToLibraryParameter(parameter: StandardLibraryJsonType.Parameter): PQLS.Library.LibraryParameter {
