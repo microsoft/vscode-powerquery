@@ -6,12 +6,37 @@ import "mocha";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import { Position, SignatureHelp } from "@microsoft/powerquery-language-services";
+import { Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
 import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
-import { ParameterInformation, SignatureInformation } from "vscode-languageserver";
+import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 
 import { StandardLibrary } from "../library";
+
+function assertGetHover(text: string): Promise<Hover> {
+    return createAnalysis(text).getHover();
+}
+
+function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
+    return createAnalysis(text).getSignatureHelp();
+}
+
+async function assertHoverContentEquals(text: string, expected: string): Promise<void> {
+    const hover: Hover = await assertGetHover(text);
+    const markupContent: MarkupContent = assertAsMarkupContent(hover.contents);
+    expect(markupContent.value).to.equal(expected);
+}
+
+function assertAsMarkupContent(value: Hover["contents"]): MarkupContent {
+    assertIsMarkupContent(value);
+    return value;
+}
+
+function assertIsMarkupContent(value: Hover["contents"]): asserts value is MarkupContent {
+    if (!MarkupContent.is(value)) {
+        throw new Error(`expected value to be MarkupContent`);
+    }
+}
 
 function createAnalysis(textWithPipe: string): PQLS.Analysis {
     const text: string = textWithPipe.replace("|", "");
@@ -23,11 +48,15 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
     return PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument("id", 1, text), position, StandardLibrary);
 }
 
-function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
-    return createAnalysis(text).getSignatureHelp();
-}
-
 describe(`StandardLibrary`, () => {
+    describe(`getHover`, () => {
+        it(`Table.AddColumn`, async () => {
+            const expression: string = `let foo = Table.AddColumn(1 as table, "bar", each 1) in fo|o`;
+            const expected: string = "[let-variable] foo: table [bar: 1, ...]";
+            await assertHoverContentEquals(expression, expected);
+        });
+    });
+
     it("getSignatureHelp", async () => {
         const signatureHelp: SignatureHelp = await assertGetSignatureHelp("Table.AddColumn(|");
         expect(signatureHelp.activeParameter).to.equal(0);

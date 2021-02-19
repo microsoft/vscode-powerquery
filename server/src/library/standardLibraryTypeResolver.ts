@@ -73,21 +73,23 @@ function resolveTableAddColumn(
         columnType = PQP.Language.Type.AnyInstance;
     }
 
+    const normalizedColumnName: string = PQP.StringUtils.normalizeIdentifier(columnName.literal.slice(1, -1));
+
     if (PQP.Language.TypeUtils.isDefinedTable(table)) {
         // We can't overwrite an existing key.
-        if (table.fields.has(PQP.StringUtils.normalizeIdentifier(columnName.literal))) {
+        if (table.fields.has(normalizedColumnName)) {
             return PQP.Language.Type.NoneInstance;
         }
 
         return PQP.Language.TypeUtils.definedTableFactory(
             table.isNullable,
-            new Map<string, PQP.Language.Type.TType>([...table.fields.entries(), [columnName.literal, columnType]]),
+            new Map<string, PQP.Language.Type.TType>([...table.fields.entries(), [normalizedColumnName, columnType]]),
             table.isOpen,
         );
     } else {
         return PQP.Language.TypeUtils.definedTableFactory(
             table.isNullable,
-            new Map<string, PQP.Language.Type.TType>([[columnName.literal, columnType]]),
+            new Map<string, PQP.Language.Type.TType>([[normalizedColumnName, columnType]]),
             true,
         );
     }
