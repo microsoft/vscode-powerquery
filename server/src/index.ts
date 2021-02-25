@@ -1,4 +1,5 @@
-import * as Library from "./library";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
-export { Library };
+export * from "./library";
 export * from "./server";

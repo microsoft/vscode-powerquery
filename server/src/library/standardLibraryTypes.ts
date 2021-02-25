@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export const enum LibraryDefinitionKind {
+export type StandardLibrary = ReadonlyArray<Module>;
+
+export const enum ExportKind {
     Constant = "Constant",
     Constructor = "Constructor",
     Function = "Function",
@@ -9,20 +11,18 @@ export const enum LibraryDefinitionKind {
 }
 
 export interface Module {
-    readonly name: string;
-    readonly version: string | undefined;
+    readonly exports: ReadonlyArray<Export>;
+    readonly module: string;
+    readonly version: string | null;
     readonly visibility: Visibility;
 }
 
-export interface LibraryDefinition {
-    readonly label: string;
-    readonly kind: LibraryDefinitionKind;
-    // TODO: should this be a string enum?
+export interface Export {
+    readonly export: string;
+    readonly kind: string;
     readonly primitiveType: string;
     readonly summary: string;
-    // tslint:disable-next-line: no-reserved-keywords
-    readonly module: Module;
-    readonly signatures: ReadonlyArray<Signature>;
+    readonly signatures: ReadonlyArray<Signature> | null;
 }
 
 export interface Signature {
@@ -31,11 +31,10 @@ export interface Signature {
 }
 
 export interface Parameter {
-    readonly documentation: string | undefined | null;
+    readonly documentation: string | null;
     readonly label: string;
     readonly signatureLabelOffset: number;
     readonly signatureLabelEnd: number;
-    // tslint:disable-next-line: no-reserved-keywords
     readonly type: string;
 }
 

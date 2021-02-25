@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export * from "./standardLibrary";
+export const enum FunctionName {
+    TableAddColumn = "Table.AddColumn",
+}

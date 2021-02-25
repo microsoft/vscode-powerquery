@@ -1,10 +1,11 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es5",
         "module": "commonjs",
         "sourceMap": true,
         "outDir": "lib",
         "strict": true,
+        "downlevelIteration": true,
         "noFallthroughCasesInSwitch": true,
         "noEmitOnError": true,
         "noImplicitReturns": true,
@@ -12,7 +13,9 @@
         "noUnusedParameters": true,
         "declaration": true,
         "rootDir": "src",
-        "incremental": true
+        "incremental": true,
+        "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+        "resolveJsonModule": true
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]
