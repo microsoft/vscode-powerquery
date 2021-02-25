@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-server",
-    "version": "0.0.33",
+    "version": "0.0.34",
     "description": "Power Query language server implementation.",
     "author": "Microsoft Corporation",
     "license": "MIT",
