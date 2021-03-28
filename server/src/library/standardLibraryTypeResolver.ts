@@ -1,27 +1,28 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
 import { FunctionName } from "./functionName";
 import { StandardLibraryDefinitions } from "./standardLibrary";
 
 export function standardLibraryTypeResolver(
-    request: PQP.Language.ExternalType.TExternalTypeRequest,
-): PQP.Language.Type.TType | undefined {
+    request: PQLS.Inspection.ExternalType.TExternalTypeRequest,
+): PQP.Language.Type.PqType | undefined {
     const maybeDuo: SpecializedDuo | undefined = SpecializedDuoResolvers.get(request.identifierLiteral);
     return maybeDuo !== undefined ? resolveSpecializedDuo(request, maybeDuo) : standardLibraryResolver(request);
 }
 
 function resolveSpecializedDuo(
-    request: PQP.Language.ExternalType.TExternalTypeRequest,
+    request: PQLS.Inspection.ExternalType.TExternalTypeRequest,
     specializedDuo: SpecializedDuo,
-): PQP.Language.Type.TType | undefined {
+): PQP.Language.Type.PqType | undefined {
     switch (request.kind) {
-        case PQP.Language.ExternalType.ExternalTypeRequestKind.Invocation:
+        case PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Invocation:
             return specializedDuo.invocationResolverFn(request);
 
-        case PQP.Language.ExternalType.ExternalTypeRequestKind.Value:
+        case PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value:
             return specializedDuo.value;
 
         default:
@@ -30,13 +31,13 @@ function resolveSpecializedDuo(
 }
 
 function standardLibraryResolver(
-    request: PQP.Language.ExternalType.TExternalTypeRequest,
-): PQP.Language.Type.TType | undefined {
+    request: PQLS.Inspection.ExternalType.TExternalTypeRequest,
+): PQP.Language.Type.PqType | undefined {
     switch (request.kind) {
-        case PQP.Language.ExternalType.ExternalTypeRequestKind.Invocation:
+        case PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Invocation:
             return undefined;
 
-        case PQP.Language.ExternalType.ExternalTypeRequestKind.Value:
+        case PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value:
             return StandardLibraryDefinitions.get(request.identifierLiteral)?.asType;
 
         default:
@@ -45,16 +46,16 @@ function standardLibraryResolver(
 }
 
 function resolveTableAddColumn(
-    request: PQP.Language.ExternalType.ExternalInvocationTypeRequest,
+    request: PQLS.Inspection.ExternalType.ExternalInvocationTypeRequest,
 ): PQP.Language.Type.TTable | PQP.Language.Type.None | undefined {
-    const table: PQP.Language.Type.TType = PQP.Language.TypeUtils.assertAsTable(PQP.Assert.asDefined(request.args[0]));
+    const table: PQP.Language.Type.PqType = PQP.Language.TypeUtils.assertAsTable(PQP.Assert.asDefined(request.args[0]));
     const columnName: PQP.Language.Type.TText = PQP.Language.TypeUtils.assertAsText(
         PQP.Assert.asDefined(request.args[1]),
     );
     const columnGenerator: PQP.Language.Type.TFunction = PQP.Language.TypeUtils.assertAsFunction(
         PQP.Assert.asDefined(request.args[2]),
     );
-    const maybeColumnType: PQP.Language.Type.TType | undefined =
+    const maybeColumnType: PQP.Language.Type.PqType | undefined =
         request.args.length === 4
             ? PQP.Language.TypeUtils.assertAsType(PQP.Assert.asDefined(request.args[3]))
             : undefined;
@@ -64,7 +65,7 @@ function resolveTableAddColumn(
         return undefined;
     }
 
-    let columnType: PQP.Language.Type.TType;
+    let columnType: PQP.Language.Type.PqType;
     if (maybeColumnType !== undefined) {
         columnType = maybeColumnType;
     } else if (PQP.Language.TypeUtils.isDefinedFunction(columnGenerator)) {
@@ -83,21 +84,21 @@ function resolveTableAddColumn(
 
         return PQP.Language.TypeUtils.definedTableFactory(
             table.isNullable,
-            new Map<string, PQP.Language.Type.TType>([...table.fields.entries(), [normalizedColumnName, columnType]]),
+            new Map<string, PQP.Language.Type.PqType>([...table.fields.entries(), [normalizedColumnName, columnType]]),
             table.isOpen,
         );
     } else {
         return PQP.Language.TypeUtils.definedTableFactory(
             table.isNullable,
-            new Map<string, PQP.Language.Type.TType>([[normalizedColumnName, columnType]]),
+            new Map<string, PQP.Language.Type.PqType>([[normalizedColumnName, columnType]]),
             true,
         );
     }
 }
 
 interface SpecializedDuo {
-    readonly value: PQP.Language.Type.TType;
-    readonly invocationResolverFn: PQP.Language.ExternalType.TExternalInvocationTypeResolverFn;
+    readonly value: PQP.Language.Type.PqType;
+    readonly invocationResolverFn: PQLS.Inspection.ExternalType.TExternalInvocationTypeResolverFn;
 }
 
 const TableAddColumnType: PQP.Language.Type.DefinedFunction = PQP.Language.TypeUtils.definedFunctionFactory(

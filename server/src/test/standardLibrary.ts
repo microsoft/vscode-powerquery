@@ -27,10 +27,6 @@ async function assertHoverContentEquals(text: string, expected: string): Promise
     expect(markupContent.value).to.equal(expected);
 }
 
-const assertIsConstructor: (
-    definition: PQLS.Library.TLibraryDefinition,
-) => asserts definition is PQLS.Library.LibraryConstructor = PQLS.LibraryUtils.assertIsConstructor;
-
 const assertIsFunction: (
     definition: PQLS.Library.TLibraryDefinition,
 ) => asserts definition is PQLS.Library.LibraryFunction = PQLS.LibraryUtils.assertIsFunction;
@@ -86,10 +82,8 @@ describe(`StandardLibrary`, () => {
             assertIsFunction(libraryDefinition);
 
             expect(libraryDefinition.label !== null);
-            expect(libraryDefinition.signatures !== null);
-            expect(libraryDefinition.signatures.length).eq(2, "expecting 2 signatures");
-            expect(libraryDefinition.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
-            expect(libraryDefinition.signatures[0].parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.List);
+            expect(libraryDefinition.parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.List);
+            expect(libraryDefinition.parameters[1].typeKind).eq(PQP.Language.Type.TypeKind.Any);
         });
 
         it("#date constructor", () => {
@@ -101,17 +95,13 @@ describe(`StandardLibrary`, () => {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
             const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
-            assertIsConstructor(libraryDefinition);
+            assertIsFunction(libraryDefinition);
 
             expect(libraryDefinition.label !== null);
-            expect(libraryDefinition.signatures !== null);
-            expect(libraryDefinition.kind).eq(PQLS.Library.LibraryDefinitionKind.Constructor);
-            expect(libraryDefinition.signatures[0].parameters.length).eq(
-                3,
-                "expecting 3 parameters in first signature",
-            );
-            expect(libraryDefinition.signatures[0].parameters[0].label).eq("year");
-            expect(libraryDefinition.signatures[0].parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.Number);
+            expect(libraryDefinition.kind).eq(PQLS.Library.LibraryDefinitionKind.Function);
+            expect(libraryDefinition.parameters.length).eq(3, "expecting 3 parameters in first signature");
+            expect(libraryDefinition.parameters[0].label).eq("year");
+            expect(libraryDefinition.parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.Number);
         });
     });
 
@@ -128,7 +118,7 @@ describe(`StandardLibrary`, () => {
 
                 expect(signatureHelp.activeParameter).to.equal(0);
                 expect(signatureHelp.activeSignature).to.equal(0);
-                expect(signatureHelp.signatures.length).to.equal(2);
+                expect(signatureHelp.signatures.length).to.equal(1);
 
                 const signature: SignatureInformation = PQP.Assert.asDefined(signatureHelp.signatures[0]);
                 Assert.isDefined(signature.documentation);
@@ -137,7 +127,7 @@ describe(`StandardLibrary`, () => {
                 );
 
                 Assert.isDefined(signature.parameters);
-                expect(signature.parameters.length).to.equal(3);
+                expect(signature.parameters.length).to.equal(4);
                 const parameters: ReadonlyArray<ParameterInformation> = signature.parameters;
 
                 const firstParameter: ParameterInformation = PQP.Assert.asDefined(parameters[0]);
@@ -148,6 +138,9 @@ describe(`StandardLibrary`, () => {
 
                 const thirdParameter: ParameterInformation = PQP.Assert.asDefined(parameters[2]);
                 expect(thirdParameter.label).to.equal("columnGenerator");
+
+                const fourthParameter: ParameterInformation = PQP.Assert.asDefined(parameters[3]);
+                expect(fourthParameter.label).to.equal("columnType");
             });
         });
     });
