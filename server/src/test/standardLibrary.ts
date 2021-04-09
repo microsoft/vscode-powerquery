@@ -11,7 +11,9 @@ import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 
-import { StandardLibrary, StandardLibraryDefinitions } from "../library";
+import { getOrCreateStandardLibrary } from "../library";
+
+const standardLibrary: PQLS.Library.ILibrary = getOrCreateStandardLibrary(PQP.Locale.en_US);
 
 function assertGetHover(text: string): Promise<Hover> {
     return createAnalysis(text).getHover();
@@ -49,16 +51,16 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
         line: 0,
     };
 
-    return PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), position, StandardLibrary);
+    return PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), position, standardLibrary);
 }
 
 describe(`StandardLibrary`, () => {
     describe(`simple`, () => {
         it("index const by name", () => {
             const definitionKey: string = "BinaryOccurrence.Required";
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = StandardLibraryDefinitions.get(
-                definitionKey,
-            );
+            const maybeLibraryDefinition:
+                | PQLS.Library.TLibraryDefinition
+                | undefined = standardLibrary.libraryDefinitions.get(definitionKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
             }
@@ -67,14 +69,14 @@ describe(`StandardLibrary`, () => {
             expect(libraryDefinition.label).eq(definitionKey, "unexpected label");
             expect(libraryDefinition.description.length).greaterThan(0, "summary should not be empty");
             expect(libraryDefinition.kind).eq(PQLS.Library.LibraryDefinitionKind.Constant);
-            expect(libraryDefinition.primitiveType.kind).eq(PQP.Language.Type.TypeKind.Number);
+            expect(libraryDefinition.asPowerQueryType.kind).eq(PQP.Language.Type.TypeKind.Number);
         });
 
         it("index function by name", () => {
             const exportKey: string = "List.Distinct";
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = StandardLibraryDefinitions.get(
-                exportKey,
-            );
+            const maybeLibraryDefinition:
+                | PQLS.Library.TLibraryDefinition
+                | undefined = standardLibrary.libraryDefinitions.get(exportKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
@@ -88,9 +90,9 @@ describe(`StandardLibrary`, () => {
 
         it("#date constructor", () => {
             const exportKey: string = "#date";
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = StandardLibraryDefinitions.get(
-                exportKey,
-            );
+            const maybeLibraryDefinition:
+                | PQLS.Library.TLibraryDefinition
+                | undefined = standardLibrary.libraryDefinitions.get(exportKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }

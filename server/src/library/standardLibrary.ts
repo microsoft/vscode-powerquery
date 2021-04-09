@@ -4,21 +4,47 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import * as StandardLibraryJson from "./standardLibrary.generated.json";
+import { CompletionItemKind } from "@microsoft/powerquery-language-services";
+
+import * as StandardLibraryEnUs from "./bylocalization/enUs.json";
 import * as StandardLibraryJsonType from "./standardLibraryTypes";
 
-import { standardLibraryTypeResolver } from "./standardLibraryTypeResolver";
+import { createStandardLibraryTypeResolver } from "./standardLibraryTypeResolver";
 
-const standardLibraryDefinitions: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
-for (const xport of StandardLibraryJson) {
-    standardLibraryDefinitions.set(xport.name, mapExport(xport));
+export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibrary {
+    locale = locale ?? PQP.Locale.en_US;
+
+    if (!libraryByLocale.has(locale)) {
+        const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateStandardLibraryDefinitions(locale);
+
+        libraryByLocale.set(locale, {
+            externalTypeResolver: createStandardLibraryTypeResolver(libraryDefinitions),
+            libraryDefinitions,
+        });
+    }
+
+    return PQP.Assert.asDefined(libraryByLocale.get(locale));
 }
-export const StandardLibraryDefinitions: PQLS.Library.LibraryDefinitions = standardLibraryDefinitions;
 
-export const StandardLibrary: PQLS.Library.ILibrary = {
-    externalTypeResolver: standardLibraryTypeResolver,
-    libraryDefinitions: StandardLibraryDefinitions,
-};
+function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.LibraryDefinitions {
+    if (!libraryDefinitionsByLocale.has(locale)) {
+        const json: StandardLibraryJsonType.StandardLibrary = jsonByLocale.get(locale) ?? StandardLibraryEnUs;
+        const mapped: Map<string, PQLS.Library.TLibraryDefinition> = new Map(
+            json.map((xport: StandardLibraryJsonType.StandardLibraryExport) => [xport.name, mapExport(xport)]),
+        );
+        libraryDefinitionsByLocale.set(locale, mapped);
+    }
+
+    return PQP.Assert.asDefined(libraryDefinitionsByLocale.get(locale));
+}
+
+const jsonByLocale: Map<string, StandardLibraryJsonType.StandardLibrary> = new Map([
+    [PQP.Locale.en_US, StandardLibraryEnUs],
+]);
+
+const libraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
+
+const libraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
 
 function mapExport(xport: StandardLibraryJsonType.StandardLibraryExport): PQLS.Library.TLibraryDefinition {
     const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.dataType);
@@ -30,25 +56,29 @@ function mapExport(xport: StandardLibraryJsonType.StandardLibraryExport): PQLS.L
             kind: PQLS.Library.LibraryDefinitionKind.Type,
             label,
             description,
-            primitiveType,
-            asType: primitiveType,
+            asPowerQueryType: primitiveType,
+            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
         };
     } else if (xport.functionParameters) {
+        const asPowerQueryType: PQP.Language.Type.DefinedFunction = mapLibraryFunctionSignatureToType(
+            xport,
+            primitiveType,
+        );
         return {
             kind: PQLS.Library.LibraryDefinitionKind.Function,
-            label,
-            primitiveType,
+            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType),
             description,
+            asPowerQueryType,
+            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
             parameters: xport.functionParameters.map(mapParameterToLibraryParameter),
-            asType: mapLibraryFunctionSignatureToType(xport, primitiveType),
         };
     } else {
         return {
             kind: PQLS.Library.LibraryDefinitionKind.Constant,
             label,
             description,
-            primitiveType,
-            asType: primitiveType,
+            asPowerQueryType: primitiveType,
+            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
         };
     }
 }
@@ -60,7 +90,7 @@ function mapLibraryFunctionSignatureToType(
     const xportParameters: ReadonlyArray<StandardLibraryJsonType.StandardLibraryFunctionParameter> =
         xport.functionParameters ?? [];
 
-    return PQP.Language.TypeUtils.definedFunctionFactory(
+    return PQP.Language.TypeUtils.createDefinedFunction(
         false,
         xportParameters.map((parameter: StandardLibraryJsonType.StandardLibraryFunctionParameter) => {
             const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(
@@ -100,6 +130,38 @@ function assertGetTypeKind(text: string): PQP.Language.Type.TypeKind {
     return PQP.Language.TypeUtils.typeKindFromPrimitiveTypeConstantKind(text);
 }
 
+function assertGetCompletionItemKind(variant: number): CompletionItemKind {
+    switch (variant) {
+        case CompletionItemKind.Constant:
+        case CompletionItemKind.Constructor:
+        case CompletionItemKind.Enum:
+        case CompletionItemKind.EnumMember:
+        case CompletionItemKind.Event:
+        case CompletionItemKind.Field:
+        case CompletionItemKind.File:
+        case CompletionItemKind.Folder:
+        case CompletionItemKind.Function:
+        case CompletionItemKind.Interface:
+        case CompletionItemKind.Keyword:
+        case CompletionItemKind.Method:
+        case CompletionItemKind.Module:
+        case CompletionItemKind.Operator:
+        case CompletionItemKind.Property:
+        case CompletionItemKind.Reference:
+        case CompletionItemKind.Snippet:
+        case CompletionItemKind.Struct:
+        case CompletionItemKind.Text:
+        case CompletionItemKind.TypeParameter:
+        case CompletionItemKind.Unit:
+        case CompletionItemKind.Value:
+        case CompletionItemKind.Variable:
+            return variant;
+
+        default:
+            throw new PQP.CommonError.InvariantError(`unknown CompletionItemKind variant value`, { variant });
+    }
+}
+
 function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimitiveType {
     const split: ReadonlyArray<string> = text.split(" ");
 
@@ -131,5 +193,5 @@ function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimiti
             throw new Error("expected text to be 1 or 2 words");
     }
 
-    return PQP.Language.TypeUtils.primitiveTypeFactory(isNullable, typeKind);
+    return PQP.Language.TypeUtils.createPrimitiveType(isNullable, typeKind);
 }

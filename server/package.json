@@ -30,8 +30,8 @@
         "node": "*"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "0.2.2",
-        "@microsoft/powerquery-parser": "0.3.3",
+        "@microsoft/powerquery-language-services": "0.2.4",
+        "@microsoft/powerquery-parser": "0.4.0",
         "vscode-languageserver": "6.1.1",
         "vscode-languageserver-textdocument": "1.0.1",
         "vscode-languageserver-types": "3.15.1"
