@@ -11,7 +11,9 @@ import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 
-import { StandardLibrary, StandardLibraryDefinitions } from "../library";
+import { getOrCreateStandardLibrary } from "../library";
+
+const standardLibrary: PQLS.Library.ILibrary = getOrCreateStandardLibrary(PQP.Locale.en_US);
 
 function assertGetHover(text: string): Promise<Hover> {
     return createAnalysis(text).getHover();
@@ -26,10 +28,6 @@ async function assertHoverContentEquals(text: string, expected: string): Promise
     const markupContent: MarkupContent = assertAsMarkupContent(hover.contents);
     expect(markupContent.value).to.equal(expected);
 }
-
-const assertIsConstructor: (
-    definition: PQLS.Library.TLibraryDefinition,
-) => asserts definition is PQLS.Library.LibraryConstructor = PQLS.LibraryUtils.assertIsConstructor;
 
 const assertIsFunction: (
     definition: PQLS.Library.TLibraryDefinition,
@@ -53,16 +51,16 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
         line: 0,
     };
 
-    return PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), position, StandardLibrary);
+    return PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), position, standardLibrary);
 }
 
 describe(`StandardLibrary`, () => {
     describe(`simple`, () => {
         it("index const by name", () => {
             const definitionKey: string = "BinaryOccurrence.Required";
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = StandardLibraryDefinitions.get(
-                definitionKey,
-            );
+            const maybeLibraryDefinition:
+                | PQLS.Library.TLibraryDefinition
+                | undefined = standardLibrary.libraryDefinitions.get(definitionKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
             }
@@ -71,14 +69,14 @@ describe(`StandardLibrary`, () => {
             expect(libraryDefinition.label).eq(definitionKey, "unexpected label");
             expect(libraryDefinition.description.length).greaterThan(0, "summary should not be empty");
             expect(libraryDefinition.kind).eq(PQLS.Library.LibraryDefinitionKind.Constant);
-            expect(libraryDefinition.primitiveType.kind).eq(PQP.Language.Type.TypeKind.Number);
+            expect(libraryDefinition.asPowerQueryType.kind).eq(PQP.Language.Type.TypeKind.Number);
         });
 
         it("index function by name", () => {
             const exportKey: string = "List.Distinct";
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = StandardLibraryDefinitions.get(
-                exportKey,
-            );
+            const maybeLibraryDefinition:
+                | PQLS.Library.TLibraryDefinition
+                | undefined = standardLibrary.libraryDefinitions.get(exportKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
@@ -86,32 +84,26 @@ describe(`StandardLibrary`, () => {
             assertIsFunction(libraryDefinition);
 
             expect(libraryDefinition.label !== null);
-            expect(libraryDefinition.signatures !== null);
-            expect(libraryDefinition.signatures.length).eq(2, "expecting 2 signatures");
-            expect(libraryDefinition.signatures[0].parameters.length).eq(1, "expecting 1 parameter in first signature");
-            expect(libraryDefinition.signatures[0].parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.List);
+            expect(libraryDefinition.parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.List);
+            expect(libraryDefinition.parameters[1].typeKind).eq(PQP.Language.Type.TypeKind.Any);
         });
 
         it("#date constructor", () => {
             const exportKey: string = "#date";
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined = StandardLibraryDefinitions.get(
-                exportKey,
-            );
+            const maybeLibraryDefinition:
+                | PQLS.Library.TLibraryDefinition
+                | undefined = standardLibrary.libraryDefinitions.get(exportKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
             const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
-            assertIsConstructor(libraryDefinition);
+            assertIsFunction(libraryDefinition);
 
             expect(libraryDefinition.label !== null);
-            expect(libraryDefinition.signatures !== null);
-            expect(libraryDefinition.kind).eq(PQLS.Library.LibraryDefinitionKind.Constructor);
-            expect(libraryDefinition.signatures[0].parameters.length).eq(
-                3,
-                "expecting 3 parameters in first signature",
-            );
-            expect(libraryDefinition.signatures[0].parameters[0].label).eq("year");
-            expect(libraryDefinition.signatures[0].parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.Number);
+            expect(libraryDefinition.kind).eq(PQLS.Library.LibraryDefinitionKind.Function);
+            expect(libraryDefinition.parameters.length).eq(3, "expecting 3 parameters in first signature");
+            expect(libraryDefinition.parameters[0].label).eq("year");
+            expect(libraryDefinition.parameters[0].typeKind).eq(PQP.Language.Type.TypeKind.Number);
         });
     });
 
@@ -128,7 +120,7 @@ describe(`StandardLibrary`, () => {
 
                 expect(signatureHelp.activeParameter).to.equal(0);
                 expect(signatureHelp.activeSignature).to.equal(0);
-                expect(signatureHelp.signatures.length).to.equal(2);
+                expect(signatureHelp.signatures.length).to.equal(1);
 
                 const signature: SignatureInformation = PQP.Assert.asDefined(signatureHelp.signatures[0]);
                 Assert.isDefined(signature.documentation);
@@ -137,7 +129,7 @@ describe(`StandardLibrary`, () => {
                 );
 
                 Assert.isDefined(signature.parameters);
-                expect(signature.parameters.length).to.equal(3);
+                expect(signature.parameters.length).to.equal(4);
                 const parameters: ReadonlyArray<ParameterInformation> = signature.parameters;
 
                 const firstParameter: ParameterInformation = PQP.Assert.asDefined(parameters[0]);
@@ -148,6 +140,9 @@ describe(`StandardLibrary`, () => {
 
                 const thirdParameter: ParameterInformation = PQP.Assert.asDefined(parameters[2]);
                 expect(thirdParameter.label).to.equal("columnGenerator");
+
+                const fourthParameter: ParameterInformation = PQP.Assert.asDefined(parameters[3]);
+                expect(fourthParameter.label).to.equal("columnType");
             });
         });
     });

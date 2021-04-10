@@ -5,7 +5,7 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as LS from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { StandardLibrary } from "./library";
+import { getOrCreateStandardLibrary } from "./library";
 
 const LanguageId: string = "powerquery";
 
@@ -17,7 +17,12 @@ const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocum
 let analysisOptions: PQLS.AnalysisOptions;
 
 function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.Analysis {
-    return PQLS.AnalysisUtils.createAnalysis(document, position, StandardLibrary, analysisOptions);
+    return PQLS.AnalysisUtils.createAnalysis(
+        document,
+        position,
+        getOrCreateStandardLibrary(analysisOptions.locale),
+        analysisOptions,
+    );
 }
 
 connection.onInitialize(() => {
@@ -114,7 +119,7 @@ connection.onCompletion(
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
-            return analysis.getCompletionItems().catch(err => {
+            return analysis.getAutocompleteItems().catch(err => {
                 connection.console.error(`onCompletion error ${JSON.stringify(err, undefined, 4)}`);
                 return [];
             });

@@ -1,45 +1,41 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export type StandardLibrary = ReadonlyArray<Module>;
+export type StandardLibrary = ReadonlyArray<StandardLibraryExport>;
 
-export const enum ExportKind {
-    Constant = "Constant",
-    Constructor = "Constructor",
-    Function = "Function",
-    Type = "Type",
+export interface StandardLibraryExport {
+    readonly name: string;
+    readonly documentation: StandardLibraryDocumentation | null;
+    readonly functionParameters: ReadonlyArray<StandardLibraryFunctionParameter> | null;
+    readonly completionItemType: number;
+    readonly isDataSource: boolean;
+    readonly dataType: string;
 }
 
-export interface Module {
-    readonly exports: ReadonlyArray<Export>;
-    readonly module: string;
-    readonly version: string | null;
-    readonly visibility: Visibility;
+export interface StandardLibraryDocumentation {
+    readonly description: string;
+    readonly longDescription: string | null;
 }
 
-export interface Export {
-    readonly export: string;
-    readonly kind: string;
-    readonly primitiveType: string;
-    readonly summary: string;
-    readonly signatures: ReadonlyArray<Signature> | null;
+export interface StandardLibraryFunctionParameter {
+    readonly name: string;
+    readonly parameterType: string;
+    readonly isRequired: boolean;
+    readonly isNullable: boolean;
+    readonly caption: string | null;
+    readonly description: string | null;
+    readonly sampleValues: ReadonlyArray<string | number> | null;
+    readonly allowedValues: ReadonlyArray<string | number> | null;
+    readonly defaultValue: string | number | null;
+    readonly fields: ReadonlyArray<StandardLibraryField> | null;
+    readonly enumNames: ReadonlyArray<string> | null;
+    readonly enumCaptions: ReadonlyArray<string> | ReadonlyArray<null> | null;
 }
 
-export interface Signature {
-    readonly label: string;
-    readonly parameters: ReadonlyArray<Parameter>;
-}
-
-export interface Parameter {
-    readonly documentation: string | null;
-    readonly label: string;
-    readonly signatureLabelOffset: number;
-    readonly signatureLabelEnd: number;
+export interface StandardLibraryField {
+    readonly fieldName: string;
     readonly type: string;
-}
-
-export interface Visibility {
-    readonly isInternal: boolean;
-    readonly isSdkOnly: boolean;
-    readonly isSdkVisible: boolean;
+    readonly isRequired: boolean;
+    readonly fieldCaption: string | null;
+    readonly fieldDescription: string | null;
 }

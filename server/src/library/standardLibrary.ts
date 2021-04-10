@@ -4,153 +4,122 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import * as StandardLibraryJson from "./standardLibrary.generated.json";
+import { CompletionItemKind } from "@microsoft/powerquery-language-services";
+
+import * as StandardLibraryEnUs from "./bylocalization/enUs.json";
 import * as StandardLibraryJsonType from "./standardLibraryTypes";
 
-import { standardLibraryTypeResolver } from "./standardLibraryTypeResolver";
+import { createStandardLibraryTypeResolver } from "./standardLibraryTypeResolver";
 
-const standardLibraryDefinitions: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
-for (const mod of StandardLibraryJson) {
-    for (const xport of mod.exports) {
-        standardLibraryDefinitions.set(xport.export, mapExport(xport));
+export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibrary {
+    locale = locale ?? PQP.Locale.en_US;
+
+    if (!libraryByLocale.has(locale)) {
+        const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateStandardLibraryDefinitions(locale);
+
+        libraryByLocale.set(locale, {
+            externalTypeResolver: createStandardLibraryTypeResolver(libraryDefinitions),
+            libraryDefinitions,
+        });
     }
+
+    return PQP.Assert.asDefined(libraryByLocale.get(locale));
 }
-export const StandardLibraryDefinitions: PQLS.Library.LibraryDefinitions = standardLibraryDefinitions;
 
-export const StandardLibrary: PQLS.Library.ILibrary = {
-    externalTypeResolver: standardLibraryTypeResolver,
-    libraryDefinitions: StandardLibraryDefinitions,
-};
+function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.LibraryDefinitions {
+    if (!libraryDefinitionsByLocale.has(locale)) {
+        const json: StandardLibraryJsonType.StandardLibrary = jsonByLocale.get(locale) ?? StandardLibraryEnUs;
+        const mapped: Map<string, PQLS.Library.TLibraryDefinition> = new Map(
+            json.map((xport: StandardLibraryJsonType.StandardLibraryExport) => [xport.name, mapExport(xport)]),
+        );
+        libraryDefinitionsByLocale.set(locale, mapped);
+    }
 
-function mapExport(xport: StandardLibraryJsonType.Export): PQLS.Library.TLibraryDefinition {
-    assertIsExportKind(xport.kind);
+    return PQP.Assert.asDefined(libraryDefinitionsByLocale.get(locale));
+}
 
-    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.primitiveType);
-    const label: string = xport.export;
-    const description: string | undefined = xport.summary;
+const jsonByLocale: Map<string, StandardLibraryJsonType.StandardLibrary> = new Map([
+    [PQP.Locale.en_US, StandardLibraryEnUs],
+]);
 
-    switch (xport.kind) {
-        case StandardLibraryJsonType.ExportKind.Constant:
-            return {
-                kind: PQLS.Library.LibraryDefinitionKind.Constant,
-                label,
-                description,
-                primitiveType,
-                asType: primitiveType,
-            };
+const libraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
 
-        case StandardLibraryJsonType.ExportKind.Constructor: {
-            const signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature> = mapSignaturesToLibraryFunctionSignatures(
-                xport.signatures,
-                description,
-            );
+const libraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
 
-            return {
-                kind: PQLS.Library.LibraryDefinitionKind.Constructor,
-                description,
-                label,
-                primitiveType,
-                signatures,
-                asType: mapLibraryFunctionSignatureToType(signatures, primitiveType),
-            };
-        }
+function mapExport(xport: StandardLibraryJsonType.StandardLibraryExport): PQLS.Library.TLibraryDefinition {
+    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.dataType);
+    const label: string = xport.name;
+    const description: string = xport.documentation?.description ?? "No description available";
 
-        case StandardLibraryJsonType.ExportKind.Function: {
-            const signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature> = mapSignaturesToLibraryFunctionSignatures(
-                xport.signatures,
-                description,
-            );
-
-            return {
-                kind: PQLS.Library.LibraryDefinitionKind.Function,
-                description,
-                label,
-                primitiveType,
-                signatures,
-                asType: mapLibraryFunctionSignatureToType(signatures, primitiveType),
-            };
-        }
-
-        case StandardLibraryJsonType.ExportKind.Type:
-            return {
-                kind: PQLS.Library.LibraryDefinitionKind.Type,
-                description,
-                label,
-                primitiveType,
-                asType: primitiveType,
-            };
-
-        default:
-            throw PQP.Assert.isNever(xport.kind);
+    if (primitiveType.kind === PQP.Language.Type.TypeKind.Type) {
+        return {
+            kind: PQLS.Library.LibraryDefinitionKind.Type,
+            label,
+            description,
+            asPowerQueryType: primitiveType,
+            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
+        };
+    } else if (xport.functionParameters) {
+        const asPowerQueryType: PQP.Language.Type.DefinedFunction = mapLibraryFunctionSignatureToType(
+            xport,
+            primitiveType,
+        );
+        return {
+            kind: PQLS.Library.LibraryDefinitionKind.Function,
+            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType),
+            description,
+            asPowerQueryType,
+            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
+            parameters: xport.functionParameters.map(mapParameterToLibraryParameter),
+        };
+    } else {
+        return {
+            kind: PQLS.Library.LibraryDefinitionKind.Constant,
+            label,
+            description,
+            asPowerQueryType: primitiveType,
+            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
+        };
     }
 }
 
 function mapLibraryFunctionSignatureToType(
-    signatures: ReadonlyArray<PQLS.Library.LibraryFunctionSignature>,
+    xport: StandardLibraryJsonType.StandardLibraryExport,
     returnType: PQP.Language.Type.TPrimitiveType,
-): PQP.Language.Type.TType {
-    const definedSignatures: ReadonlyArray<PQP.Language.Type.DefinedFunction> = signatures.map(
-        (signature: PQLS.Library.LibraryFunctionSignature) => {
-            const parameters: ReadonlyArray<PQP.Language.Type.FunctionParameter> = signature.parameters.map(
-                (parameter: PQLS.Library.LibraryParameter) => {
-                    return {
-                        isNullable: parameter.isNullable,
-                        isOptional: parameter.isOptional,
-                        maybeType: parameter.typeKind,
-                        nameLiteral: parameter.label,
-                    };
-                },
+): PQP.Language.Type.DefinedFunction {
+    const xportParameters: ReadonlyArray<StandardLibraryJsonType.StandardLibraryFunctionParameter> =
+        xport.functionParameters ?? [];
+
+    return PQP.Language.TypeUtils.createDefinedFunction(
+        false,
+        xportParameters.map((parameter: StandardLibraryJsonType.StandardLibraryFunctionParameter) => {
+            const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(
+                parameter.parameterType,
             );
 
-            return PQP.Language.TypeUtils.definedFunctionFactory(false, parameters, returnType);
-        },
+            return {
+                isNullable: primitiveType.isNullable,
+                isOptional: !parameter.isRequired,
+                maybeType: primitiveType.kind,
+                nameLiteral: parameter.name,
+            };
+        }),
+        returnType,
     );
-
-    return PQP.Language.TypeUtils.anyUnionFactory(definedSignatures);
 }
 
-function mapSignaturesToLibraryFunctionSignatures(
-    signatures: ReadonlyArray<StandardLibraryJsonType.Signature> | null,
-    description: string | undefined,
-): ReadonlyArray<PQLS.Library.LibraryFunctionSignature> {
-    if (!signatures) {
-        return [];
-    }
-
-    return signatures.map((signature: StandardLibraryJsonType.Signature) => {
-        return {
-            label: signature.label,
-            description,
-            parameters: signature.parameters.map(mapParameterToLibraryParameter),
-        };
-    });
-}
-
-function mapParameterToLibraryParameter(parameter: StandardLibraryJsonType.Parameter): PQLS.Library.LibraryParameter {
-    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.type);
+function mapParameterToLibraryParameter(
+    parameter: StandardLibraryJsonType.StandardLibraryFunctionParameter,
+): PQLS.Library.LibraryParameter {
+    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.parameterType);
 
     return {
         isNullable: primitiveType.isNullable,
         isOptional: false,
-        label: parameter.label,
-        maybeDocumentation: parameter.documentation ?? undefined,
+        label: parameter.name,
+        maybeDocumentation: parameter.description ?? undefined,
         typeKind: primitiveType.kind,
-        signatureLabelEnd: parameter.signatureLabelEnd,
-        signatureLabelOffset: parameter.signatureLabelOffset,
     };
-}
-
-function assertIsExportKind(text: string): asserts text is StandardLibraryJsonType.ExportKind {
-    switch (text) {
-        case StandardLibraryJsonType.ExportKind.Constant:
-        case StandardLibraryJsonType.ExportKind.Constructor:
-        case StandardLibraryJsonType.ExportKind.Function:
-        case StandardLibraryJsonType.ExportKind.Type:
-            break;
-
-        default:
-            throw new Error(`unknown exportKind: ${text}`);
-    }
 }
 
 function assertGetTypeKind(text: string): PQP.Language.Type.TypeKind {
@@ -159,6 +128,38 @@ function assertGetTypeKind(text: string): PQP.Language.Type.TypeKind {
     }
 
     return PQP.Language.TypeUtils.typeKindFromPrimitiveTypeConstantKind(text);
+}
+
+function assertGetCompletionItemKind(variant: number): CompletionItemKind {
+    switch (variant) {
+        case CompletionItemKind.Constant:
+        case CompletionItemKind.Constructor:
+        case CompletionItemKind.Enum:
+        case CompletionItemKind.EnumMember:
+        case CompletionItemKind.Event:
+        case CompletionItemKind.Field:
+        case CompletionItemKind.File:
+        case CompletionItemKind.Folder:
+        case CompletionItemKind.Function:
+        case CompletionItemKind.Interface:
+        case CompletionItemKind.Keyword:
+        case CompletionItemKind.Method:
+        case CompletionItemKind.Module:
+        case CompletionItemKind.Operator:
+        case CompletionItemKind.Property:
+        case CompletionItemKind.Reference:
+        case CompletionItemKind.Snippet:
+        case CompletionItemKind.Struct:
+        case CompletionItemKind.Text:
+        case CompletionItemKind.TypeParameter:
+        case CompletionItemKind.Unit:
+        case CompletionItemKind.Value:
+        case CompletionItemKind.Variable:
+            return variant;
+
+        default:
+            throw new PQP.CommonError.InvariantError(`unknown CompletionItemKind variant value`, { variant });
+    }
 }
 
 function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimitiveType {
@@ -192,5 +193,5 @@ function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimiti
             throw new Error("expected text to be 1 or 2 words");
     }
 
-    return PQP.Language.TypeUtils.primitiveTypeFactory(isNullable, typeKind);
+    return PQP.Language.TypeUtils.createPrimitiveType(isNullable, typeKind);
 }
