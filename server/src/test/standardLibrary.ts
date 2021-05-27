@@ -6,14 +6,14 @@ import "mocha";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import { Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
+import { AnalysisSettings, Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
 import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 
-import { getOrCreateStandardLibrary } from "../library";
+import { StandardLibraryUtils } from "../standardLibrary";
 
-const standardLibrary: PQLS.Library.ILibrary = getOrCreateStandardLibrary(PQP.Locale.en_US);
+const standardLibrary: PQLS.Library.ILibrary = StandardLibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
 
 function assertGetHover(text: string): Promise<Hover> {
     return createAnalysis(text).getHover();
@@ -51,7 +51,19 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
         line: 0,
     };
 
-    return PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), position, standardLibrary);
+    const library: PQLS.Library.ILibrary = StandardLibraryUtils.getOrCreateStandardLibrary();
+
+    const analysisSettings: AnalysisSettings = {
+        createInspectionSettingsFn: () =>
+            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, library.externalTypeResolver),
+        library: library,
+    };
+
+    return PQLS.AnalysisUtils.createAnalysis(
+        PQLS.createTextDocument(textWithPipe, 1, text),
+        analysisSettings,
+        position,
+    );
 }
 
 describe(`StandardLibrary`, () => {

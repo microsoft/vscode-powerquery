@@ -24,7 +24,7 @@ export function createStandardLibraryTypeResolver(
 function resolveSpecializedDuo(
     request: PQLS.Inspection.ExternalType.TExternalTypeRequest,
     specializedDuo: SpecializedDuo,
-): PQP.Language.Type.PowerQueryType | undefined {
+): PQP.Language.Type.TPowerQueryType | undefined {
     switch (request.kind) {
         case PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Invocation:
             return specializedDuo.invocationResolverFn(request);
@@ -40,7 +40,7 @@ function resolveSpecializedDuo(
 function resolveTableAddColumn(
     request: PQLS.Inspection.ExternalType.ExternalInvocationTypeRequest,
 ): PQP.Language.Type.TTable | PQP.Language.Type.None | undefined {
-    const table: PQP.Language.Type.PowerQueryType = PQP.Language.TypeUtils.assertAsTable(
+    const table: PQP.Language.Type.TPowerQueryType = PQP.Language.TypeUtils.assertAsTable(
         PQP.Assert.asDefined(request.args[0]),
     );
     const columnName: PQP.Language.Type.TText = PQP.Language.TypeUtils.assertAsText(
@@ -49,7 +49,7 @@ function resolveTableAddColumn(
     const columnGenerator: PQP.Language.Type.TFunction = PQP.Language.TypeUtils.assertAsFunction(
         PQP.Assert.asDefined(request.args[2]),
     );
-    const maybeColumnType: PQP.Language.Type.PowerQueryType | undefined =
+    const maybeColumnType: PQP.Language.Type.TPowerQueryType | undefined =
         request.args.length === 4
             ? PQP.Language.TypeUtils.assertAsType(PQP.Assert.asDefined(request.args[3]))
             : undefined;
@@ -59,7 +59,7 @@ function resolveTableAddColumn(
         return undefined;
     }
 
-    let columnType: PQP.Language.Type.PowerQueryType;
+    let columnType: PQP.Language.Type.TPowerQueryType;
     if (maybeColumnType !== undefined) {
         columnType = maybeColumnType;
     } else if (PQP.Language.TypeUtils.isDefinedFunction(columnGenerator)) {
@@ -78,7 +78,7 @@ function resolveTableAddColumn(
 
         return PQP.Language.TypeUtils.createDefinedTable(
             table.isNullable,
-            new Map<string, PQP.Language.Type.PowerQueryType>([
+            new Map<string, PQP.Language.Type.TPowerQueryType>([
                 ...table.fields.entries(),
                 [normalizedColumnName, columnType],
             ]),
@@ -87,14 +87,14 @@ function resolveTableAddColumn(
     } else {
         return PQP.Language.TypeUtils.createDefinedTable(
             table.isNullable,
-            new Map<string, PQP.Language.Type.PowerQueryType>([[normalizedColumnName, columnType]]),
+            new Map<string, PQP.Language.Type.TPowerQueryType>([[normalizedColumnName, columnType]]),
             true,
         );
     }
 }
 
 interface SpecializedDuo {
-    readonly value: PQP.Language.Type.PowerQueryType;
+    readonly value: PQP.Language.Type.TPowerQueryType;
     readonly invocationResolverFn: PQLS.Inspection.ExternalType.TExternalInvocationTypeResolverFn;
 }
 
