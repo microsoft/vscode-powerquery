@@ -1,9 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// Contains smart type resolvers for standard library functions,
+// such as Table.AddColumn(...) returning a DefinedTable.
+
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
+// Takes a standard library and returns a type resolver.
 export function createStandardLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
@@ -11,13 +15,14 @@ export function createStandardLibraryTypeResolver(
         const maybeLibraryType: PQP.Language.Type.TPowerQueryType | undefined = libraryDefinitions.get(
             request.identifierLiteral,
         )?.asPowerQueryType;
+
         if (maybeLibraryType === undefined) {
             return undefined;
-        } else if (request.kind === PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value) {
-            return maybeLibraryType;
         }
-        // This scenario shouldn't happen.
-        else {
+        // It's asking for a value, which we already have.
+        else if (request.kind === PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value) {
+            return maybeLibraryType;
+        } else {
             const key: string = PQP.Language.TypeUtils.nameOf(maybeLibraryType);
             const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
 
@@ -27,6 +32,8 @@ export function createStandardLibraryTypeResolver(
 
             const typeChecked: PQP.Language.TypeUtils.CheckedInvocation = PQP.Language.TypeUtils.typeCheckInvocation(
                 request.args,
+                // If it's an invocation type then it's assumed we
+                // already confirmed the request is about a DefinedFunction.
                 PQP.Language.TypeUtils.assertAsDefinedFunction(maybeLibraryType),
             );
 
