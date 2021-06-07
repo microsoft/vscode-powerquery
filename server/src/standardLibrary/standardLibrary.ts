@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// Typing for the JSON ouput for a localized standard library.
 export type StandardLibrary = ReadonlyArray<StandardLibraryExport>;
 
 export interface StandardLibraryExport {

@@ -7,8 +7,8 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItemKind } from "@microsoft/powerquery-language-services";
 
 import * as StandardLibraryEnUs from "./bylocalization/enUs.json";
-import * as StandardLibraryJsonType from "./standardLibraryTypes";
 
+import { StandardLibrary, StandardLibraryExport, StandardLibraryFunctionParameter } from "./standardLibrary";
 import { createStandardLibraryTypeResolver } from "./standardLibraryTypeResolver";
 
 export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibrary {
@@ -28,9 +28,9 @@ export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibra
 
 function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.LibraryDefinitions {
     if (!libraryDefinitionsByLocale.has(locale)) {
-        const json: StandardLibraryJsonType.StandardLibrary = jsonByLocale.get(locale) ?? StandardLibraryEnUs;
+        const json: StandardLibrary = jsonByLocale.get(locale) ?? StandardLibraryEnUs;
         const mapped: Map<string, PQLS.Library.TLibraryDefinition> = new Map(
-            json.map((xport: StandardLibraryJsonType.StandardLibraryExport) => [xport.name, mapExport(xport)]),
+            json.map((xport: StandardLibraryExport) => [xport.name, mapExport(xport)]),
         );
         libraryDefinitionsByLocale.set(locale, mapped);
     }
@@ -38,15 +38,13 @@ function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.Lib
     return PQP.Assert.asDefined(libraryDefinitionsByLocale.get(locale));
 }
 
-const jsonByLocale: Map<string, StandardLibraryJsonType.StandardLibrary> = new Map([
-    [PQP.Locale.en_US, StandardLibraryEnUs],
-]);
+const jsonByLocale: Map<string, StandardLibrary> = new Map([[PQP.Locale.en_US, StandardLibraryEnUs]]);
 
 const libraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
 
 const libraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
 
-function mapExport(xport: StandardLibraryJsonType.StandardLibraryExport): PQLS.Library.TLibraryDefinition {
+function mapExport(xport: StandardLibraryExport): PQLS.Library.TLibraryDefinition {
     const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.dataType);
     const label: string = xport.name;
     const description: string = xport.documentation?.description ?? "No description available";
@@ -84,15 +82,14 @@ function mapExport(xport: StandardLibraryJsonType.StandardLibraryExport): PQLS.L
 }
 
 function mapLibraryFunctionSignatureToType(
-    xport: StandardLibraryJsonType.StandardLibraryExport,
+    xport: StandardLibraryExport,
     returnType: PQP.Language.Type.TPrimitiveType,
 ): PQP.Language.Type.DefinedFunction {
-    const xportParameters: ReadonlyArray<StandardLibraryJsonType.StandardLibraryFunctionParameter> =
-        xport.functionParameters ?? [];
+    const xportParameters: ReadonlyArray<StandardLibraryFunctionParameter> = xport.functionParameters ?? [];
 
     return PQP.Language.TypeUtils.createDefinedFunction(
         false,
-        xportParameters.map((parameter: StandardLibraryJsonType.StandardLibraryFunctionParameter) => {
+        xportParameters.map((parameter: StandardLibraryFunctionParameter) => {
             const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(
                 parameter.parameterType,
             );
@@ -108,9 +105,7 @@ function mapLibraryFunctionSignatureToType(
     );
 }
 
-function mapParameterToLibraryParameter(
-    parameter: StandardLibraryJsonType.StandardLibraryFunctionParameter,
-): PQLS.Library.LibraryParameter {
+function mapParameterToLibraryParameter(parameter: StandardLibraryFunctionParameter): PQLS.Library.LibraryParameter {
     const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.parameterType);
 
     return {

@@ -7,7 +7,7 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-// Takes a standard library and returns a type resolver.
+// Takes the definitions for a standard library and returns a type resolver.
 export function createStandardLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
@@ -37,14 +37,17 @@ export function createStandardLibraryTypeResolver(
                 PQP.Language.TypeUtils.assertAsDefinedFunction(maybeLibraryType),
             );
 
-            return maybeSmartTypeResolverFn(request.args, typeChecked);
+            if (isValidInvocation(typeChecked)) {
+                return undefined;
+            }
+
+            return maybeSmartTypeResolverFn(request.args);
         }
     };
 }
 
 type SmartTypeResolverFn = (
     args: ReadonlyArray<PQP.Language.Type.TPowerQueryType>,
-    typeChecked: PQP.Language.TypeUtils.CheckedInvocation,
 ) => PQP.Language.Type.TPowerQueryType | undefined;
 
 function isValidInvocation(typeChecked: PQP.Language.TypeUtils.CheckedInvocation): boolean {
@@ -53,12 +56,7 @@ function isValidInvocation(typeChecked: PQP.Language.TypeUtils.CheckedInvocation
 
 function resolveTableAddColumn(
     args: ReadonlyArray<PQP.Language.Type.TPowerQueryType>,
-    typeChecked: PQP.Language.TypeUtils.CheckedInvocation,
 ): PQP.Language.Type.TPowerQueryType | undefined {
-    if (!isValidInvocation(typeChecked)) {
-        return PQP.Language.Type.NoneInstance;
-    }
-
     const table: PQP.Language.Type.TPowerQueryType = PQP.Language.TypeUtils.assertAsTable(
         PQP.Assert.asDefined(args[0]),
     );
