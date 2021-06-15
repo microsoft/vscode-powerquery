@@ -5,9 +5,8 @@ import * as PQP from "@microsoft/powerquery-parser";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as LS from "vscode-languageserver";
 
-// import { Library, ValidationSettings } from "@microsoft/powerquery-language-services";
-
 import { TextDocument } from "vscode-languageserver-textdocument";
+
 import { StandardLibraryUtils } from "./standardLibrary";
 
 const LanguageId: string = "powerquery";
