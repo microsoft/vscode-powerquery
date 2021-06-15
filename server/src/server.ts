@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as PQP from "@microsoft/powerquery-parser";
 import * as PQLS from "@microsoft/powerquery-language-services";
+import * as PQP from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
