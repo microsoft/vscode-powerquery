@@ -16,7 +16,7 @@ Hovering over a variable will provide a summary.
 
 ## Function hints
 
-![Parameter hints](imgs/parameterHints)
+![Parameter hints](imgs/parameterHints.png)
 
 When calling a function it provideds the function's documentation if it exists.
 
