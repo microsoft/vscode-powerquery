@@ -37,7 +37,7 @@ export function createStandardLibraryTypeResolver(
                 PQP.Language.TypeUtils.assertAsDefinedFunction(maybeLibraryType),
             );
 
-            if (isValidInvocation(typeChecked)) {
+            if (!isValidInvocation(typeChecked)) {
                 return undefined;
             }
 
