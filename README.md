@@ -1,30 +1,31 @@
+[![](https://vsmarketplacebadge.apphb.com/version-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
+[![](https://vsmarketplacebadge.apphb.com/installs-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquer)
+
 # Power Query language service for VS Code
 
 Available in the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery). Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/) with the following capabilities:
 
 ## Fuzzy autocomplete.
 
-![Fuzzy autocomplete](imgs/fuzzyAutocomplete.gif)
+Suggests keywords, local variables, and the standard Power Query library.
 
-Uses fuzzy matching to suggest autocomplete items for: keywords, local scope, and the standard Power Query library.
+![Fuzzy autocomplete](imgs/fuzzyAutocomplete.gif)
 
 ## Hover
 
 ![On hover](imgs/hover.png)
 
-Hovering over a variable will provide a summary.
-
 ## Function hints
+
+Displays function documentation if it exists, and validates the types for function arguments.
 
 ![Parameter hints](imgs/parameterHints.png)
 
-When calling a function it provideds the function's documentation if it exists.
-
 ## Code formatting
 
-![Format Document](imgs/formatDocument.gif)
-
 Provides a formatter for the "Format Document" (Ctrl + Shift + F) command.
+
+![Format Document](imgs/formatDocument.gif)
 
 ## Related projects
 
