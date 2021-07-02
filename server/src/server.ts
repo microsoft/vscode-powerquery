@@ -2,28 +2,27 @@
 // Licensed under the MIT license.
 
 import * as PQLS from "@microsoft/powerquery-language-services";
+import * as PQP from "@microsoft/powerquery-parser";
 import * as LS from "vscode-languageserver";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { getOrCreateStandardLibrary } from "./library";
+
+import { StandardLibraryUtils } from "./standardLibrary";
 
 const LanguageId: string = "powerquery";
+
+interface ServerSettings {
+    checkForDuplicateIdentifiers: boolean;
+    locale: string;
+    maintainWorkspaceCache: boolean;
+}
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
-let analysisOptions: PQLS.AnalysisOptions;
-
-function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.Analysis {
-    return PQLS.AnalysisUtils.createAnalysis(
-        document,
-        position,
-        getOrCreateStandardLibrary(analysisOptions.locale),
-        analysisOptions,
-    );
-}
+let serverSettings: ServerSettings;
 
 connection.onInitialize(() => {
     return {
@@ -46,8 +45,9 @@ connection.onInitialize(() => {
 
 connection.onInitialized(() => {
     connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
-        analysisOptions = {
-            locale: config?.general?.locale,
+        serverSettings = {
+            checkForDuplicateIdentifiers: true,
+            locale: config?.general?.locale ?? PQP.DefaultLocale,
             maintainWorkspaceCache: true,
         };
     });
@@ -71,12 +71,11 @@ documents.onDidChangeContent(event => {
     );
 });
 
-async function validateDocument(document: LS.TextDocument): Promise<void> {
-    const result: PQLS.ValidationResult = PQLS.validate(document, {
-        ...analysisOptions,
-        checkForDuplicateIdentifiers: true,
-        source: LanguageId,
-    });
+async function validateDocument(document: TextDocument): Promise<void> {
+    const result: PQLS.ValidationResult = PQLS.validate(
+        document,
+        createValidationSettings(getLocalizedStandardLibrary()),
+    );
 
     connection.sendDiagnostics({
         uri: document.uri,
@@ -85,14 +84,14 @@ async function validateDocument(document: LS.TextDocument): Promise<void> {
 }
 
 connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
-    const maybeDocument: LS.TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
+    const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
     if (maybeDocument === undefined) {
         return [];
     }
-    const document: LS.TextDocument = maybeDocument;
+    const document: TextDocument = maybeDocument;
 
     try {
-        return PQLS.tryFormat(document, documentfomattingParams.options, analysisOptions.locale ?? "en-US");
+        return PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale ?? PQP.DefaultLocale);
     } catch (err) {
         const error: Error = err;
         const errorMessage: string = error.message;
@@ -115,7 +114,7 @@ connection.onCompletion(
         textDocumentPosition: LS.TextDocumentPositionParams,
         _token: LS.CancellationToken,
     ): Promise<LS.CompletionItem[]> => {
-        const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
@@ -134,9 +133,13 @@ connection.onDocumentSymbol(
         documentSymbolParams: LS.DocumentSymbolParams,
         _token: LS.CancellationToken,
     ): Promise<LS.DocumentSymbol[] | undefined> => {
-        const document: LS.TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
+        const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
         if (document) {
-            return PQLS.getDocumentSymbols(document, analysisOptions);
+            return PQLS.getDocumentSymbols(
+                document,
+                PQP.DefaultSettings,
+                serverSettings.maintainWorkspaceCache ?? false,
+            );
         }
 
         return undefined;
@@ -150,7 +153,7 @@ connection.onHover(
             contents: [],
         };
 
-        const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document === undefined) {
             return emptyHover;
         }
@@ -176,7 +179,7 @@ connection.onSignatureHelp(
             activeSignature: 0,
         };
 
-        const document: LS.TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
@@ -196,3 +199,39 @@ documents.listen(connection);
 
 // Listen on the connection
 connection.listen();
+
+function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.Analysis {
+    const localizedStandardLibrary: PQLS.Library.ILibrary = getLocalizedStandardLibrary();
+
+    return PQLS.AnalysisUtils.createAnalysis(document, createAnalysisSettings(localizedStandardLibrary), position);
+}
+
+function createAnalysisSettings(library: PQLS.Library.ILibrary): PQLS.AnalysisSettings {
+    return {
+        createInspectionSettingsFn: () => createInspectionSettings(library),
+        library,
+        maintainWorkspaceCache: serverSettings.maintainWorkspaceCache,
+    };
+}
+
+function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
+    return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+}
+
+function createInspectionSettings(library: PQLS.Library.ILibrary): PQLS.InspectionSettings {
+    return PQLS.InspectionUtils.createInspectionSettings(
+        {
+            ...PQP.DefaultSettings,
+            locale: serverSettings.locale,
+        },
+        library.externalTypeResolver,
+    );
+}
+
+function createValidationSettings(library: PQLS.Library.ILibrary): PQLS.ValidationSettings {
+    return PQLS.ValidationSettingsUtils.createValidationSettings(
+        createInspectionSettings(library),
+        LanguageId,
+        serverSettings.checkForDuplicateIdentifiers,
+    );
+}
