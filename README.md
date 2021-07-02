@@ -1,5 +1,5 @@
 [![](https://vsmarketplacebadge.apphb.com/version-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
-[![](https://vsmarketplacebadge.apphb.com/installs-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquer)
+[![](https://vsmarketplacebadge.apphb.com/installs-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
 
 # Power Query language service for VS Code
 
