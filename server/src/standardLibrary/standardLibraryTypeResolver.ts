@@ -6,15 +6,16 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
+// tslint:disable-next-line: no-submodule-imports
+import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 
 // Takes the definitions for a standard library and returns a type resolver.
 export function createStandardLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
     return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest) => {
-        const maybeLibraryType: PQP.Language.Type.TPowerQueryType | undefined = libraryDefinitions.get(
-            request.identifierLiteral,
-        )?.asPowerQueryType;
+        const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(request.identifierLiteral)
+            ?.asPowerQueryType;
 
         if (maybeLibraryType === undefined) {
             return undefined;
@@ -23,18 +24,18 @@ export function createStandardLibraryTypeResolver(
         else if (request.kind === PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value) {
             return maybeLibraryType;
         } else {
-            const key: string = PQP.Language.TypeUtils.nameOf(maybeLibraryType);
+            const key: string = TypeUtils.nameOf(maybeLibraryType);
             const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
 
             if (maybeSmartTypeResolverFn === undefined) {
                 return undefined;
             }
 
-            const typeChecked: PQP.Language.TypeUtils.CheckedInvocation = PQP.Language.TypeUtils.typeCheckInvocation(
+            const typeChecked: TypeUtils.CheckedInvocation = TypeUtils.typeCheckInvocation(
                 request.args,
                 // If it's an invocation type then it's assumed we
                 // already confirmed the request is about a DefinedFunction.
-                PQP.Language.TypeUtils.assertAsDefinedFunction(maybeLibraryType),
+                TypeUtils.assertAsDefinedFunction(maybeLibraryType),
             );
 
             if (!isValidInvocation(typeChecked)) {
@@ -46,61 +47,50 @@ export function createStandardLibraryTypeResolver(
     };
 }
 
-type SmartTypeResolverFn = (
-    args: ReadonlyArray<PQP.Language.Type.TPowerQueryType>,
-) => PQP.Language.Type.TPowerQueryType | undefined;
+type SmartTypeResolverFn = (args: ReadonlyArray<Type.TPowerQueryType>) => Type.TPowerQueryType | undefined;
 
-function isValidInvocation(typeChecked: PQP.Language.TypeUtils.CheckedInvocation): boolean {
+function isValidInvocation(typeChecked: TypeUtils.CheckedInvocation): boolean {
     return !typeChecked.extraneous.length && !typeChecked.invalid.size && !typeChecked.missing.length;
 }
 
-function resolveTableAddColumn(
-    args: ReadonlyArray<PQP.Language.Type.TPowerQueryType>,
-): PQP.Language.Type.TPowerQueryType | undefined {
-    const table: PQP.Language.Type.TPowerQueryType = PQP.Language.TypeUtils.assertAsTable(
-        PQP.Assert.asDefined(args[0]),
-    );
-    const columnName: PQP.Language.Type.TText = PQP.Language.TypeUtils.assertAsText(PQP.Assert.asDefined(args[1]));
-    const columnGenerator: PQP.Language.Type.TFunction = PQP.Language.TypeUtils.assertAsFunction(
-        PQP.Assert.asDefined(args[2]),
-    );
-    const maybeColumnType: PQP.Language.Type.TPowerQueryType | undefined =
-        args.length === 4 ? PQP.Language.TypeUtils.assertAsType(PQP.Assert.asDefined(args[3])) : undefined;
+function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.TPowerQueryType | undefined {
+    const table: Type.TPowerQueryType = TypeUtils.assertAsTable(PQP.Assert.asDefined(args[0]));
+    const columnName: Type.TText = TypeUtils.assertAsText(PQP.Assert.asDefined(args[1]));
+    const columnGenerator: Type.TFunction = TypeUtils.assertAsFunction(PQP.Assert.asDefined(args[2]));
+    const maybeColumnType: Type.TPowerQueryType | undefined =
+        args.length === 4 ? TypeUtils.assertAsType(PQP.Assert.asDefined(args[3])) : undefined;
 
     // We can't mutate the given table without being able to resolve columnName to a literal.
-    if (!PQP.Language.TypeUtils.isTextLiteral(columnName)) {
+    if (!TypeUtils.isTextLiteral(columnName)) {
         return undefined;
     }
 
-    let columnType: PQP.Language.Type.TPowerQueryType;
+    let columnType: Type.TPowerQueryType;
     if (maybeColumnType !== undefined) {
         columnType = maybeColumnType;
-    } else if (PQP.Language.TypeUtils.isDefinedFunction(columnGenerator)) {
+    } else if (TypeUtils.isDefinedFunction(columnGenerator)) {
         columnType = columnGenerator.returnType;
     } else {
-        columnType = PQP.Language.Type.AnyInstance;
+        columnType = Type.AnyInstance;
     }
 
     const normalizedColumnName: string = PQP.StringUtils.normalizeIdentifier(columnName.literal.slice(1, -1));
 
-    if (PQP.Language.TypeUtils.isDefinedTable(table)) {
+    if (TypeUtils.isDefinedTable(table)) {
         // We can't overwrite an existing key.
         if (table.fields.has(normalizedColumnName)) {
-            return PQP.Language.Type.NoneInstance;
+            return Type.NoneInstance;
         }
 
-        return PQP.Language.TypeUtils.createDefinedTable(
+        return TypeUtils.createDefinedTable(
             table.isNullable,
-            new Map<string, PQP.Language.Type.TPowerQueryType>([
-                ...table.fields.entries(),
-                [normalizedColumnName, columnType],
-            ]),
+            new PQP.OrderedMap([...table.fields.entries(), [normalizedColumnName, columnType]]),
             table.isOpen,
         );
     } else {
-        return PQP.Language.TypeUtils.createDefinedTable(
+        return TypeUtils.createDefinedTable(
             table.isNullable,
-            new Map<string, PQP.Language.Type.TPowerQueryType>([[normalizedColumnName, columnType]]),
+            new PQP.OrderedMap([[normalizedColumnName, columnType]]),
             true,
         );
     }
