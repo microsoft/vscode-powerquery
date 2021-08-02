@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-server",
-    "version": "0.0.36",
+    "version": "0.0.37",
     "description": "Power Query language server implementation.",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -30,8 +30,8 @@
         "node": "*"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "0.2.9",
-        "@microsoft/powerquery-parser": "0.4.8",
+        "@microsoft/powerquery-language-services": "0.2.11",
+        "@microsoft/powerquery-parser": "0.4.10",
         "vscode-languageserver": "6.1.1",
         "vscode-languageserver-textdocument": "1.0.1",
         "vscode-languageserver-types": "3.15.1"
@@ -51,7 +51,7 @@
         "tslint-config-prettier": "1.18.0",
         "tslint-microsoft-contrib": "6.2.0",
         "tslint-plugin-prettier": "2.3.0",
-        "typescript": "4.1.2",
+        "typescript": "^4.3.5",
         "webpack": "4.43.0",
         "webpack-cli": "3.3.12"
     }
