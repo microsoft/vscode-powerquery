@@ -145,7 +145,7 @@ describe(`StandardLibrary`, () => {
                 const parameters: ReadonlyArray<ParameterInformation> = signature.parameters;
 
                 const firstParameter: ParameterInformation = PQP.Assert.asDefined(parameters[0]);
-                expect(firstParameter.label).to.equal(PQP.Language.Constant.PrimitiveTypeConstantKind.Table);
+                expect(firstParameter.label).to.equal(PQP.Language.Constant.PrimitiveTypeConstant.Table);
 
                 const secondParameter: ParameterInformation = PQP.Assert.asDefined(parameters[1]);
                 expect(secondParameter.label).to.equal("newColumnName");
