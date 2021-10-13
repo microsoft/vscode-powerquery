@@ -118,7 +118,7 @@ function mapParameterToLibraryParameter(parameter: StandardLibraryFunctionParame
 }
 
 function assertGetTypeKind(text: string): PQP.Language.Type.TypeKind {
-    if (!PQP.Language.ConstantUtils.isPrimitiveTypeConstantKind(text)) {
+    if (!PQP.Language.ConstantUtils.isPrimitiveTypeConstant(text)) {
         throw new Error(`unknown type: ${text}`);
     }
 
@@ -174,10 +174,8 @@ function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimiti
         }
 
         case 2: {
-            if (split[0] !== PQP.Language.Constant.LanguageConstantKind.Nullable) {
-                throw new Error(
-                    `expected first word in text to be ${PQP.Language.Constant.LanguageConstantKind.Nullable}`,
-                );
+            if (split[0] !== PQP.Language.Constant.LanguageConstant.Nullable) {
+                throw new Error(`expected first word in text to be ${PQP.Language.Constant.LanguageConstant.Nullable}`);
             }
             isNullable = true;
             typeKind = assertGetTypeKind(split[1]);
