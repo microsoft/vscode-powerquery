@@ -93,7 +93,7 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     try {
         return PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale ?? PQP.DefaultLocale);
     } catch (err) {
-        const error: Error = err;
+        const error: Error = err as Error;
         const errorMessage: string = error.message;
 
         let userMessage: string;
