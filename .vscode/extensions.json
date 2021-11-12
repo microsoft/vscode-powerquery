@@ -1,4 +1,4 @@
 {
-    "recommendations": ["eamodio.tsl-problem-matcher", "esbenp.prettier-vscode"],
+    "recommendations": ["amodio.tsl-problem-matcher", "esbenp.prettier-vscode"],
     "unwantedRecommendations": []
 }
