@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.23",
+    "version": "0.1.24",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -145,11 +145,11 @@
     },
     "dependencies": {},
     "devDependencies": {
-        "prettier": "2.2.1",
+        "prettier": "2.4.1",
         "tslint": "6.1.3",
         "tslint-config-prettier": "1.18.0",
         "tslint-microsoft-contrib": "6.2.0",
         "tslint-plugin-prettier": "2.3.0",
-        "typescript": "^4.3.5"
+        "typescript": "^4.4.4"
     }
 }

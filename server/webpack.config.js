@@ -18,6 +18,9 @@ const config = {
     externals: {
         vscode: "commonjs vscode",
     },
+    infrastructureLogging: {
+        level: 'log',
+    },
     resolve: {
         extensions: [".ts", ".js"],
     },

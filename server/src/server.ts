@@ -3,7 +3,8 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import * as LS from "vscode-languageserver";
+// tslint:disable-next-line: no-submodule-imports
+import * as LS from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
