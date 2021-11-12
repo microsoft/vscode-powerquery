@@ -22,7 +22,7 @@
         "watch": ".\\node_modules\\.bin\\tsc -watch",
         "test": "node ./lib/test/runTest.js",
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
-        "webpack-dev": "node_modules\\.bin\\webpack --info-verbosity verbose --mode development --watch"
+        "webpack-dev": "node_modules\\.bin\\webpack --watch --mode development"
     },
     "main": "lib\\extension",
     "engines": {
