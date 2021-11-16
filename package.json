@@ -40,6 +40,11 @@
     "engines": {
         "vscode": "^1.40.0"
     },
+    "capabilities": {
+        "untrustedWorkspaces": {
+            "supported": true
+        }
+    },
     "categories": [
         "Programming Languages"
     ],
