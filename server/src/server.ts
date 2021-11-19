@@ -58,6 +58,7 @@ documents.onDidClose(event => {
     // Clear any errors associated with this file
     connection.sendDiagnostics({
         uri: event.document.uri,
+        version: event.document.version,
         diagnostics: [],
     });
     PQLS.documentClosed(event.document);
@@ -80,6 +81,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
 
     connection.sendDiagnostics({
         uri: document.uri,
+        version: document.version,
         diagnostics: result.diagnostics,
     });
 }
