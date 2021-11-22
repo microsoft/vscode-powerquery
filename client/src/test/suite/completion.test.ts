@@ -13,14 +13,14 @@ import * as TestUtils from "./testUtils";
 // TODO: Add test mechanism that uses | notation and uses testUtils.setTestContent
 // TODO: Add test case for identifier with trailing. ex - "Access.|"
 
-suite("Access.Dat completion", () => {
+suite("Access.Dat completion", async () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
     vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Simple completion item test", async () => {
-        CompletionUtils.testCompletion(
+        await CompletionUtils.testCompletion(
             docUri,
-            new vscode.Position(0, 10),
+            new vscode.Position(0, 9),
             {
                 items: [{ label: "Access.Database", kind: vscode.CompletionItemKind.Function }],
             },
