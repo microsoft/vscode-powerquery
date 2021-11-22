@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.24",
+    "version": "0.1.25",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -67,6 +67,12 @@
                     ],
                     "default": "off",
                     "description": "Traces the communication between VS Code and the language server."
+                },
+                "powerquery.diagnostics.experimental": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Specifies whether to enable experimental diagnostics features. This may result in false positives while the feature is under development."
                 },
                 "powerquery.general.locale": {
                     "scope": "window",

@@ -14,6 +14,7 @@ const LanguageId: string = "powerquery";
 
 interface ServerSettings {
     checkForDuplicateIdentifiers: boolean;
+    checkInvokeExpressions: boolean;
     locale: string;
     maintainWorkspaceCache: boolean;
 }
@@ -24,40 +25,49 @@ const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
 let serverSettings: ServerSettings;
+let hasConfigurationCapability: boolean = false;
 
-connection.onInitialize(() => {
-    return {
-        capabilities: {
-            textDocumentSync: LS.TextDocumentSyncKind.Incremental,
-            documentFormattingProvider: true,
-            completionProvider: {
-                resolveProvider: false,
-            },
-            documentSymbolProvider: {
-                workDoneProgress: false,
-            },
-            hoverProvider: true,
-            signatureHelpProvider: {
-                triggerCharacters: ["(", ","],
-            },
+connection.onInitialize((params: LS.InitializeParams) => {
+    const capabilities: LS.ServerCapabilities = {
+        textDocumentSync: LS.TextDocumentSyncKind.Incremental,
+        documentFormattingProvider: true,
+        completionProvider: {
+            resolveProvider: false,
         },
+        documentSymbolProvider: {
+            workDoneProgress: false,
+        },
+        hoverProvider: true,
+        signatureHelpProvider: {
+            triggerCharacters: ["(", ","],
+        },
+    };
+
+    hasConfigurationCapability = !!params.capabilities.workspace?.configuration;
+
+    return {
+        capabilities,
     };
 });
 
-connection.onInitialized(() => {
-    connection.workspace.getConfiguration({ section: "powerquery" }).then(config => {
-        serverSettings = {
-            checkForDuplicateIdentifiers: true,
-            locale: config?.general?.locale ?? PQP.DefaultLocale,
-            maintainWorkspaceCache: true,
-        };
-    });
+connection.onInitialized(async () => {
+    if (hasConfigurationCapability) {
+        connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
+    }
+
+    serverSettings = await fetchConfigurationSettings();
+});
+
+connection.onDidChangeConfiguration(async () => {
+    serverSettings = await fetchConfigurationSettings();
+    documents.all().forEach(validateDocument);
 });
 
 documents.onDidClose(event => {
     // Clear any errors associated with this file
     connection.sendDiagnostics({
         uri: event.document.uri,
+        version: event.document.version,
         diagnostics: [],
     });
     PQLS.documentClosed(event.document);
@@ -80,6 +90,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
 
     connection.sendDiagnostics({
         uri: document.uri,
+        version: document.version,
         diagnostics: result.diagnostics,
     });
 }
@@ -234,5 +245,25 @@ function createValidationSettings(library: PQLS.Library.ILibrary): PQLS.Validati
         createInspectionSettings(library),
         LanguageId,
         serverSettings.checkForDuplicateIdentifiers,
+        serverSettings.checkInvokeExpressions,
     );
+}
+
+async function fetchConfigurationSettings(): Promise<ServerSettings> {
+    if (!hasConfigurationCapability) {
+        return {
+            checkForDuplicateIdentifiers: true,
+            checkInvokeExpressions: false,
+            locale: PQP.DefaultLocale,
+            maintainWorkspaceCache: true,
+        };
+    }
+
+    const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
+    return {
+        checkForDuplicateIdentifiers: true,
+        checkInvokeExpressions: config?.diagnostics?.experimental ?? false,
+        locale: config?.general?.locale ?? PQP.DefaultLocale,
+        maintainWorkspaceCache: true,
+    };
 }

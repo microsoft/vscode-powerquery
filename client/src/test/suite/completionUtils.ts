@@ -35,7 +35,7 @@ export async function testCompletion(
     } else {
         assert(
             actualCompletionList.items.length >= expectedCompletionList.items.length,
-            "received fewer items than expected",
+            `received fewer items (${actualCompletionList.items.length}) than expected (${expectedCompletionList.items.length})`,
         );
     }
 

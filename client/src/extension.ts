@@ -6,7 +6,7 @@ import * as path from "path";
 import * as LC from "vscode-languageclient/node";
 
 // tslint:disable-next-line: no-implicit-dependencies
-import { ExtensionContext, workspace } from "vscode";
+import { ExtensionContext } from "vscode";
 
 let client: LC.LanguageClient;
 
@@ -41,10 +41,6 @@ export function activate(context: ExtensionContext): void {
                 language: "powerquery",
             },
         ],
-        synchronize: {
-            // Notify the server about file changes to '.clientrc files contained in the workspace
-            fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
-        },
     };
 
     // Create the language client and start the client.
