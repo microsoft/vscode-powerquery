@@ -31,7 +31,6 @@ suite("No errors", async () => {
     test("No errors", async () => {
         await testDiagnostics(docUri, []);
     });
-
 });
 
 suite("Experimental diagnostics", async () => {
