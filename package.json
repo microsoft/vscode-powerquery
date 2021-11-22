@@ -68,6 +68,12 @@
                     "default": "off",
                     "description": "Traces the communication between VS Code and the language server."
                 },
+                "powerquery.diagnostics.experimental": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Specifies whether to enable experimental diagnostics features. This may result in false positives while the feature is under development."
+                },
                 "powerquery.general.locale": {
                     "scope": "window",
                     "type": "string",
