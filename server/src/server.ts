@@ -3,8 +3,9 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-// tslint:disable-next-line: no-submodule-imports
 import * as LS from "vscode-languageserver/node";
+
+import { CancellationTokenShimUtils } from "./cancellationTokenShim";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
@@ -85,7 +86,7 @@ documents.onDidChangeContent(event => {
 async function validateDocument(document: TextDocument): Promise<void> {
     const result: PQLS.ValidationResult = PQLS.validate(
         document,
-        createValidationSettings(getLocalizedStandardLibrary()),
+        createValidationSettings(getLocalizedStandardLibrary(), undefined),
     );
 
     connection.sendDiagnostics({
@@ -124,11 +125,15 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
 connection.onCompletion(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
-        _token: LS.CancellationToken,
+        token: LS.CancellationToken,
     ): Promise<LS.CompletionItem[]> => {
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
+            const analysis: PQLS.Analysis = createAnalysis(
+                document,
+                textDocumentPosition.position,
+                CancellationTokenShimUtils.create(connection.onHover.name, document, token),
+            );
 
             return analysis.getAutocompleteItems().catch(err => {
                 connection.console.error(`onCompletion error ${JSON.stringify(err, undefined, 4)}`);
@@ -159,7 +164,7 @@ connection.onDocumentSymbol(
 );
 
 connection.onHover(
-    async (textDocumentPosition: LS.TextDocumentPositionParams, _token: LS.CancellationToken): Promise<LS.Hover> => {
+    async (textDocumentPosition: LS.TextDocumentPositionParams, token: LS.CancellationToken): Promise<LS.Hover> => {
         const emptyHover: LS.Hover = {
             range: undefined,
             contents: [],
@@ -170,7 +175,11 @@ connection.onHover(
             return emptyHover;
         }
 
-        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
+        const analysis: PQLS.Analysis = createAnalysis(
+            document,
+            textDocumentPosition.position,
+            CancellationTokenShimUtils.create(connection.onHover.name, document, token),
+        );
 
         return analysis.getHover().catch(err => {
             connection.console.error(`onHover error ${JSON.stringify(err, undefined, 4)}`);
@@ -182,7 +191,7 @@ connection.onHover(
 connection.onSignatureHelp(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
-        _token: LS.CancellationToken,
+        token: LS.CancellationToken,
     ): Promise<LS.SignatureHelp> => {
         const emptySignatureHelp: LS.SignatureHelp = {
             signatures: [],
@@ -193,7 +202,11 @@ connection.onSignatureHelp(
 
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
         if (document) {
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
+            const analysis: PQLS.Analysis = createAnalysis(
+                document,
+                textDocumentPosition.position,
+                CancellationTokenShimUtils.create(connection.onHover.name, document, token),
+            );
 
             return analysis.getSignatureHelp().catch(err => {
                 connection.console.error(`onSignatureHelp error ${JSON.stringify(err, undefined, 4)}`);
@@ -212,40 +225,53 @@ documents.listen(connection);
 // Listen on the connection
 connection.listen();
 
-function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.Analysis {
+function createAnalysis(
+    document: TextDocument,
+    position: PQLS.Position,
+    maybeCancellationToken: PQP.ICancellationToken | undefined,
+): PQLS.Analysis {
     const localizedStandardLibrary: PQLS.Library.ILibrary = getLocalizedStandardLibrary();
 
-    return PQLS.AnalysisUtils.createAnalysis(document, createAnalysisSettings(localizedStandardLibrary), position);
+    return PQLS.AnalysisUtils.createAnalysis(
+        document,
+        createAnalysisSettings(localizedStandardLibrary, maybeCancellationToken),
+        position,
+    );
 }
 
-function createAnalysisSettings(library: PQLS.Library.ILibrary): PQLS.AnalysisSettings {
+function createAnalysisSettings(
+    library: PQLS.Library.ILibrary,
+    maybeCancellationToken: PQP.ICancellationToken | undefined,
+): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: () => createInspectionSettings(library),
+        createInspectionSettingsFn: () => createInspectionSettings(library, maybeCancellationToken),
         library,
         maintainWorkspaceCache: serverSettings.maintainWorkspaceCache,
     };
 }
 
-function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
-    return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
-}
-
-function createInspectionSettings(library: PQLS.Library.ILibrary): PQLS.InspectionSettings {
+function createInspectionSettings(
+    library: PQLS.Library.ILibrary,
+    maybeCancellationToken: PQP.ICancellationToken | undefined,
+): PQLS.InspectionSettings {
     return PQLS.InspectionUtils.createInspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
+            maybeCancellationToken,
         },
         library.externalTypeResolver,
     );
 }
 
-function createValidationSettings(library: PQLS.Library.ILibrary): PQLS.ValidationSettings {
+function createValidationSettings(
+    library: PQLS.Library.ILibrary,
+    maybeCancellationToken: PQP.ICancellationToken | undefined,
+): PQLS.ValidationSettings {
     return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library),
+        createInspectionSettings(library, maybeCancellationToken),
         LanguageId,
         serverSettings.checkForDuplicateIdentifiers,
-        serverSettings.checkInvokeExpressions,
     );
 }
 
@@ -266,4 +292,8 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         maintainWorkspaceCache: true,
     };
+}
+
+function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
+    return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
 }
