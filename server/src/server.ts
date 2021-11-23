@@ -19,12 +19,19 @@ interface ServerSettings {
     maintainWorkspaceCache: boolean;
 }
 
+const defaultServerSettings: ServerSettings = {
+    checkForDuplicateIdentifiers: true,
+    checkInvokeExpressions: false,
+    locale: PQP.DefaultLocale,
+    maintainWorkspaceCache: true,
+};
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
-let serverSettings: ServerSettings;
+let serverSettings: ServerSettings = defaultServerSettings;
 let hasConfigurationCapability: boolean = false;
 
 connection.onInitialize((params: LS.InitializeParams) => {
@@ -103,7 +110,7 @@ connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingP
     const document: TextDocument = maybeDocument;
 
     try {
-        return PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale ?? PQP.DefaultLocale);
+        return PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale);
     } catch (err) {
         const error: Error = err as Error;
         const errorMessage: string = error.message;
@@ -147,11 +154,7 @@ connection.onDocumentSymbol(
     ): Promise<LS.DocumentSymbol[] | undefined> => {
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
         if (document) {
-            return PQLS.getDocumentSymbols(
-                document,
-                PQP.DefaultSettings,
-                serverSettings.maintainWorkspaceCache ?? false,
-            );
+            return PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.maintainWorkspaceCache);
         }
 
         return undefined;
@@ -251,12 +254,7 @@ function createValidationSettings(library: PQLS.Library.ILibrary): PQLS.Validati
 
 async function fetchConfigurationSettings(): Promise<ServerSettings> {
     if (!hasConfigurationCapability) {
-        return {
-            checkForDuplicateIdentifiers: true,
-            checkInvokeExpressions: false,
-            locale: PQP.DefaultLocale,
-            maintainWorkspaceCache: true,
-        };
+        return defaultServerSettings;
     }
 
     const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
