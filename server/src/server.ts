@@ -85,7 +85,7 @@ documents.onDidChangeContent(event => {
     PQLS.documentClosed(event.document);
 
     validateDocument(event.document).catch(err =>
-        connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
+        connection.console.error(`validateDocument err: ${formatError(err)}`),
     );
 });
 
@@ -138,7 +138,7 @@ connection.onCompletion(
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
             return analysis.getAutocompleteItems().catch(err => {
-                connection.console.error(`onCompletion error ${JSON.stringify(err, undefined, 4)}`);
+                connection.console.error(`onCompletion error ${formatError(err)}`);
                 return [];
             });
         }
@@ -176,7 +176,7 @@ connection.onHover(
         const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
         return analysis.getHover().catch(err => {
-            connection.console.error(`onHover error ${JSON.stringify(err, undefined, 4)}`);
+            connection.console.error(`onHover error ${formatError(err)}`);
             return emptyHover;
         });
     },
@@ -199,7 +199,7 @@ connection.onSignatureHelp(
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
             return analysis.getSignatureHelp().catch(err => {
-                connection.console.error(`onSignatureHelp error ${JSON.stringify(err, undefined, 4)}`);
+                connection.console.error(`onSignatureHelp error ${formatError(err)}`);
                 return emptySignatureHelp;
             });
         }
@@ -263,5 +263,35 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
         checkInvokeExpressions: config?.diagnostics?.experimental ?? false,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         maintainWorkspaceCache: true,
+    };
+}
+
+interface ErrorMetadata {
+    readonly maybeChild: ErrorMetadata | undefined;
+    readonly maybeTopOfStack: string | undefined;
+    readonly message: any | undefined;
+    readonly name: string;
+}
+
+function formatError(error: Error): string {
+    return JSON.stringify(errorMetadata(error), null, 4);
+}
+
+function errorMetadata(error: Error): ErrorMetadata {
+    let maybeChild: ErrorMetadata | undefined;
+
+    if (
+        error instanceof PQP.CommonError.CommonError ||
+        error instanceof PQP.Lexer.LexError.LexError ||
+        error instanceof PQP.Parser.ParseError.ParseError
+    ) {
+        maybeChild = errorMetadata(error.innerError);
+    }
+
+    return {
+        maybeChild,
+        maybeTopOfStack: error.stack?.split("\n")[0],
+        message: error.message,
+        name: error.name,
     };
 }
