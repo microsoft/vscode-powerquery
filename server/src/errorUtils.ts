@@ -4,31 +4,33 @@
 import * as PQP from "@microsoft/powerquery-parser";
 
 export function formatError(error: Error): string {
-    return JSON.stringify(errorMetadata(error), null, 4);
+    return JSON.stringify(formatErrorMetadata(error), null, 4);
 }
 
-interface ErrorMetadata {
-    readonly maybeChild: ErrorMetadata | undefined;
+export interface FormatErrorMetadata {
+    readonly maybeChild: FormatErrorMetadata | undefined;
     readonly maybeTopOfStack: string | undefined;
     readonly message: any | undefined;
     readonly name: string;
 }
 
-function errorMetadata(error: Error): ErrorMetadata {
-    let maybeChild: ErrorMetadata | undefined;
+function formatErrorMetadata(error: Error): FormatErrorMetadata {
+    let maybeChild: FormatErrorMetadata | undefined;
 
     if (
         error instanceof PQP.CommonError.CommonError ||
         error instanceof PQP.Lexer.LexError.LexError ||
         error instanceof PQP.Parser.ParseError.ParseError
     ) {
-        maybeChild = errorMetadata(error.innerError);
+        maybeChild = formatErrorMetadata(error.innerError);
     }
+
+    const maybeSplitLines: ReadonlyArray<string> | undefined = error.stack?.split("\n");
 
     return {
         maybeChild,
-        maybeTopOfStack: error.stack?.split("\n")[0],
+        maybeTopOfStack: maybeSplitLines !== undefined ? maybeSplitLines.slice(0, 4).join("\n") : undefined,
         message: error.message,
-        name: error.name,
+        name: error.constructor.name,
     };
 }
