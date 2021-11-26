@@ -3,12 +3,12 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-// tslint:disable-next-line: no-submodule-imports
 import * as LS from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { StandardLibraryUtils } from "./standardLibrary";
+import { formatError } from "./errorUtils";
 
 const LanguageId: string = "powerquery";
 
@@ -263,35 +263,5 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
         checkInvokeExpressions: config?.diagnostics?.experimental ?? false,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         maintainWorkspaceCache: true,
-    };
-}
-
-interface ErrorMetadata {
-    readonly maybeChild: ErrorMetadata | undefined;
-    readonly maybeTopOfStack: string | undefined;
-    readonly message: any | undefined;
-    readonly name: string;
-}
-
-function formatError(error: Error): string {
-    return JSON.stringify(errorMetadata(error), null, 4);
-}
-
-function errorMetadata(error: Error): ErrorMetadata {
-    let maybeChild: ErrorMetadata | undefined;
-
-    if (
-        error instanceof PQP.CommonError.CommonError ||
-        error instanceof PQP.Lexer.LexError.LexError ||
-        error instanceof PQP.Parser.ParseError.ParseError
-    ) {
-        maybeChild = errorMetadata(error.innerError);
-    }
-
-    return {
-        maybeChild,
-        maybeTopOfStack: error.stack?.split("\n")[0],
-        message: error.message,
-        name: error.name,
     };
 }
