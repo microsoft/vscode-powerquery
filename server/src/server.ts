@@ -3,12 +3,12 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-// tslint:disable-next-line: no-submodule-imports
 import * as LS from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { StandardLibraryUtils } from "./standardLibrary";
+import { formatError } from "./errorUtils";
 
 const LanguageId: string = "powerquery";
 
@@ -85,7 +85,7 @@ documents.onDidChangeContent(event => {
     PQLS.documentClosed(event.document);
 
     validateDocument(event.document).catch(err =>
-        connection.console.error(`validateDocument err: ${JSON.stringify(err, undefined, 4)}`),
+        connection.console.error(`validateDocument err: ${formatError(err)}`),
     );
 });
 
@@ -138,7 +138,7 @@ connection.onCompletion(
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
             return analysis.getAutocompleteItems().catch(err => {
-                connection.console.error(`onCompletion error ${JSON.stringify(err, undefined, 4)}`);
+                connection.console.error(`onCompletion error ${formatError(err)}`);
                 return [];
             });
         }
@@ -176,7 +176,7 @@ connection.onHover(
         const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
         return analysis.getHover().catch(err => {
-            connection.console.error(`onHover error ${JSON.stringify(err, undefined, 4)}`);
+            connection.console.error(`onHover error ${formatError(err)}`);
             return emptyHover;
         });
     },
@@ -199,7 +199,7 @@ connection.onSignatureHelp(
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
             return analysis.getSignatureHelp().catch(err => {
-                connection.console.error(`onSignatureHelp error ${JSON.stringify(err, undefined, 4)}`);
+                connection.console.error(`onSignatureHelp error ${formatError(err)}`);
                 return emptySignatureHelp;
             });
         }
