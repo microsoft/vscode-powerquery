@@ -19,7 +19,7 @@ const config = {
         vscode: "commonjs vscode",
     },
     infrastructureLogging: {
-        level: 'log',
+        level: "log",
     },
     resolve: {
         extensions: [".ts", ".js"],
@@ -32,6 +32,9 @@ const config = {
                 use: [
                     {
                         loader: "ts-loader",
+                        options: {
+                            configFile: "tsconfig.webpack.json",
+                        },
                     },
                 ],
             },
