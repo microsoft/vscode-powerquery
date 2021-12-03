@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-// tslint:disable-next-line: no-implicit-dependencies
 import * as vscode from "vscode";
 
 export let doc: vscode.TextDocument;
@@ -17,6 +16,7 @@ export const extensionId: string = "powerquery.vscode-powerquery";
  */
 export async function activate(docUri: vscode.Uri): Promise<void> {
     // The extensionId is `publisher.name` from package.json
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
     if (!ext) {
         throw new Error("Failed to load extension.");
@@ -27,7 +27,6 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
         doc = await vscode.workspace.openTextDocument(docUri);
         editor = await vscode.window.showTextDocument(doc);
     } catch (e) {
-        // tslint:disable-next-line: no-console
         console.error(e);
     }
 }

@@ -1,11 +1,12 @@
 **/.*/
 **/*.ts
 **/*.js.map
+.prettierrc
 .gitignore
+.eslintignore
+.eslintrc.js
 **/tsconfig.json
-**/tsconfig.base.json
 **/tsconfig.tsbuildinfo
-**/tslint.json
 **/package-lock.json
 contributing.md
 scripts/
@@ -16,3 +17,5 @@ server/**
 !server/dist/**/*.js
 **/*.zip
 **/*.vsix
+imgs
+!imgs/PQIcon_128.png

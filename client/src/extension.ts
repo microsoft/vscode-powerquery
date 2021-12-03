@@ -2,10 +2,8 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-// tslint:disable-next-line: no-submodule-imports
 import * as LC from "vscode-languageclient/node";
 
-// tslint:disable-next-line: no-implicit-dependencies
 import { ExtensionContext } from "vscode";
 
 let client: LC.LanguageClient;

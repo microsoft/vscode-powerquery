@@ -70,9 +70,8 @@ describe(`StandardLibrary`, () => {
     describe(`simple`, () => {
         it("index const by name", () => {
             const definitionKey: string = "BinaryOccurrence.Required";
-            const maybeLibraryDefinition:
-                | PQLS.Library.TLibraryDefinition
-                | undefined = standardLibrary.libraryDefinitions.get(definitionKey);
+            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
+                standardLibrary.libraryDefinitions.get(definitionKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
             }
@@ -86,9 +85,8 @@ describe(`StandardLibrary`, () => {
 
         it("index function by name", () => {
             const exportKey: string = "List.Distinct";
-            const maybeLibraryDefinition:
-                | PQLS.Library.TLibraryDefinition
-                | undefined = standardLibrary.libraryDefinitions.get(exportKey);
+            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
+                standardLibrary.libraryDefinitions.get(exportKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
@@ -102,9 +100,8 @@ describe(`StandardLibrary`, () => {
 
         it("#date constructor", () => {
             const exportKey: string = "#date";
-            const maybeLibraryDefinition:
-                | PQLS.Library.TLibraryDefinition
-                | undefined = standardLibrary.libraryDefinitions.get(exportKey);
+            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
+                standardLibrary.libraryDefinitions.get(exportKey);
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }

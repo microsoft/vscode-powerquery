@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// tslint:disable: no-implicit-dependencies
-
 import * as assert from "assert";
 import * as vscode from "vscode";
 
@@ -67,9 +65,9 @@ async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.D
     assert.equal(actualDiagnostics.length, expectedDiagnostics.length);
 
     expectedDiagnostics.forEach((expectedDiagnostic, i) => {
-        const actualDiagnostic: vscode.Diagnostic = actualDiagnostics[i];
-        assert.equal(actualDiagnostic.message, expectedDiagnostic.message);
-        assert.deepEqual(actualDiagnostic.range, expectedDiagnostic.range);
-        assert.equal(actualDiagnostic.severity, expectedDiagnostic.severity);
+        const actualDiagnostic: vscode.Diagnostic | undefined = actualDiagnostics.at(i);
+        assert.equal(actualDiagnostic?.message, expectedDiagnostic.message);
+        assert.deepEqual(actualDiagnostic?.range, expectedDiagnostic.range);
+        assert.equal(actualDiagnostic?.severity, expectedDiagnostic.severity);
     });
 }

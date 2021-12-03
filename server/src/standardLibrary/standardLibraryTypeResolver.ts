@@ -6,7 +6,6 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-// tslint:disable-next-line: no-submodule-imports
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 
 // Takes the definitions for a standard library and returns a type resolver.
@@ -14,8 +13,9 @@ export function createStandardLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
     return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest) => {
-        const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(request.identifierLiteral)
-            ?.asPowerQueryType;
+        const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
+            request.identifierLiteral,
+        )?.asPowerQueryType;
 
         if (maybeLibraryType === undefined) {
             return undefined;

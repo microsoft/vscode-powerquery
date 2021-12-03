@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// tslint:disable: no-implicit-dependencies
-
 import * as assert from "assert";
 import * as vscode from "vscode";
 
@@ -41,9 +39,9 @@ export async function testCompletion(
 
     if (vertification === VertificationType.Exact || vertification === VertificationType.Ordered) {
         expectedCompletionList.items.forEach((expectedItem, i) => {
-            const actualItem: vscode.CompletionItem = actualCompletionList.items[i];
-            assert.equal(actualItem.label, expectedItem.label);
-            assert.equal(actualItem.kind, expectedItem.kind);
+            const actualItem: vscode.CompletionItem | undefined = actualCompletionList.items.at(i);
+            assert.equal(actualItem?.label, expectedItem.label);
+            assert.equal(actualItem?.kind, expectedItem.kind);
         });
     } else {
         expectedCompletionList.items.forEach(expectedItem => {
