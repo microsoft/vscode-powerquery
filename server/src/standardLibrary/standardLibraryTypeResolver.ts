@@ -6,7 +6,6 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-// tslint:disable-next-line: no-submodule-imports
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 
 // Takes the definitions for a standard library and returns a type resolver.

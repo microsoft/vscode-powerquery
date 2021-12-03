@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// tslint:disable: no-implicit-dependencies
-
 import * as vscode from "vscode";
 
 import * as CompletionUtils from "./completionUtils";

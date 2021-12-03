@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import * as path from "path";
-// tslint:disable-next-line: no-implicit-dependencies
 import * as vscode from "vscode";
 
 export let doc: vscode.TextDocument;
@@ -28,7 +27,6 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
         doc = await vscode.workspace.openTextDocument(docUri);
         editor = await vscode.window.showTextDocument(doc);
     } catch (e) {
-        // tslint:disable-next-line: no-console
         console.error(e);
     }
 }

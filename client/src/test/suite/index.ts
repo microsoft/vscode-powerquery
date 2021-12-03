@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// tslint:disable: no-implicit-dependencies
-
 import * as glob from "glob";
 import * as Mocha from "mocha";
 import * as path from "path";
 
-// tslint:disable-next-line: promise-function-async
 export function run(): Promise<void> {
     // Create the mocha test
     const mocha: Mocha = new Mocha({
@@ -29,7 +26,6 @@ export function run(): Promise<void> {
     return new Promise((c, e) => {
         glob("**/**.test.js", { cwd: testsRoot }, (err, files) => {
             if (err) {
-                // tslint:disable-next-line: no-void-expression
                 return e(err);
             }
 
@@ -46,7 +42,6 @@ export function run(): Promise<void> {
                     }
                 });
             } catch (err) {
-                // tslint:disable-next-line: no-console
                 console.error(err);
                 e(err);
             }

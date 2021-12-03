@@ -189,7 +189,6 @@ connection.onSignatureHelp(
     ): Promise<LS.SignatureHelp> => {
         const emptySignatureHelp: LS.SignatureHelp = {
             signatures: [],
-            // tslint:disable-next-line: no-null-keyword
             activeParameter: null,
             activeSignature: 0,
         };
