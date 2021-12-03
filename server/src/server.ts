@@ -257,7 +257,9 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
         return defaultServerSettings;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
+
     return {
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: config?.diagnostics?.experimental ?? false,

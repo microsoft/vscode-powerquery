@@ -14,8 +14,9 @@ export function createStandardLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
     return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest) => {
-        const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(request.identifierLiteral)
-            ?.asPowerQueryType;
+        const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
+            request.identifierLiteral,
+        )?.asPowerQueryType;
 
         if (maybeLibraryType === undefined) {
             return undefined;

@@ -10,7 +10,7 @@ export function formatError(error: Error): string {
 export interface FormatErrorMetadata {
     readonly maybeChild: FormatErrorMetadata | undefined;
     readonly maybeTopOfStack: string | undefined;
-    readonly message: any | undefined;
+    readonly message: string | undefined;
     readonly name: string;
 }
 
