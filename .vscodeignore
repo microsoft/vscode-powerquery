@@ -16,3 +16,5 @@ server/**
 !server/dist/**/*.js
 **/*.zip
 **/*.vsix
+imgs
+!imgs/PQIcon_128.png
