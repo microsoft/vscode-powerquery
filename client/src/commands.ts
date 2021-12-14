@@ -12,7 +12,7 @@ export function escapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEdit
     textEditor.selections.forEach(selection => {
         let text: string = textEditor.document.getText(selection);
 
-        text = text.replace(/#\(/gm, "#(#)(");
+        text = text.replace(/#\(/gm, "#(#)("); // Needs to be first
         text = text.replace(/\r\n/gm, "#(cr,lf)");
         text = text.replace(/\r/gm, "#(cr)");
         text = text.replace(/\n/gm, "#(lf)");
@@ -32,7 +32,7 @@ export function unescapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEd
         text = text.replace(/#\(lf\)/gm, "\n");
         text = text.replace(/#\(tab\)/gm, "\t");
         text = text.replace(/""/gm, '"');
-        text = text.replace(/#\(#\)\(/gm, "#(");
+        text = text.replace(/#\(#\)\(/gm, "#("); // Needs to be last
 
         edit.replace(selection, text);
     });
