@@ -7,6 +7,7 @@ import { Constants } from "../../constants";
 
 import * as TestUtils from "./testUtils";
 
+// TODO: We could add command unit tests that use mocks to avoid UI based tests.
 suite("M Encode/Decode", async () => {
     suiteSetup(async () => {
         await TestUtils.activateExtension();
