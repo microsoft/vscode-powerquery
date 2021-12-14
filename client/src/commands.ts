@@ -67,18 +67,12 @@ export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.Tex
     });
 }
 
+// If the string starts and ends with double quote, assume that the user selected a full string.
+// If either are missing, add quotes on both sides.
 function ensureQuoted(original: string): string {
-    let replacement: string;
-
-    if (!original.startsWith('"')) {
-        replacement = '"'.concat(original);
-    } else {
-        replacement = original;
+    if (original.startsWith('"') && original.endsWith('"')) {
+        return original;
     }
 
-    if (!replacement.endsWith('"')) {
-        replacement = replacement.concat('"');
-    }
-
-    return replacement;
+    return '"'.concat(original).concat('"');
 }
