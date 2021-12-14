@@ -13,6 +13,7 @@ let client: LC.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext): void {
     // Register commands
+    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeText, Commands.escapeMText));
     commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeText, Commands.unescapeMText));
 
     // The server is implemented in node

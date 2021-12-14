@@ -8,8 +8,7 @@
     "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/microsoft/vscode-powerquery.git",
-        "directory": "client"
+        "url": "git+https://github.com/microsoft/vscode-powerquery.git"
     },
     "issues": {
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
@@ -56,6 +55,11 @@
     "contributes": {
         "commands": [
             {
+                "command": "powerquery.mEscapeText",
+                "title": "Add M text encoding",
+                "category": "powerquery"
+            },
+            {
                 "command": "powerquery.mUnescapeText",
                 "title": "Remove M text encoding",
                 "category": "powerquery"
@@ -63,6 +67,10 @@
         ],
         "menus": {
             "commandPalette": [
+                {
+                    "command": "powerquery.mEscapeText",
+                    "when": "editorHasSelection"
+                },
                 {
                     "command": "powerquery.mUnescapeText",
                     "when": "editorHasSelection"
