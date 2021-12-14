@@ -8,17 +8,17 @@ import * as TestUtils from "./testUtils";
 
 suite("Section document", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
-    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Keywords", async () => {
         await CompletionUtils.testCompletion(
             docUri,
-            new vscode.Position(12, 5),
+            new vscode.Position(3, 14),
             {
                 items: [
                     { label: "if", kind: vscode.CompletionItemKind.Keyword },
-                    { label: "is", kind: vscode.CompletionItemKind.Keyword },
-                    { label: "in", kind: vscode.CompletionItemKind.Keyword },
+                    { label: "let", kind: vscode.CompletionItemKind.Keyword },
+                    { label: "not", kind: vscode.CompletionItemKind.Keyword },
+                    { label: "true", kind: vscode.CompletionItemKind.Keyword },
                 ],
             },
             CompletionUtils.VertificationType.Contains,
@@ -31,9 +31,9 @@ suite("Section document", () => {
             new vscode.Position(11, 12),
             {
                 items: [
-                    { label: "firstMember", kind: vscode.CompletionItemKind.Value },
-                    { label: "secondMember", kind: vscode.CompletionItemKind.Value },
-                    { label: "thirdMember", kind: vscode.CompletionItemKind.Function },
+                    { label: "firstMember", kind: vscode.CompletionItemKind.Variable },
+                    { label: "secondMember", kind: vscode.CompletionItemKind.Variable },
+                    { label: "thirdMember", kind: vscode.CompletionItemKind.Variable },
                 ],
             },
             CompletionUtils.VertificationType.Contains,

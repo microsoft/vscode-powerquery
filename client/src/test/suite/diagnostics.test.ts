@@ -24,7 +24,6 @@ suite("Should get diagnostics", async () => {
 
 suite("No errors", async () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.NoErrors.pq");
-    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("No errors", async () => {
         await testDiagnostics(docUri, []);
