@@ -49,10 +49,26 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:powerquery"
+        "onLanguage:powerquery",
+        "onCommand:powerquery.mUnescapeText"
     ],
     "publisher": "PowerQuery",
     "contributes": {
+        "commands": [
+            {
+                "command": "powerquery.mUnescapeText",
+                "title": "Remove M text encoding",
+                "category": "powerquery"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "powerquery.mUnescapeText",
+                    "when": "editorHasSelection"
+                }
+            ]
+        },
         "configuration": {
             "type": "object",
             "title": "Power Query",

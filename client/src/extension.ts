@@ -3,12 +3,18 @@
 
 import * as path from "path";
 import * as LC from "vscode-languageclient/node";
+import * as vscode from "vscode";
 
-import { ExtensionContext } from "vscode";
+import * as Commands from "./commands";
+import { Constants } from "./constants";
 
+const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
 
-export function activate(context: ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): void {
+    // Register commands
+    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeText, Commands.unescapeMText));
+
     // The server is implemented in node
     const serverModule: string = context.asAbsolutePath(path.join("server", "dist", "server.js"));
     // The debug options for the server
@@ -49,6 +55,11 @@ export function activate(context: ExtensionContext): void {
 }
 
 export function deactivate(): Thenable<void> | undefined {
+    if (commands.length > 0) {
+        commands.forEach(c => c.dispose());
+        commands.length = 0;
+    }
+
     if (!client) {
         return undefined;
     }
