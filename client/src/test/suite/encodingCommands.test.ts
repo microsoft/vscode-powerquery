@@ -12,23 +12,47 @@ suite("M Encode/Decode", async () => {
         await TestUtils.activateExtension();
     });
 
-    test("M Encode", async () => {
-        const content: string = "Encode #(tab)";
-        const expected: string = "Encode \t";
+    test("Commands are registered", async () => {
+        const commands: string[] = [Constants.CommandEscapeText, Constants.CommandUnescapeText];
 
-        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument({
-            language: "powerquery",
-            content: content,
-        });
+        const pqCommands: string[] = await (
+            await vscode.commands.getCommands(/*filterInternal*/ true)
+        ).filter(cmd => cmd.startsWith("powerquery"));
 
-        const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
-        editor.selection = new vscode.Selection(0, 0, 0, content.length);
+        commands.forEach(cmd => assert(pqCommands.includes(cmd), `Command not found: ${cmd}`));
+    });
 
-        await vscode.commands.executeCommand(Constants.CommandUnescapeText);
+    test("M Unescape", async () => {
+        const content: string = 'Encode #(tab)#(tab) and #(cr)#(lf) and ""quotes"" but not this #(#)(tab)';
+        const expected: string = 'Encode \t\t and \r\n and "quotes" but not this #(tab)';
 
-        const currentText: string = doc.getText();
-        assert(expected === currentText, `expected strings to be equal. Expected: ${expected} Actual: ${currentText}`);
+        await runEncodeTest(content, expected, Constants.CommandUnescapeText);
+    });
 
-        await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    test("M Escape", async () => {
+        const content: string = 'Encode \t\t and \r\n and "quotes" but not this #(tab)';
+        const expected: string = 'Encode #(tab)#(tab) and #(cr,lf) and ""quotes"" but not this #(#)(tab)';
+
+        await runEncodeTest(content, expected, Constants.CommandEscapeText);
     });
 });
+
+async function runEncodeTest(original: string, expected: string, command: string): Promise<void> {
+    const doc: vscode.TextDocument = await vscode.workspace.openTextDocument({
+        language: "powerquery",
+        content: original,
+    });
+
+    // Use a large range to select the entire document
+    const editor: vscode.TextEditor = await vscode.window.showTextDocument(doc);
+    editor.selection = new vscode.Selection(0, 0, 9999, 9999);
+
+    await vscode.commands.executeCommand(command);
+
+    const currentText: string = doc.getText();
+    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+
+    assert(expected === currentText, `expected strings to be equal. Expected: ${expected} Actual: ${currentText}`);
+
+    return;
+}
