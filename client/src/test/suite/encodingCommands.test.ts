@@ -8,9 +8,11 @@ import { Constants } from "../../constants";
 import * as TestUtils from "./testUtils";
 
 suite("M Encode/Decode", async () => {
-    test("M Encode", async () => {
+    suiteSetup(async () => {
         await TestUtils.activateExtension();
+    });
 
+    test("M Encode", async () => {
         const content: string = "Encode #(tab)";
         const expected: string = "Encode \t";
 
@@ -25,6 +27,8 @@ suite("M Encode/Decode", async () => {
         await vscode.commands.executeCommand(Constants.CommandUnescapeText);
 
         const currentText: string = doc.getText();
-        assert(expected === currentText, "expected strings to be equal");
+        assert(expected === currentText, `expected strings to be equal. Expected: ${expected} Actual: ${currentText}`);
+
+        await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
     });
 });

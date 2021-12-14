@@ -8,7 +8,6 @@ import * as TestUtils from "./testUtils";
 
 suite("Should get diagnostics", async () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("diagnostics.pq");
-    vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Simple diagnostics test", async () => {
         await testDiagnostics(docUri, [
