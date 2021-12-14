@@ -65,7 +65,6 @@ async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.D
     assert.equal(actualDiagnostics.length, expectedDiagnostics.length);
 
     expectedDiagnostics.forEach((expectedDiagnostic, i) => {
-        // eslint-disable-next-line security/detect-object-injection
         const actualDiagnostic: vscode.Diagnostic | undefined = actualDiagnostics[i];
         assert.equal(actualDiagnostic?.message, expectedDiagnostic.message);
         assert.deepEqual(actualDiagnostic?.range, expectedDiagnostic.range);

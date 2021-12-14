@@ -12,7 +12,6 @@ suite("Extension Tests", () => {
     });
 
     test("should be able to activate", () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(TestUtils.extensionId);
         if (!ext) {
             assert.fail("failed to get extension");

@@ -11,7 +11,7 @@ suite("Section document", () => {
     vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Keywords", async () => {
-        CompletionUtils.testCompletion(
+        await CompletionUtils.testCompletion(
             docUri,
             new vscode.Position(12, 5),
             {
@@ -26,7 +26,7 @@ suite("Section document", () => {
     });
 
     test("Section members", async () => {
-        CompletionUtils.testCompletion(
+        await CompletionUtils.testCompletion(
             docUri,
             new vscode.Position(11, 12),
             {
