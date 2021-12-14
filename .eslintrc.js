@@ -10,7 +10,16 @@ module.exports = {
     ],
     rules: {
         "@typescript-eslint/no-inferrable-types": "off",
-        "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-        "prettier/prettier": ["error"],
+        "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+        "@typescript-eslint/typedef": [
+            "warn",
+            {
+                arrowParameter: false,
+                variableDeclaration: true,
+                variableDeclarationIgnoreFunction: true,
+            },
+        ],
+        "prettier/prettier": ["warn"],
+        "security/detect-non-literal-fs-filename": "off",
     },
 };
