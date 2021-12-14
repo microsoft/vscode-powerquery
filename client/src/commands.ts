@@ -37,3 +37,48 @@ export function unescapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEd
         edit.replace(selection, text);
     });
 }
+
+export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
+    textEditor.selections.forEach(selection => {
+        let replacement: string = ensureQuoted(textEditor.document.getText(selection));
+
+        try {
+            replacement = JSON.stringify(replacement);
+            // Value will contain embedded escaped \" at start and end - we can remove.
+            replacement = replacement.replace(/^"\\"/, '"').replace(/\\""$/, '"');
+
+            edit.replace(selection, replacement);
+        } catch (err) {
+            vscode.window.showErrorMessage(`Failed to escape as JSON string. Error: ${JSON.stringify(err)}`);
+        }
+    });
+}
+
+export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
+    textEditor.selections.forEach(selection => {
+        let replacement: string = ensureQuoted(textEditor.document.getText(selection));
+
+        try {
+            replacement = JSON.parse(replacement);
+            edit.replace(selection, replacement);
+        } catch (err) {
+            vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
+        }
+    });
+}
+
+function ensureQuoted(original: string): string {
+    let replacement: string;
+
+    if (!original.startsWith('"')) {
+        replacement = '"'.concat(original);
+    } else {
+        replacement = original;
+    }
+
+    if (!replacement.endsWith('"')) {
+        replacement = replacement.concat('"');
+    }
+
+    return replacement;
+}

@@ -13,8 +13,12 @@ let client: LC.LanguageClient;
 
 export function activate(context: vscode.ExtensionContext): void {
     // Register commands
-    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeText, Commands.escapeMText));
-    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeText, Commands.unescapeMText));
+    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeMText, Commands.escapeMText));
+    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeMText, Commands.unescapeMText));
+    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeJsonText, Commands.escapeJsonText));
+    commands.push(
+        vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeJsonText, Commands.unescapeJsonText),
+    );
 
     // The server is implemented in node
     const serverModule: string = context.asAbsolutePath(path.join("server", "dist", "server.js"));

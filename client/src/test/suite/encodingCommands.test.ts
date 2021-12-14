@@ -14,11 +14,11 @@ suite("M Encode/Decode", async () => {
     });
 
     test("Commands are registered", async () => {
-        const commands: string[] = [Constants.CommandEscapeText, Constants.CommandUnescapeText];
+        const commands: string[] = [Constants.CommandEscapeMText, Constants.CommandUnescapeMText];
 
-        const pqCommands: string[] = await (
-            await vscode.commands.getCommands(/*filterInternal*/ true)
-        ).filter(cmd => cmd.startsWith("powerquery"));
+        const pqCommands: string[] = (await vscode.commands.getCommands(/*filterInternal*/ true)).filter(cmd =>
+            cmd.startsWith("powerquery"),
+        );
 
         commands.forEach(cmd => assert(pqCommands.includes(cmd), `Command not found: ${cmd}`));
     });
@@ -27,14 +27,14 @@ suite("M Encode/Decode", async () => {
         const content: string = 'Encode #(tab)#(tab) and #(cr)#(lf) and ""quotes"" but not this #(#)(tab)';
         const expected: string = 'Encode \t\t and \r\n and "quotes" but not this #(tab)';
 
-        await runEncodeTest(content, expected, Constants.CommandUnescapeText);
+        await runEncodeTest(content, expected, Constants.CommandUnescapeMText);
     });
 
     test("M Escape", async () => {
         const content: string = 'Encode \t\t and \r\n and "quotes" but not this #(tab)';
         const expected: string = 'Encode #(tab)#(tab) and #(cr,lf) and ""quotes"" but not this #(#)(tab)';
 
-        await runEncodeTest(content, expected, Constants.CommandEscapeText);
+        await runEncodeTest(content, expected, Constants.CommandEscapeMText);
     });
 });
 

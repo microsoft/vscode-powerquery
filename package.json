@@ -63,6 +63,16 @@
                 "command": "powerquery.mUnescapeText",
                 "title": "Remove M text encoding",
                 "category": "powerquery"
+            },
+            {
+                "command": "powerquery.jsonUnescapeText",
+                "title": "Remove JSON string encoding from text",
+                "category": "powerquery"
+            },
+            {
+                "command": "powerquery.jsonEscapeText",
+                "title": "Add JSON string encoding to text",
+                "category": "powerquery"
             }
         ],
         "menus": {
@@ -73,6 +83,14 @@
                 },
                 {
                     "command": "powerquery.mUnescapeText",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "powerquery.jsonUnescapeText",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "powerquery.jsonEscapeText",
                     "when": "editorHasSelection"
                 }
             ]
