@@ -5,7 +5,7 @@
 
 Available in the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery). Provides a language service for the [Power Query / M formula language](https://powerquery.microsoft.com/) with the following capabilities:
 
-## Fuzzy autocomplete.
+## Fuzzy autocomplete
 
 Suggests keywords, local variables, and the standard Power Query library.
 
@@ -26,6 +26,23 @@ Displays function documentation if it exists, and validates the types for functi
 Provides a formatter for the "Format Document" (Ctrl + Shift + F) command.
 
 ![Format Document](imgs/formatDocument.gif)
+
+## Commands
+
+### String encoding/decoding
+
+These commands can be used to add/remove M and JSON string formatting to/from the currently selected text. This can be helpful when you need to encode an embedded SQL (or other) query in an M expression, or when you're working with files that contain embedded M expressions, such as Power BI Dataflow's [model.json](https://docs.microsoft.com/en-us/common-data-model/model-json) file, and Power Query traces.
+
+These commands require one or more text selections in the active editor window.
+
+![Decode/Encode JSON string](imgs/jsonDecodeEncode.png)
+
+| Command                     | Label                                      |
+| --------------------------- | ------------------------------------------ |
+| powerquery.jsonEscapeText   | Encode selection as JSON string            |
+| powerquery.jsonUnescapeText | Remove JSON string encoding from selection |
+| powerquery.mEscapeText      | Encode selection as an M text value        |
+| powerquery.mUnescapeText    | Remove M text encoding from selection      |
 
 ## Related projects
 
