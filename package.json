@@ -49,7 +49,10 @@
     ],
     "activationEvents": [
         "onLanguage:powerquery",
-        "onCommand:powerquery.mUnescapeText"
+        "onCommand:powerquery.mEscapeText",
+        "onCommand:powerquery.mUnescapeText",
+        "onCommand:powerquery.jsonEscapeText",
+        "onCommand:powerquery.jsonUnescapeText"
     ],
     "publisher": "PowerQuery",
     "contributes": {
