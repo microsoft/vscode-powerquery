@@ -61,7 +61,6 @@ module.exports = {
         "no-unreachable": "error",
         "no-unsafe-optional-chaining": "error",
         "no-unused-private-class-members": "error",
-        "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
         "no-useless-backreference": "error",
         "no-useless-catch": "error",
         "no-useless-computed-key": "error",
