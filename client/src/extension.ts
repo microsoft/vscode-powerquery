@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as path from "path";
 import * as LC from "vscode-languageclient/node";
+import * as path from "path";
 
 import { ExtensionContext } from "vscode";
 
