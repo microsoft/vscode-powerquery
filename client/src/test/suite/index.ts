@@ -23,7 +23,6 @@ export function run(): Promise<void> {
 
     const testsRoot: string = path.resolve(__dirname, "..");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Promise((c: (value: void | PromiseLike<void>) => void, e: (reason?: any) => void) => {
         glob("**/**.test.js", { cwd: testsRoot }, (err: Error | null, files: ReadonlyArray<string>) => {
             if (err) {
