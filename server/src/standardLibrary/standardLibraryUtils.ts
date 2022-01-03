@@ -3,11 +3,9 @@
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-
 import { CompletionItemKind } from "@microsoft/powerquery-language-services";
 
 import * as StandardLibraryEnUs from "./bylocalization/enUs.json";
-
 import { StandardLibrary, StandardLibraryExport, StandardLibraryFunctionParameter } from "./standardLibrary";
 import { createStandardLibraryTypeResolver } from "./standardLibraryTypeResolver";
 

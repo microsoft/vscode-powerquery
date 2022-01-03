@@ -2,14 +2,12 @@
 // Licensed under the MIT license.
 
 import "mocha";
-
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-
 import { AnalysisSettings, Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
+import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
-import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 
 import { StandardLibraryUtils } from "../standardLibrary";
 

@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-
 import { expect } from "chai";
+
 import { formatError, FormatErrorMetadata } from "../errorUtils";
 
 type AbridgedFormatErrorMetadata = Pick<FormatErrorMetadata, "message" | "name"> & {

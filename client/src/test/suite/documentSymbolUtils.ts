@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { assert, expect } from "chai";
 import * as vscode from "vscode";
+import { assert, expect } from "chai";
 
 import * as TestUtils from "./testUtils";
 import { Commands } from "./testUtils";
 
 export interface ExpectedDocumentSymbol {
-    name: string;
-    kind: vscode.SymbolKind;
-    children?: ExpectedDocumentSymbol[];
+    readonly name: string;
+    readonly kind: vscode.SymbolKind;
+    readonly children?: ExpectedDocumentSymbol[];
 }
 
 export async function testDocumentSymbols(
@@ -34,7 +34,7 @@ async function documentSymbolsBase(docUri: vscode.Uri): Promise<vscode.DocumentS
 
 function documentSymbolArrayToExpectedSymbols(documentSymbols: vscode.DocumentSymbol[]): ExpectedDocumentSymbol[] {
     const expectedSymbols: ExpectedDocumentSymbol[] = [];
-    documentSymbols.forEach(element => {
+    documentSymbols.forEach((element: vscode.DocumentSymbol) => {
         let children: ExpectedDocumentSymbol[] | undefined;
         if (element.children && element.children.length > 0) {
             children = documentSymbolArrayToExpectedSymbols(element.children);
