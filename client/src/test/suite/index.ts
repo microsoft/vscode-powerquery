@@ -23,7 +23,7 @@ export function run(): Promise<void> {
 
     const testsRoot: string = path.resolve(__dirname, "..");
 
-    return new Promise((c: (value: void | PromiseLike<void>) => void, e: (reason?: any) => void) => {
+    return new Promise((c: (value: void | PromiseLike<void>) => void, e: (reason?: unknown) => void) => {
         glob("**/**.test.js", { cwd: testsRoot }, (err: Error | null, files: ReadonlyArray<string>) => {
             if (err) {
                 return e(err);
