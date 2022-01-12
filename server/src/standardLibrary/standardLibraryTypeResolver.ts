@@ -74,7 +74,7 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
         columnType = Type.AnyInstance;
     }
 
-    const normalizedColumnName: string = PQP.StringUtils.normalizeIdentifier(columnName.literal.slice(1, -1));
+    const normalizedColumnName: string = PQP.Language.TextUtils.normalizeIdentifier(columnName.literal.slice(1, -1));
 
     if (TypeUtils.isDefinedTable(table)) {
         // We can't overwrite an existing key.
