@@ -21,11 +21,11 @@ suite("Encode/Decode Commands", async () => {
             Constants.CommandUnescapeJsonText,
         ];
 
-        const pqCommands: string[] = (await vscode.commands.getCommands(/*filterInternal*/ true)).filter(cmd =>
-            cmd.startsWith("powerquery."),
+        const pqCommands: string[] = (await vscode.commands.getCommands(/*filterInternal*/ true)).filter(
+            (cmd: string) => cmd.startsWith("powerquery."),
         );
 
-        commands.forEach(cmd => assert(pqCommands.includes(cmd), `Command not found: ${cmd}`));
+        commands.forEach((cmd: string) => assert(pqCommands.includes(cmd), `Command not found: ${cmd}`));
     });
 
     test("M Escape", async () => {
@@ -80,6 +80,4 @@ async function runEncodeTest(original: string, expected: string, command: string
     await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 
     assert(expected === currentText, `expected strings to be equal. Expected: ${expected} Actual: ${currentText}`);
-
-    return;
 }
