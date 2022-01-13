@@ -38,7 +38,7 @@ export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => v
 
 export async function setTestContent(content: string): Promise<boolean> {
     const all: vscode.Range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
-    return editor.edit(eb => eb.replace(all, content));
+    return editor.edit((eb: vscode.TextEditorEdit) => eb.replace(all, content));
 }
 
 export enum Commands {

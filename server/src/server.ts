@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import * as LS from "vscode-languageserver/node";
-
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { StandardLibraryUtils } from "./standardLibrary";
 import { formatError } from "./errorUtils";
+import { StandardLibraryUtils } from "./standardLibrary";
 
 const LanguageId: string = "powerquery";
 
@@ -50,7 +49,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
         },
     };
 
-    hasConfigurationCapability = !!params.capabilities.workspace?.configuration;
+    hasConfigurationCapability = Boolean(params.capabilities.workspace?.configuration);
 
     return {
         capabilities,
@@ -70,7 +69,7 @@ connection.onDidChangeConfiguration(async () => {
     documents.all().forEach(validateDocument);
 });
 
-documents.onDidClose(event => {
+documents.onDidClose((event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // Clear any errors associated with this file
     connection.sendDiagnostics({
         uri: event.document.uri,
@@ -80,12 +79,12 @@ documents.onDidClose(event => {
     PQLS.documentClosed(event.document);
 });
 
-documents.onDidChangeContent(event => {
+documents.onDidChangeContent((event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // TODO: pass actual incremental changes into the workspace cache
     PQLS.documentClosed(event.document);
 
-    validateDocument(event.document).catch(err =>
-        connection.console.error(`validateDocument err: ${formatError(err)}`),
+    validateDocument(event.document).catch((err: unknown) =>
+        connection.console.error(`validateDocument err: ${formatError(assertAsError(err))}`),
     );
 });
 
@@ -137,8 +136,8 @@ connection.onCompletion(
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
-            return analysis.getAutocompleteItems().catch(err => {
-                connection.console.error(`onCompletion error ${formatError(err)}`);
+            return analysis.getAutocompleteItems().catch((err: unknown) => {
+                connection.console.error(`onCompletion error ${formatError(assertAsError(err))}`);
                 return [];
             });
         }
@@ -175,6 +174,7 @@ connection.onHover(
 
         const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
+        // eslint-disable-next-line @typescript-eslint/typedef
         return analysis.getHover().catch(err => {
             connection.console.error(`onHover error ${formatError(err)}`);
             return emptyHover;
@@ -197,8 +197,8 @@ connection.onSignatureHelp(
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
-            return analysis.getSignatureHelp().catch(err => {
-                connection.console.error(`onSignatureHelp error ${formatError(err)}`);
+            return analysis.getSignatureHelp().catch((err: unknown) => {
+                connection.console.error(`onSignatureHelp error ${formatError(assertAsError(err))}`);
                 return emptySignatureHelp;
             });
         }
@@ -265,4 +265,12 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         maintainWorkspaceCache: true,
     };
+}
+
+function assertAsError<T>(value: T | Error): Error {
+    if (value instanceof Error) {
+        return value;
+    }
+
+    throw new Error(`received an error value that isn't an instanceof Error`);
 }

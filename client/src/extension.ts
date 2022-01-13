@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as path from "path";
 import * as LC from "vscode-languageclient/node";
+import * as path from "path";
 import * as vscode from "vscode";
 
 import * as Commands from "./commands";
@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): Thenable<void> | undefined {
     if (commands.length > 0) {
-        commands.forEach(c => c.dispose());
+        commands.forEach((disposable: vscode.Disposable) => disposable.dispose());
         commands.length = 0;
     }
 
