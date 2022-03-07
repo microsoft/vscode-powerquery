@@ -58,7 +58,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
 
 connection.onInitialized(async () => {
     if (hasConfigurationCapability) {
-        connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
+        await connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
     }
 
     serverSettings = await fetchConfigurationSettings();
@@ -76,20 +76,25 @@ documents.onDidClose((event: LS.TextDocumentChangeEvent<TextDocument>) => {
         version: event.document.version,
         diagnostics: [],
     });
+
     PQLS.documentClosed(event.document);
 });
 
-documents.onDidChangeContent((event: LS.TextDocumentChangeEvent<TextDocument>) => {
+documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // TODO: pass actual incremental changes into the workspace cache
     PQLS.documentClosed(event.document);
 
-    validateDocument(event.document).catch((err: unknown) =>
-        connection.console.error(`validateDocument err: ${formatError(assertAsError(err))}`),
-    );
+    try {
+        return await validateDocument(event.document);
+    } catch (error) {
+        connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
+
+        return [];
+    }
 });
 
 async function validateDocument(document: TextDocument): Promise<void> {
-    const result: PQLS.ValidationResult = PQLS.validate(
+    const result: PQLS.ValidationResult = await PQLS.validate(
         document,
         createValidationSettings(getLocalizedStandardLibrary()),
     );
@@ -101,31 +106,36 @@ async function validateDocument(document: TextDocument): Promise<void> {
     });
 }
 
-connection.onDocumentFormatting((documentfomattingParams: LS.DocumentFormattingParams): LS.TextEdit[] => {
-    const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
-    if (maybeDocument === undefined) {
-        return [];
-    }
-    const document: TextDocument = maybeDocument;
+connection.onDocumentFormatting(
+    async (documentfomattingParams: LS.DocumentFormattingParams): Promise<LS.TextEdit[]> => {
+        const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
 
-    try {
-        return PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale);
-    } catch (err) {
-        const error: Error = err as Error;
-        const errorMessage: string = error.message;
-
-        let userMessage: string;
-        // An already localized message was returned.
-        if (errorMessage) {
-            userMessage = errorMessage;
-        } else {
-            userMessage = "An unknown error occured during formatting.";
+        if (maybeDocument === undefined) {
+            return [];
         }
 
-        connection.window.showErrorMessage(userMessage);
-        return [];
-    }
-});
+        const document: TextDocument = maybeDocument;
+
+        try {
+            return await PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale);
+        } catch (err) {
+            const error: Error = err as Error;
+            const errorMessage: string = error.message;
+            let userMessage: string;
+
+            // An already localized message was returned.
+            if (errorMessage) {
+                userMessage = errorMessage;
+            } else {
+                userMessage = "An unknown error occured during formatting.";
+            }
+
+            connection.window.showErrorMessage(userMessage);
+
+            return [];
+        }
+    },
+);
 
 connection.onCompletion(
     async (
@@ -133,13 +143,17 @@ connection.onCompletion(
         _token: LS.CancellationToken,
     ): Promise<LS.CompletionItem[]> => {
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
-            return analysis.getAutocompleteItems().catch((err: unknown) => {
-                connection.console.error(`onCompletion error ${formatError(assertAsError(err))}`);
+            try {
+                return await analysis.getAutocompleteItems();
+            } catch (error) {
+                connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
+
                 return [];
-            });
+            }
         }
 
         return [];
@@ -152,8 +166,9 @@ connection.onDocumentSymbol(
         _token: LS.CancellationToken,
     ): Promise<LS.DocumentSymbol[] | undefined> => {
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
+
         if (document) {
-            return PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.maintainWorkspaceCache);
+            return await PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.maintainWorkspaceCache);
         }
 
         return undefined;
@@ -168,17 +183,20 @@ connection.onHover(
         };
 
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+
         if (document === undefined) {
             return emptyHover;
         }
 
         const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
-        // eslint-disable-next-line @typescript-eslint/typedef
-        return analysis.getHover().catch(err => {
-            connection.console.error(`onHover error ${formatError(err)}`);
+        try {
+            return await analysis.getHover();
+        } catch (error) {
+            connection.console.error(`onHover error ${formatError(assertAsError(error))}`);
+
             return emptyHover;
-        });
+        }
     },
 );
 
@@ -194,13 +212,17 @@ connection.onSignatureHelp(
         };
 
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+
         if (document) {
             const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
 
-            return analysis.getSignatureHelp().catch((err: unknown) => {
-                connection.console.error(`onSignatureHelp error ${formatError(assertAsError(err))}`);
+            try {
+                return await analysis.getSignatureHelp();
+            } catch (error) {
+                connection.console.error(`onSignatureHelp error ${formatError(assertAsError(error))}`);
+
                 return emptySignatureHelp;
-            });
+            }
         }
 
         return emptySignatureHelp;
@@ -222,7 +244,7 @@ function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.A
 
 function createAnalysisSettings(library: PQLS.Library.ILibrary): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: () => createInspectionSettings(library),
+        createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library),
         library,
         maintainWorkspaceCache: serverSettings.maintainWorkspaceCache,
     };
@@ -238,6 +260,7 @@ function createInspectionSettings(library: PQLS.Library.ILibrary): PQLS.Inspecti
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
         },
+        undefined,
         library.externalTypeResolver,
     );
 }

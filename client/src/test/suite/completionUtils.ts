@@ -20,6 +20,7 @@ export async function testCompletion(
     vertification: VertificationType,
 ): Promise<void> {
     const actualCompletionList: vscode.CompletionList | undefined = await testCompletionBase(docUri, position);
+
     if (actualCompletionList === undefined) {
         throw new Error("CompletionList is undefined");
     }
