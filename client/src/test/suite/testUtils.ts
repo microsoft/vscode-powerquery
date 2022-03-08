@@ -18,11 +18,13 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
     // The extensionId is `publisher.name` from package.json
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
+
     if (!ext) {
         throw new Error("Failed to load extension.");
     }
 
     await ext.activate();
+
     try {
         doc = await vscode.workspace.openTextDocument(docUri);
         editor = await vscode.window.showTextDocument(doc);
@@ -36,8 +38,10 @@ export const getDocPath: (p: string) => string = (p: string): string =>
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 
+// eslint-disable-next-line require-await
 export async function setTestContent(content: string): Promise<boolean> {
     const all: vscode.Range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+
     return editor.edit((eb: vscode.TextEditorEdit) => eb.replace(all, content));
 }
 

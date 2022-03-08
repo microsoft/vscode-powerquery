@@ -27,9 +27,11 @@ export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibra
 function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.LibraryDefinitions {
     if (!libraryDefinitionsByLocale.has(locale)) {
         const json: StandardLibrary = jsonByLocale.get(locale) ?? StandardLibraryEnUs;
+
         const mapped: Map<string, PQLS.Library.TLibraryDefinition> = new Map(
             json.map((xport: StandardLibraryExport) => [xport.name, mapExport(xport)]),
         );
+
         libraryDefinitionsByLocale.set(locale, mapped);
     }
 
@@ -60,6 +62,7 @@ function mapExport(xport: StandardLibraryExport): PQLS.Library.TLibraryDefinitio
             xport,
             primitiveType,
         );
+
         return {
             kind: PQLS.Library.LibraryDefinitionKind.Function,
             label: PQP.Language.TypeUtils.nameOf(asPowerQueryType),
@@ -175,6 +178,7 @@ function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimiti
             if (split[0] !== PQP.Language.Constant.LanguageConstant.Nullable) {
                 throw new Error(`expected first word in text to be ${PQP.Language.Constant.LanguageConstant.Nullable}`);
             }
+
             isNullable = true;
             typeKind = assertGetTypeKind(split[1]);
             break;

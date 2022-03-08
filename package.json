@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.28",
+    "version": "0.1.29",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -18,6 +18,9 @@
         "postinstall": "npm run install:client && npm run install:server",
         "install:client": "cd client && npm install",
         "install:server": "cd server && npm install",
+        "audit": "npm audit fix:client && npm audit fix:server",
+        "audit:client": "cd client && npm audit fix",
+        "audit:server": "cd server && npm audit fix",
         "build": "npm run build:client && npm run build:server",
         "build:client": "cd client && npm run build",
         "build:server": "cd server && npm run build",
@@ -154,13 +157,13 @@
             }
         ]
     },
-    "dependencies": {},
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "5.7.0",
         "@typescript-eslint/parser": "5.7.0",
         "eslint": "8.4.1",
         "eslint-config-prettier": "8.3.0",
         "eslint-plugin-prettier": "4.0.0",
+        "eslint-plugin-promise": "6.0.0",
         "eslint-plugin-security": "1.4.0",
         "prettier": "2.5.1",
         "typescript": "4.5.4"

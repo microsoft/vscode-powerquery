@@ -33,6 +33,7 @@ const assertIsFunction: (
 
 function assertAsMarkupContent(value: Hover["contents"]): MarkupContent {
     assertIsMarkupContent(value);
+
     return value;
 }
 
@@ -44,6 +45,7 @@ function assertIsMarkupContent(value: Hover["contents"]): asserts value is Marku
 
 function createAnalysis(textWithPipe: string): PQLS.Analysis {
     const text: string = textWithPipe.replace("|", "");
+
     const position: Position = {
         character: textWithPipe.indexOf("|"),
         line: 0,
@@ -53,7 +55,7 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
 
     const analysisSettings: AnalysisSettings = {
         createInspectionSettingsFn: () =>
-            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, library.externalTypeResolver),
+            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, undefined, library.externalTypeResolver),
         library,
     };
 
@@ -68,11 +70,14 @@ describe(`StandardLibrary`, () => {
     describe(`simple`, () => {
         it("index const by name", () => {
             const definitionKey: string = "BinaryOccurrence.Required";
+
             const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
                 standardLibrary.libraryDefinitions.get(definitionKey);
+
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
             }
+
             const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
 
             expect(libraryDefinition.label).eq(definitionKey, "unexpected label");
@@ -83,11 +88,14 @@ describe(`StandardLibrary`, () => {
 
         it("index function by name", () => {
             const exportKey: string = "List.Distinct";
+
             const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
                 standardLibrary.libraryDefinitions.get(exportKey);
+
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
+
             const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
             assertIsFunction(libraryDefinition);
 
@@ -98,11 +106,14 @@ describe(`StandardLibrary`, () => {
 
         it("#date constructor", () => {
             const exportKey: string = "#date";
+
             const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
                 standardLibrary.libraryDefinitions.get(exportKey);
+
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
+
             const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
             assertIsFunction(libraryDefinition);
 
@@ -131,6 +142,7 @@ describe(`StandardLibrary`, () => {
 
                 const signature: SignatureInformation = PQP.Assert.asDefined(signatureHelp.signatures[0]);
                 Assert.isDefined(signature.documentation);
+
                 expect(signature.documentation).to.equal(
                     `Adds a column with the specified name. The value is computed using the specified selection function with each row taken as an input.`,
                 );

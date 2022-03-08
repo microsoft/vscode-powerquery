@@ -11,15 +11,14 @@ suite("Extension Tests", () => {
         assert.ok(vscode.extensions.getExtension(TestUtils.extensionId));
     });
 
-    test("should be able to activate", () => {
+    test("should be able to activate", async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(TestUtils.extensionId);
+
         if (!ext) {
             assert.fail("failed to get extension");
         }
 
-        return ext.activate().then(() => {
-            assert.ok(true);
-        });
+        await ext.activate();
     });
 });
