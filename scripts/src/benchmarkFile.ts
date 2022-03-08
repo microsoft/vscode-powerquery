@@ -50,14 +50,11 @@ if (args.length < 4) {
     throw new Error(`Expected the 3rd argument to be a filepath to an existing file. Received ${args[2]}`);
 }
 
+let contents: string = "";
+
 const fileContents: string = fs.readFileSync(args[2], "utf8").replace(/^\uFEFF/, "");
 const position: Position = parsePosition(args[3]);
-
-console.log(fileContents, position);
-
 const standardLibrary: PQLS.Library.ILibrary = StandardLibraryUtils.getOrCreateStandardLibrary();
-
-let contents: string = "";
 
 const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspectionSettings(
     {
@@ -80,11 +77,10 @@ triedInpsect
                 PQP.Lexer.LexError.TLexError | PQP.Parser.ParseError.TParseError
             >,
         ) => {
-            if (PQP.ResultUtils.isOk(result)) {
-                console.log("it's okay");
-            } else {
-                console.log("hello world");
-            }
+            console.log(`isOk: ${PQP.ResultUtils.isOk(result)}`);
         },
     )
-    .finally(() => console.log("hello world"));
+    .catch((error: unknown) => {
+        throw error;
+    })
+    .finally(() => console.log(contents));
