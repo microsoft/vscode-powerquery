@@ -65,11 +65,11 @@ const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspec
     standardLibrary.externalTypeResolver,
 );
 
-const triedInpsect: Promise<
+const triedInspect: Promise<
     PQP.Result<Promise<PQLS.Inspection.Inspected>, PQP.Lexer.LexError.TLexError | PQP.Parser.ParseError.TParseError>
 > = PQLS.Inspection.tryInspect(inspectionSettings, fileContents, position, undefined);
 
-triedInpsect
+triedInspect
     .then(
         (
             result: PQP.Result<
