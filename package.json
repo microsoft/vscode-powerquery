@@ -15,11 +15,11 @@
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
     "scripts": {
-        "postinstall": "npm run install:client && npm run install:server && npm run install scripts",
+        "postinstall": "npm run install:client && npm run install:server && npm run install:scripts",
         "install:client": "cd client && npm install",
         "install:server": "cd server && npm install",
         "install:scripts": "cd scripts && npm install",
-        "audit": "npm audit fix:client && npm audit fix:server && npm audit fix:scripts",
+        "audit": "npm audit fix npm audit fix:client && npm audit fix:server && npm audit fix:scripts",
         "audit:client": "cd client && npm audit fix",
         "audit:server": "cd server && npm audit fix",
         "audit:scripts": "cd scripts && npm audit fix",
