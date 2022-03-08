@@ -21,11 +21,6 @@ function throwInvalidPosition(): void {
 
 function parsePosition(raw: string): Position {
     const components: ReadonlyArray<string> = raw.split(":").map((value: string) => value.trim());
-    console.log(args);
-    console.log(raw);
-    console.log(raw.indexOf(":"));
-    console.log(components);
-    console.log([components.length !== 2, !Number.isInteger(components[0]), !Number.isInteger(components[1])]);
 
     if (components.length !== 2) {
         throwInvalidPosition();
