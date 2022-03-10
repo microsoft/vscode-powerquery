@@ -1,8 +1,8 @@
 {
     "extends": "../tsconfig",
     "compilerOptions": {
-        "rootDir": "src"
+        "rootDirs": ["src", "../server"]
     },
-    "include": ["src/**/*.ts"],
+    "include": ["src/**/*.ts", "../server/**/*.ts"],
     "exclude": ["node_modules"]
 }
