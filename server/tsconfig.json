@@ -1,22 +1,7 @@
 {
+    "extends": "../tsconfig",
     "compilerOptions": {
-        "declaration": true,
-        "downlevelIteration": true,
-        "incremental": true,
-        "module": "commonjs",
-        "noEmitOnError": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitOverride": true,
-        "noImplicitReturns": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "outDir": "lib",
-        "resolveJsonModule": true,
-        "rootDir": "src",
-        "sourceMap": true,
-        "strict": true,
-        "target": "es6",
-        "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
+        "rootDir": "src"
     },
     "include": ["src/**/*.ts", "src/library/standardLibrary.json"],
     "exclude": ["node_modules"]

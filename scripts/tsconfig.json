@@ -1,22 +1,7 @@
 {
+    "extends": "../tsconfig",
     "compilerOptions": {
-        "declaration": true,
-        "downlevelIteration": true,
-        "incremental": true,
-        "module": "commonjs",
-        "noEmitOnError": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitOverride": true,
-        "noImplicitReturns": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "outDir": "lib",
-        "resolveJsonModule": true,
-        "rootDirs": ["src", "../server"],
-        "sourceMap": true,
-        "strict": true,
-        "target": "es6",
-        "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
+        "rootDirs": ["src", "../server"]
     },
     "include": ["src/**/*.ts", "../server/**/*.ts"],
     "exclude": ["node_modules"]
