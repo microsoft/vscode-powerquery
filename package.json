@@ -19,7 +19,7 @@
         "install:client": "cd client && npm install",
         "install:server": "cd server && npm install",
         "install:scripts": "cd scripts && npm install",
-        "audit": "npm audit fix npm audit fix:client && npm audit fix:server && npm audit fix:scripts",
+        "audit": "npm audit fix && npm run audit:client && npm run audit:server && npm run audit:scripts",
         "audit:client": "cd client && npm audit fix",
         "audit:server": "cd server && npm audit fix",
         "audit:scripts": "cd scripts && npm audit fix",
