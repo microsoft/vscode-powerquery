@@ -22,6 +22,7 @@ export async function testCompletion(
     await vscode.workspace.openTextDocument(docUri);
 
     const actualCompletionList: vscode.CompletionList | undefined = await testCompletionBase(docUri, position);
+
     if (actualCompletionList === undefined) {
         throw new Error("CompletionList is undefined");
     }

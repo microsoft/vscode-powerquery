@@ -20,6 +20,7 @@ export async function testDocumentSymbols(
     await vscode.workspace.openTextDocument(docUri);
 
     const documentSymbols: vscode.DocumentSymbol[] | undefined = await documentSymbolsBase(docUri);
+
     if (documentSymbols === undefined) {
         assert.fail("documentSymbols undefined");
     }
@@ -36,8 +37,10 @@ async function documentSymbolsBase(docUri: vscode.Uri): Promise<vscode.DocumentS
 
 function documentSymbolArrayToExpectedSymbols(documentSymbols: vscode.DocumentSymbol[]): ExpectedDocumentSymbol[] {
     const expectedSymbols: ExpectedDocumentSymbol[] = [];
+
     documentSymbols.forEach((element: vscode.DocumentSymbol) => {
         let children: ExpectedDocumentSymbol[] | undefined;
+
         if (element.children && element.children.length > 0) {
             children = documentSymbolArrayToExpectedSymbols(element.children);
             expectedSymbols.push({ name: element.name, kind: element.kind, children });
@@ -45,5 +48,6 @@ function documentSymbolArrayToExpectedSymbols(documentSymbols: vscode.DocumentSy
             expectedSymbols.push({ name: element.name, kind: element.kind });
         }
     });
+
     return expectedSymbols;
 }

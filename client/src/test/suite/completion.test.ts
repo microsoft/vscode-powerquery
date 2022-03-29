@@ -13,6 +13,7 @@ import * as TestUtils from "./testUtils";
 
 suite("Access.Dat completion", async () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
+    await vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     // TODO: Test runs fine under VS Code debugger, but fails when run from npm command line.
     // Investigate moving to @vscode/test-electron as described in the latest docs.

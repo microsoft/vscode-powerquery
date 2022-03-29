@@ -8,6 +8,7 @@ import * as TestUtils from "./testUtils";
 
 suite("Should get diagnostics", async () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("diagnostics.pq");
+    await vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Simple diagnostics test", async () => {
         await testDiagnostics(docUri, [
@@ -23,13 +24,14 @@ suite("Should get diagnostics", async () => {
 
 suite("No errors", async () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.NoErrors.pq");
+    await vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("No errors", async () => {
         await testDiagnostics(docUri, []);
     });
 });
 
-suite("Experimental diagnostics", async () => {
+suite("Experimental diagnostics", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.TableIsEmpty.Error.pq");
 
     test("No error reported with default settings", async () => {
@@ -47,6 +49,7 @@ suite("Experimental diagnostics", async () => {
 function toRange(sLine: number, sChar: number, eLine: number, eChar: number): vscode.Range {
     const start: vscode.Position = new vscode.Position(sLine, sChar);
     const end: vscode.Position = new vscode.Position(eLine, eChar);
+
     return new vscode.Range(start, end);
 }
 

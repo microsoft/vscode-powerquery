@@ -12,7 +12,7 @@ import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-par
 export function createStandardLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
-    return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest) => {
+    return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest): Type.TPowerQueryType | undefined => {
         const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
             request.identifierLiteral,
         )?.asPowerQueryType;
@@ -57,6 +57,7 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
     const table: Type.TPowerQueryType = TypeUtils.assertAsTable(PQP.Assert.asDefined(args[0]));
     const columnName: Type.TText = TypeUtils.assertAsText(PQP.Assert.asDefined(args[1]));
     const columnGenerator: Type.TFunction = TypeUtils.assertAsFunction(PQP.Assert.asDefined(args[2]));
+
     const maybeColumnType: Type.TPowerQueryType | undefined =
         args.length === 4 ? TypeUtils.assertAsType(PQP.Assert.asDefined(args[3])) : undefined;
 
@@ -66,6 +67,7 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
     }
 
     let columnType: Type.TPowerQueryType;
+
     if (maybeColumnType !== undefined) {
         columnType = maybeColumnType;
     } else if (TypeUtils.isDefinedFunction(columnGenerator)) {

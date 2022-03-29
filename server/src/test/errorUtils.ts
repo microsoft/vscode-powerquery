@@ -12,6 +12,7 @@ type AbridgedFormatErrorMetadata = Pick<FormatErrorMetadata, "message" | "name">
 
 function abridgedFormattedError(text: string): AbridgedFormatErrorMetadata {
     const metadata: FormatErrorMetadata = JSON.parse(text);
+
     return stripMaybeTopOfStack(metadata);
 }
 
@@ -27,11 +28,13 @@ describe(`errorUtils`, () => {
     describe(`formatError`, () => {
         it(`unknown error`, () => {
             const actual: AbridgedFormatErrorMetadata = abridgedFormattedError(formatError(new Error("foobar")));
+
             const expected: AbridgedFormatErrorMetadata = {
                 maybeChild: undefined,
                 message: "foobar",
                 name: Error.name,
             };
+
             expect(actual).to.deep.equal(expected);
         });
 
@@ -39,6 +42,7 @@ describe(`errorUtils`, () => {
             const actual: AbridgedFormatErrorMetadata = abridgedFormattedError(
                 formatError(new PQP.CommonError.CommonError(new PQP.CommonError.InvariantError("1 <> 2"))),
             );
+
             const expected: AbridgedFormatErrorMetadata = {
                 maybeChild: {
                     maybeChild: undefined,
@@ -48,6 +52,7 @@ describe(`errorUtils`, () => {
                 message: "InvariantError: 1 <> 2",
                 name: PQP.CommonError.CommonError.name,
             };
+
             expect(actual).to.deep.equal(expected);
         });
     });
