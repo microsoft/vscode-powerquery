@@ -10,7 +10,7 @@
         "noImplicitReturns": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "outDir": "lib",
+        "outDir": "dist",
         "resolveJsonModule": true,
         "sourceMap": true,
         "strict": true,
