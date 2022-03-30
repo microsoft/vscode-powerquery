@@ -22,9 +22,11 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
     }
 }
 
+// eslint-disable-next-line require-await
 export async function activateExtension(): Promise<void> {
     // The extensionId is `publisher.name` from package.json
     const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
+
     if (!ext) {
         throw new Error("Failed to load extension.");
     }

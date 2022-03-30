@@ -53,6 +53,7 @@ export async function testCompletion(
             );
 
             assert.equal(filteredItems.length, 1, `expected to find one item with label '${expectedItem.label}'`);
+
             assert.equal(
                 filteredItems[0].kind,
                 expectedItem.kind,

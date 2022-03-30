@@ -16,6 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
     commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeMText, Commands.escapeMText));
     commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeMText, Commands.unescapeMText));
     commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeJsonText, Commands.escapeJsonText));
+
     commands.push(
         vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeJsonText, Commands.unescapeJsonText),
     );

@@ -22,7 +22,7 @@ export function unescapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEd
 }
 
 export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
-    textEditor.selections.forEach((selection: vscode.Selection) => {
+    textEditor.selections.forEach(async (selection: vscode.Selection) => {
         let replacement: string = ensureQuoted(textEditor.document.getText(selection));
 
         try {
@@ -32,20 +32,20 @@ export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextE
 
             edit.replace(selection, replacement);
         } catch (err) {
-            vscode.window.showErrorMessage(`Failed to escape as JSON string. Error: ${JSON.stringify(err)}`);
+            await vscode.window.showErrorMessage(`Failed to escape as JSON string. Error: ${JSON.stringify(err)}`);
         }
     });
 }
 
 export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
-    textEditor.selections.forEach((selection: vscode.Selection) => {
+    textEditor.selections.forEach(async (selection: vscode.Selection) => {
         let replacement: string = ensureQuoted(textEditor.document.getText(selection));
 
         try {
             replacement = JSON.parse(replacement);
             edit.replace(selection, replacement);
         } catch (err) {
-            vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
+            await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
         }
     });
 }

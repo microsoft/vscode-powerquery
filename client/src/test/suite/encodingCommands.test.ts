@@ -4,11 +4,12 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { Constants } from "../../constants";
+import { expect } from "chai";
 
 import * as TestUtils from "./testUtils";
 
 // TODO: We could add command unit tests that use mocks to avoid UI based tests.
-suite("Encode/Decode Commands", async () => {
+suite("Encode/Decode Commands", () => {
     suiteSetup(async () => {
         await TestUtils.activateExtension();
     });
@@ -21,7 +22,7 @@ suite("Encode/Decode Commands", async () => {
             Constants.CommandUnescapeJsonText,
         ];
 
-        const pqCommands: string[] = (await vscode.commands.getCommands(/*filterInternal*/ true)).filter(
+        const pqCommands: string[] = (await vscode.commands.getCommands(/* filterInternal */ true)).filter(
             (cmd: string) => cmd.startsWith("powerquery."),
         );
 
@@ -79,5 +80,5 @@ async function runEncodeTest(original: string, expected: string, command: string
     const currentText: string = doc.getText();
     await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 
-    assert(expected === currentText, `expected strings to be equal. Expected: ${expected} Actual: ${currentText}`);
+    expect(expected).to.equal(currentText);
 }
