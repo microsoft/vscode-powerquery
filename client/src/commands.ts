@@ -23,12 +23,8 @@ export function unescapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEd
 
 export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
     textEditor.selections.forEach(async (selection: vscode.Selection) => {
-        let replacement: string = ensureQuoted(textEditor.document.getText(selection));
-
         try {
-            replacement = JSON.stringify(replacement);
-            // Value will contain embedded escaped \" at start and end - we can remove.
-            replacement = replacement.replace(/^"\\"/, '"').replace(/\\""$/, '"');
+            const replacement: string = JSON.stringify(textEditor.document.getText(selection));
 
             edit.replace(selection, replacement);
         } catch (err) {
@@ -39,17 +35,11 @@ export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextE
 
 export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
     textEditor.selections.forEach(async (selection: vscode.Selection) => {
-        let replacement: string = ensureQuoted(textEditor.document.getText(selection));
-
         try {
-            replacement = JSON.parse(replacement);
+            const replacement: string = JSON.parse(textEditor.document.getText(selection));
             edit.replace(selection, replacement);
         } catch (err) {
             await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
         }
     });
-}
-
-function ensureQuoted(original: string): string {
-    return PQP.StringUtils.ensureQuoted(original);
 }

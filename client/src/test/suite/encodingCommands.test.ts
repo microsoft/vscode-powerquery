@@ -10,6 +10,9 @@ import * as TestUtils from "./testUtils";
 
 // TODO: We could add command unit tests that use mocks to avoid UI based tests.
 suite("Encode/Decode Commands", () => {
+    const mToEncode: string = 'let\r\n  #"id" = "m text"" here"\r\nin\r\n  #"id"';
+    const jsonToDecode: string = `"let\\r\\n  #\\"id\\" = \\"m text\\"\\" here\\"\\r\\nin\\r\\n  #\\"id\\""`;
+
     suiteSetup(async () => {
         await TestUtils.activateExtension();
     });
@@ -44,10 +47,7 @@ suite("Encode/Decode Commands", () => {
     });
 
     test("JSON Escape", async () => {
-        const content: string = 'let\r\n  #"id" = "m text"" here"\r\nin\r\n  #"id"';
-        const expected: string = '"let\\r\\n  #\\"id\\" = \\"m text\\"\\" here\\"\\r\\nin\\r\\n  #\\"id\\""';
-
-        await runEncodeTest(content, expected, Constants.CommandEscapeJsonText);
+        await runEncodeTest(mToEncode, jsonToDecode, Constants.CommandEscapeJsonText);
     });
 
     test("JSON Unescape (existing quotes)", async () => {
@@ -58,10 +58,7 @@ suite("Encode/Decode Commands", () => {
     });
 
     test("JSON Unescape (no quotes)", async () => {
-        const content: string = 'let\\r\\n  #\\"id\\" = \\"m text\\"\\" here\\"\\r\\nin\\r\\n  #\\"id\\"';
-        const expected: string = 'let\r\n  #"id" = "m text"" here"\r\nin\r\n  #"id"';
-
-        await runEncodeTest(content, expected, Constants.CommandUnescapeJsonText);
+        await runEncodeTest(jsonToDecode, mToEncode, Constants.CommandUnescapeJsonText);
     });
 });
 
