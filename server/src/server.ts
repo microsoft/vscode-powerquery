@@ -11,9 +11,9 @@ import { StandardLibraryUtils } from "./standardLibrary";
 const LanguageId: string = "powerquery";
 
 interface RenameIdentifierParams {
-    textDocumentUri: string;
-    position: Position;
-    newName: string;
+    readonly textDocumentUri: string;
+    readonly position: Position;
+    readonly newName: string;
 }
 
 interface ServerSettings {
