@@ -16,9 +16,9 @@
     },
     "scripts": {
         "postinstall": "npm run install:client && npm run install:server && npm run install:scripts",
-        "install:client": "cd client && npm install",
-        "install:server": "cd server && npm install",
-        "install:scripts": "cd scripts && npm install",
+        "install:client": "cd client && npm install-clean",
+        "install:server": "cd server && npm install-clean",
+        "install:scripts": "cd scripts && npm install-clean",
         "audit": "npm audit fix && npm run audit:client && npm run audit:server && npm run audit:scripts",
         "audit:client": "cd client && npm audit fix",
         "audit:server": "cd server && npm audit fix",
@@ -45,6 +45,7 @@
     "icon": "imgs/PQIcon_128.png",
     "main": "./client/dist/extension",
     "engines": {
+        "node": ">=16.13.2",
         "vscode": "^1.40.0"
     },
     "capabilities": {

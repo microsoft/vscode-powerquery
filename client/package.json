@@ -14,7 +14,7 @@
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
     },
     "scripts": {
-        "init": "npm install",
+        "init": "npm install-clean",
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch",
         "test": "node ./lib/test/runTest.js",
@@ -24,7 +24,8 @@
     },
     "main": "lib\\extension",
     "engines": {
-        "vscode": "1.40.0"
+        "node": ">=16.13.2",
+        "vscode": "^1.40.0"
     },
     "dependencies": {
         "vscode-languageclient": "7.0.0"
