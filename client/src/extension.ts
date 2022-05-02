@@ -3,8 +3,9 @@
 
 import * as LC from "vscode-languageclient/node";
 import * as path from "path";
+import * as vs from "vscode";
 
-import { ExtensionContext } from "vscode";
+import { CancellationToken, ExtensionContext, Position, TextDocument, TextEdit, WorkspaceEdit } from "vscode";
 
 let client: LC.LanguageClient;
 
@@ -46,6 +47,32 @@ export function activate(context: ExtensionContext): void {
 
     // Start the client. This will also launch the server
     client.start();
+
+    context.subscriptions.push(
+        vs.languages.registerRenameProvider(
+            { language: "powerquery" },
+            {
+                async provideRenameEdits(
+                    textDocument: TextDocument,
+                    position: Position,
+                    newName: string,
+                    token: CancellationToken,
+                ): Promise<WorkspaceEdit | undefined> {
+                    const textEdits: TextEdit[] = await client.sendRequest<TextEdit[]>("powerquery/renameIdentifier", {
+                        textDocumentUri: textDocument.uri.toString(),
+                        position,
+                        newName,
+                        token,
+                    });
+
+                    const res: WorkspaceEdit = new WorkspaceEdit();
+                    res.set(textDocument.uri, textEdits);
+
+                    return res;
+                },
+            },
+        ),
+    );
 }
 
 export function deactivate(): Thenable<void> | undefined {

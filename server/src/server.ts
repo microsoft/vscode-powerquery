@@ -4,12 +4,17 @@
 import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { TextDocument } from "vscode-languageserver-textdocument";
-
+import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { formatError } from "./errorUtils";
 import { StandardLibraryUtils } from "./standardLibrary";
 
 const LanguageId: string = "powerquery";
+
+interface RenameIdentifierParams {
+    readonly textDocumentUri: string;
+    readonly position: Position;
+    readonly newName: string;
+}
 
 interface ServerSettings {
     checkForDuplicateIdentifiers: boolean;
@@ -228,6 +233,22 @@ connection.onSignatureHelp(
         return emptySignatureHelp;
     },
 );
+
+connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
+    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+
+    if (document) {
+        try {
+            const analysis: PQLS.Analysis = createAnalysis(document, params.position);
+
+            return await analysis.getRenameEdits(params.newName);
+        } catch (error) {
+            connection.console.error(`on powerquery/renameIdentifier error ${formatError(assertAsError(error))}`);
+        }
+    }
+
+    return [];
+});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
