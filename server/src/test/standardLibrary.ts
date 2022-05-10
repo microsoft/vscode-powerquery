@@ -55,7 +55,13 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
 
     const analysisSettings: AnalysisSettings = {
         createInspectionSettingsFn: () =>
-            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, undefined, library.externalTypeResolver),
+            PQLS.InspectionUtils.createInspectionSettings(
+                PQP.DefaultSettings,
+                undefined,
+                library.externalTypeResolver,
+                false,
+            ),
+        isWorkspaceCacheAllowed: false,
         library,
     };
 

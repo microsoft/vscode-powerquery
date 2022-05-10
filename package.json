@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.32",
+    "version": "0.1.33",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -65,6 +65,12 @@
             "type": "object",
             "title": "Power Query",
             "properties": {
+                "powerquery.benchmark.enable": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Recommended always off. Enables benchmark traces to be generated for the extension."
+                },
                 "powerquery.trace.server": {
                     "scope": "window",
                     "type": "string",
@@ -81,6 +87,12 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Specifies whether to enable experimental diagnostics features. This may result in false positives while the feature is under development."
+                },
+                "powerquery.diagnostics.isWorkspaceCacheAllowed": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Recommended always on. Toggles internal caching causing performance degregation when off. Used to find hot paths in the extension."
                 },
                 "powerquery.general.locale": {
                     "scope": "window",

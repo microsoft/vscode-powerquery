@@ -20,14 +20,16 @@ interface ServerSettings {
     checkForDuplicateIdentifiers: boolean;
     checkInvokeExpressions: boolean;
     locale: string;
-    maintainWorkspaceCache: boolean;
+    isBenchmarksEnabled: boolean;
+    isWorkspaceCacheAllowed: boolean;
 }
 
 const defaultServerSettings: ServerSettings = {
     checkForDuplicateIdentifiers: true,
     checkInvokeExpressions: false,
     locale: PQP.DefaultLocale,
-    maintainWorkspaceCache: true,
+    isBenchmarksEnabled: false,
+    isWorkspaceCacheAllowed: true,
 };
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -173,7 +175,7 @@ connection.onDocumentSymbol(
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
 
         if (document) {
-            return await PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.maintainWorkspaceCache);
+            return await PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.isWorkspaceCacheAllowed);
         }
 
         return undefined;
@@ -267,7 +269,7 @@ function createAnalysisSettings(library: PQLS.Library.ILibrary): PQLS.AnalysisSe
     return {
         createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library),
         library,
-        maintainWorkspaceCache: serverSettings.maintainWorkspaceCache,
+        isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
     };
 }
 
@@ -283,6 +285,7 @@ function createInspectionSettings(library: PQLS.Library.ILibrary): PQLS.Inspecti
         },
         undefined,
         library.externalTypeResolver,
+        serverSettings.isWorkspaceCacheAllowed,
     );
 }
 
@@ -307,7 +310,8 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: config?.diagnostics?.experimental ?? false,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
-        maintainWorkspaceCache: true,
+        isBenchmarksEnabled: config?.benchmark?.enable ?? false,
+        isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
     };
 }
 

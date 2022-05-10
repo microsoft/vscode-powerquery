@@ -58,6 +58,7 @@ const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspec
     },
     undefined,
     standardLibrary.externalTypeResolver,
+    true,
 );
 
 const triedInspect: Promise<
