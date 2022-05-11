@@ -1,10 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as fs from "fs";
 import * as LS from "vscode-languageserver/node";
+import * as path from "path";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
+
 import { formatError } from "./errorUtils";
 import { StandardLibraryUtils } from "./standardLibrary";
 
@@ -101,9 +104,11 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
 });
 
 async function validateDocument(document: TextDocument): Promise<void> {
+    const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "validateDocument");
+
     const result: PQLS.ValidationResult = await PQLS.validate(
         document,
-        createValidationSettings(getLocalizedStandardLibrary()),
+        createValidationSettings(getLocalizedStandardLibrary(), traceManager),
     );
 
     connection.sendDiagnostics({
@@ -152,7 +157,13 @@ connection.onCompletion(
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
         if (document) {
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
+            const traceManager: PQP.Trace.TraceManager = createTraceManager(
+                textDocumentPosition.textDocument.uri,
+                "onCompletion",
+                textDocumentPosition.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
 
             try {
                 return await analysis.getAutocompleteItems();
@@ -195,7 +206,13 @@ connection.onHover(
             return emptyHover;
         }
 
-        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
+        const traceManager: PQP.Trace.TraceManager = createTraceManager(
+            textDocumentPosition.textDocument.uri,
+            "onHover",
+            textDocumentPosition.position,
+        );
+
+        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
 
         try {
             return await analysis.getHover();
@@ -221,7 +238,13 @@ connection.onSignatureHelp(
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
         if (document) {
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position);
+            const traceManager: PQP.Trace.TraceManager = createTraceManager(
+                textDocumentPosition.textDocument.uri,
+                "onSignatureHelp",
+                textDocumentPosition.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
 
             try {
                 return await analysis.getSignatureHelp();
@@ -241,7 +264,8 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
 
     if (document) {
         try {
-            const analysis: PQLS.Analysis = createAnalysis(document, params.position);
+            const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "renameIdentifier");
+            const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
 
             return await analysis.getRenameEdits(params.newName);
         } catch (error) {
@@ -259,15 +283,27 @@ documents.listen(connection);
 // Listen on the connection
 connection.listen();
 
-function createAnalysis(document: TextDocument, position: PQLS.Position): PQLS.Analysis {
+function createAnalysis(
+    document: TextDocument,
+    position: PQLS.Position,
+    traceManager: PQP.Trace.TraceManager,
+): PQLS.Analysis {
     const localizedStandardLibrary: PQLS.Library.ILibrary = getLocalizedStandardLibrary();
+    document.uri;
 
-    return PQLS.AnalysisUtils.createAnalysis(document, createAnalysisSettings(localizedStandardLibrary), position);
+    return PQLS.AnalysisUtils.createAnalysis(
+        document,
+        createAnalysisSettings(localizedStandardLibrary, traceManager),
+        position,
+    );
 }
 
-function createAnalysisSettings(library: PQLS.Library.ILibrary): PQLS.AnalysisSettings {
+function createAnalysisSettings(
+    library: PQLS.Library.ILibrary,
+    traceManager: PQP.Trace.TraceManager,
+): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library),
+        createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library, traceManager),
         library,
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
     };
@@ -277,11 +313,15 @@ function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
     return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
 }
 
-function createInspectionSettings(library: PQLS.Library.ILibrary): PQLS.InspectionSettings {
+function createInspectionSettings(
+    library: PQLS.Library.ILibrary,
+    traceManager: PQP.Trace.TraceManager,
+): PQLS.InspectionSettings {
     return PQLS.InspectionUtils.createInspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
+            traceManager,
         },
         undefined,
         library.externalTypeResolver,
@@ -289,9 +329,52 @@ function createInspectionSettings(library: PQLS.Library.ILibrary): PQLS.Inspecti
     );
 }
 
-function createValidationSettings(library: PQLS.Library.ILibrary): PQLS.ValidationSettings {
+function createBenchmarkTraceManager(
+    uri: string | undefined,
+    sourceAction: string,
+    position?: Position,
+): PQP.Trace.BenchmarkTraceManager | undefined {
+    if (!uri) {
+        return undefined;
+    }
+
+    const source: string = path.basename(uri);
+
+    if (position) {
+        sourceAction += `L${position.line}C${position.character}`;
+    }
+
+    let benchmarkUri: string;
+
+    // TODO: make this not O(n)
+    for (let iteration: number = 0; iteration < 1000; iteration += 1) {
+        benchmarkUri = path.join(path.dirname(uri), `${source}_${sourceAction}_${iteration}.log`);
+
+        if (!fs.existsSync(benchmarkUri)) {
+            const writeStream: fs.WriteStream = fs.createWriteStream(benchmarkUri, { flags: "w" });
+
+            return new PQP.Trace.BenchmarkTraceManager((message: string) => writeStream.write(message));
+        }
+    }
+
+    // TODO: handle fallback if all iterations are taken
+    return undefined;
+}
+
+function createTraceManager(
+    uri: string | undefined,
+    sourceAction: string,
+    position?: Position,
+): PQP.Trace.TraceManager {
+    return createBenchmarkTraceManager(uri, sourceAction, position) ?? new PQP.Trace.NoOpTraceManager();
+}
+
+function createValidationSettings(
+    library: PQLS.Library.ILibrary,
+    traceManager: PQP.Trace.TraceManager,
+): PQLS.ValidationSettings {
     return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library),
+        createInspectionSettings(library, traceManager),
         LanguageId,
         serverSettings.checkForDuplicateIdentifiers,
         serverSettings.checkInvokeExpressions,
