@@ -39,6 +39,7 @@ const defaultServerSettings: ServerSettings = {
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
+const NoOpTraceManager: PQP.Trace.NoOpTraceManager = new PQP.Trace.NoOpTraceManager();
 
 let serverSettings: ServerSettings = defaultServerSettings;
 let hasConfigurationCapability: boolean = false;
@@ -375,7 +376,11 @@ function createTraceManager(
     sourceAction: string,
     position?: Position,
 ): PQP.Trace.TraceManager {
-    return createBenchmarkTraceManager(uri, sourceAction, position) ?? new PQP.Trace.NoOpTraceManager();
+    if (serverSettings.isBenchmarksEnabled) {
+        return createBenchmarkTraceManager(uri, sourceAction, position) ?? NoOpTraceManager;
+    } else {
+        return NoOpTraceManager;
+    }
 }
 
 function createValidationSettings(
