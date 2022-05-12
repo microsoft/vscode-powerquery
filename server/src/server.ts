@@ -338,7 +338,11 @@ function createBenchmarkTraceManager(
         return undefined;
     }
 
-    const source: string = path.basename(uri);
+    const source: string = path.parse(uri).name;
+
+    if (!source) {
+        return undefined;
+    }
 
     if (position) {
         sourceAction += `L${position.line}C${position.character}`;
@@ -348,7 +352,12 @@ function createBenchmarkTraceManager(
 
     // TODO: make this not O(n)
     for (let iteration: number = 0; iteration < 1000; iteration += 1) {
-        benchmarkUri = path.join(path.dirname(uri), `${source}_${sourceAction}_${iteration}.log`);
+        benchmarkUri = path.resolve(
+            path.format({
+                root: "./",
+                base: `${source}_${sourceAction}_${iteration}.log`,
+            }),
+        );
 
         if (!fs.existsSync(benchmarkUri)) {
             const writeStream: fs.WriteStream = fs.createWriteStream(benchmarkUri, { flags: "w" });
