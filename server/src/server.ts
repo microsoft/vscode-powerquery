@@ -349,16 +349,17 @@ function createBenchmarkTraceManager(
         sourceAction += `L${position.line}C${position.character}`;
     }
 
+    const logDirectory: string = path.join(process.cwd(), "vscode-powerquery-logs");
+
+    if (!fs.existsSync(logDirectory)) {
+        fs.mkdirSync(logDirectory, { recursive: true });
+    }
+
     let benchmarkUri: string;
 
     // TODO: make this not O(n)
     for (let iteration: number = 0; iteration < 1000; iteration += 1) {
-        benchmarkUri = path.resolve(
-            path.format({
-                root: "./",
-                base: `${source}_${sourceAction}_${iteration}.log`,
-            }),
-        );
+        benchmarkUri = path.join(logDirectory, `${source}_${sourceAction}_${iteration}.log`);
 
         if (!fs.existsSync(benchmarkUri)) {
             const writeStream: fs.WriteStream = fs.createWriteStream(benchmarkUri, { flags: "w" });
