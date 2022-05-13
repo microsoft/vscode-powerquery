@@ -30,10 +30,10 @@
     "dependencies": {
         "@microsoft/powerquery-language-services": "0.3.14",
         "@microsoft/powerquery-parser": "0.8.2",
+        "vscode": "^0.9.9",
         "vscode-languageserver": "7.0.0",
         "vscode-languageserver-textdocument": "1.0.4",
-        "vscode-languageserver-types": "3.16.0",
-        "vscode": "1.1.37"
+        "vscode-languageserver-types": "3.16.0"
     },
     "devDependencies": {
         "@types/chai": "4.3.1",
