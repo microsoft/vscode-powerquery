@@ -325,7 +325,7 @@ function createInspectionSettings(
             traceManager,
         },
         undefined,
-        library.externalTypeResolver,
+        library,
         serverSettings.isWorkspaceCacheAllowed,
     );
 }
