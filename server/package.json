@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-server",
-    "version": "0.0.42",
+    "version": "0.0.43",
     "description": "Power Query language server implementation.",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -28,8 +28,10 @@
         "node": ">=16.13.2"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "0.3.11",
-        "@microsoft/powerquery-parser": "0.6.8",
+        "@microsoft/powerquery-formatter": "0.0.52",
+        "@microsoft/powerquery-language-services": "0.3.17",
+        "@microsoft/powerquery-parser": "0.8.3",
+        "vscode": "^0.9.9",
         "vscode-languageserver": "7.0.0",
         "vscode-languageserver-textdocument": "1.0.4",
         "vscode-languageserver-types": "3.16.0"

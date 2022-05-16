@@ -57,7 +57,8 @@ const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspec
         traceManager: new PQP.Trace.BenchmarkTraceManager((message: string) => (contents += message)),
     },
     undefined,
-    standardLibrary.externalTypeResolver,
+    standardLibrary,
+    true,
 );
 
 const triedInspect: Promise<
