@@ -339,7 +339,16 @@ function createBenchmarkTraceManager(
         return undefined;
     }
 
-    const source: string = path.parse(uri).name;
+    let source: string = path.parse(uri).name;
+
+    // If untitled document
+    if (uri.startsWith("untitled:")) {
+        source = source.slice("untitled:".length);
+    }
+    // Else expect it to be a file
+    else {
+        source = path.parse(uri).name;
+    }
 
     if (!source) {
         return undefined;
