@@ -39,6 +39,7 @@ module.exports = {
                 "array-callback-return": "error",
                 "arrow-body-style": ["error", "as-needed"],
                 "constructor-super": "error",
+                curly: ["error", "all"],
                 "max-len": [
                     "warn",
                     {

@@ -17,6 +17,6 @@
         "target": "es6",
         "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
     },
-    "include": ["**/*.ts"],
+    "include": ["**/src/**/*.ts"],
     "exclude": ["node_modules"]
 }
