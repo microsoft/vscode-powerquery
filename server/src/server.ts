@@ -4,6 +4,7 @@
 import * as fs from "fs";
 import * as LS from "vscode-languageserver/node";
 import * as path from "path";
+import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
@@ -130,7 +131,11 @@ connection.onDocumentFormatting(
         const document: TextDocument = maybeDocument;
 
         try {
-            return await PQLS.tryFormat(document, documentfomattingParams.options, serverSettings.locale);
+            return await PQLS.tryFormat(document, {
+                ...PQP.DefaultSettings,
+                indentationLiteral: PQF.IndentationLiteral.SpaceX4,
+                newlineLiteral: PQF.NewlineLiteral.Windows,
+            });
         } catch (err) {
             const error: Error = err as Error;
             const errorMessage: string = error.message;
