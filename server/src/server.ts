@@ -237,7 +237,7 @@ connection.onSignatureHelp(
     ): Promise<LS.SignatureHelp> => {
         const emptySignatureHelp: LS.SignatureHelp = {
             signatures: [],
-            activeParameter: null,
+            activeParameter: undefined,
             activeSignature: 0,
         };
 
