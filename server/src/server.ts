@@ -16,7 +16,7 @@ const LanguageId: string = "powerquery";
 
 interface RenameIdentifierParams {
     readonly textDocumentUri: string;
-    readonly position: Position;
+    readonly position: LS.Position;
     readonly newName: string;
 }
 

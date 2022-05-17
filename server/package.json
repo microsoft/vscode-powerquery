@@ -31,7 +31,6 @@
         "@microsoft/powerquery-formatter": "0.0.52",
         "@microsoft/powerquery-language-services": "0.3.18",
         "@microsoft/powerquery-parser": "0.8.3",
-        "vscode": "^0.9.9",
         "vscode-languageserver": "8.0.1",
         "vscode-languageserver-textdocument": "1.0.4",
         "vscode-languageserver-types": "3.17.1"
@@ -39,7 +38,8 @@
     "devDependencies": {
         "@types/chai": "4.3.1",
         "@types/mocha": "9.1.1",
-        "@types/node": "17.0.33",
+        "@types/node": "17.0.34",
+        "@types/vscode": "1.67.0",
         "chai": "4.3.6",
         "eslint": "8.15.0",
         "eslint-config-prettier": "8.5.0",
