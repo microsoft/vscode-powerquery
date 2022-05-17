@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-server",
-    "version": "0.0.43",
+    "version": "0.0.44",
     "description": "Power Query language server implementation.",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -29,30 +29,30 @@
     },
     "dependencies": {
         "@microsoft/powerquery-formatter": "0.0.52",
-        "@microsoft/powerquery-language-services": "0.3.17",
+        "@microsoft/powerquery-language-services": "0.3.18",
         "@microsoft/powerquery-parser": "0.8.3",
-        "vscode": "^0.9.9",
-        "vscode-languageserver": "7.0.0",
+        "vscode-languageserver": "8.0.1",
         "vscode-languageserver-textdocument": "1.0.4",
-        "vscode-languageserver-types": "3.16.0"
+        "vscode-languageserver-types": "3.17.1"
     },
     "devDependencies": {
         "@types/chai": "4.3.1",
         "@types/mocha": "9.1.1",
-        "@types/node": "17.0.29",
+        "@types/node": "17.0.34",
+        "@types/vscode": "1.67.0",
         "chai": "4.3.6",
-        "eslint": "8.14.0",
+        "eslint": "8.15.0",
         "eslint-config-prettier": "8.5.0",
         "eslint-plugin-prettier": "4.0.0",
         "eslint-plugin-security": "1.5.0",
-        "mocha": "^9.2.2",
-        "mocha-junit-reporter": "^2.0.2",
+        "mocha": "10.0.0",
+        "mocha-junit-reporter": "2.0.2",
         "mocha-multi-reporters": "1.5.1",
         "prettier": "2.6.2",
-        "ts-loader": "9.2.9",
+        "ts-loader": "9.3.0",
         "ts-node": "10.7.0",
-        "typescript": "^4.6.3",
-        "webpack": "5.72.0",
+        "typescript": "4.6.4",
+        "webpack": "5.72.1",
         "webpack-cli": "4.9.2"
     }
 }

@@ -17,6 +17,8 @@ export async function testDocumentSymbols(
     docUri: vscode.Uri,
     expectedSymbols: ExpectedDocumentSymbol[],
 ): Promise<void> {
+    await vscode.workspace.openTextDocument(docUri);
+
     const documentSymbols: vscode.DocumentSymbol[] | undefined = await documentSymbolsBase(docUri);
 
     if (documentSymbols === undefined) {

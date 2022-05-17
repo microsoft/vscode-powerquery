@@ -3,13 +3,27 @@
 
 import * as LC from "vscode-languageclient/node";
 import * as path from "path";
-import * as vs from "vscode";
+import * as vscode from "vscode";
 
-import { CancellationToken, ExtensionContext, Position, TextDocument, TextEdit, WorkspaceEdit } from "vscode";
+import * as CommandFn from "./commands";
+import { CommandConstant } from "./commandConstant";
 
+import { CancellationToken, Position, TextDocument, TextEdit, WorkspaceEdit } from "vscode";
+
+const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
 
-export function activate(context: ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    // Register commands
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
+
+    commands.push(
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
+    );
+
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
+
     // The server is implemented in node
     const serverModule: string = context.asAbsolutePath(path.join("server", "dist", "server.js"));
     // The debug options for the server
@@ -46,10 +60,10 @@ export function activate(context: ExtensionContext): void {
     client = new LC.LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
 
     // Start the client. This will also launch the server
-    client.start();
+    await client.start();
 
     context.subscriptions.push(
-        vs.languages.registerRenameProvider(
+        vscode.languages.registerRenameProvider(
             { language: "powerquery" },
             {
                 async provideRenameEdits(
@@ -76,6 +90,11 @@ export function activate(context: ExtensionContext): void {
 }
 
 export function deactivate(): Thenable<void> | undefined {
+    if (commands.length > 0) {
+        commands.forEach((disposable: vscode.Disposable) => disposable.dispose());
+        commands.length = 0;
+    }
+
     if (!client) {
         return undefined;
     }

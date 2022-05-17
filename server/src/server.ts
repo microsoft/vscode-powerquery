@@ -16,7 +16,7 @@ const LanguageId: string = "powerquery";
 
 interface RenameIdentifierParams {
     readonly textDocumentUri: string;
-    readonly position: Position;
+    readonly position: LS.Position;
     readonly newName: string;
 }
 
@@ -81,9 +81,9 @@ connection.onDidChangeConfiguration(async () => {
     documents.all().forEach(validateDocument);
 });
 
-documents.onDidClose((event: LS.TextDocumentChangeEvent<TextDocument>) => {
+documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // Clear any errors associated with this file
-    connection.sendDiagnostics({
+    await connection.sendDiagnostics({
         uri: event.document.uri,
         version: event.document.version,
         diagnostics: [],
@@ -113,7 +113,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
         createValidationSettings(getLocalizedStandardLibrary(), traceManager),
     );
 
-    connection.sendDiagnostics({
+    await connection.sendDiagnostics({
         uri: document.uri,
         version: document.version,
         diagnostics: result.diagnostics,
@@ -237,7 +237,7 @@ connection.onSignatureHelp(
     ): Promise<LS.SignatureHelp> => {
         const emptySignatureHelp: LS.SignatureHelp = {
             signatures: [],
-            activeParameter: null,
+            activeParameter: undefined,
             activeSignature: 0,
         };
 

@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.33",
+    "version": "0.1.34",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -8,8 +8,7 @@
     "homepage": "https://github.com/microsoft/vscode-powerquery#readme",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/microsoft/vscode-powerquery.git",
-        "directory": "client"
+        "url": "git+https://github.com/microsoft/vscode-powerquery.git"
     },
     "issues": {
         "url": "https://github.com/microsoft/vscode-powerquery/issues"
@@ -57,10 +56,56 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:powerquery"
+        "onLanguage:powerquery",
+        "onCommand:powerquery.mEscapeText",
+        "onCommand:powerquery.mUnescapeText",
+        "onCommand:powerquery.jsonEscapeText",
+        "onCommand:powerquery.jsonUnescapeText"
     ],
     "publisher": "PowerQuery",
     "contributes": {
+        "commands": [
+            {
+                "command": "powerquery.mEscapeText",
+                "title": "Encode selection as an M text value",
+                "category": "powerquery"
+            },
+            {
+                "command": "powerquery.mUnescapeText",
+                "title": "Remove M text encoding from selection",
+                "category": "powerquery"
+            },
+            {
+                "command": "powerquery.jsonUnescapeText",
+                "title": "Remove JSON string encoding from selection",
+                "category": "powerquery"
+            },
+            {
+                "command": "powerquery.jsonEscapeText",
+                "title": "Encode selection as JSON string",
+                "category": "powerquery"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "powerquery.mEscapeText",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "powerquery.mUnescapeText",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "powerquery.jsonUnescapeText",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "powerquery.jsonEscapeText",
+                    "when": "editorHasSelection"
+                }
+            ]
+        },
         "configuration": {
             "type": "object",
             "title": "Power Query",
@@ -175,14 +220,14 @@
         ]
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "5.21.0",
-        "@typescript-eslint/parser": "5.21.0",
-        "eslint": "8.14.0",
+        "@typescript-eslint/eslint-plugin": "5.24.0",
+        "@typescript-eslint/parser": "5.24.0",
+        "eslint": "8.15.0",
         "eslint-config-prettier": "8.5.0",
         "eslint-plugin-prettier": "4.0.0",
         "eslint-plugin-promise": "6.0.0",
         "eslint-plugin-security": "1.5.0",
         "prettier": "2.6.2",
-        "typescript": "4.6.3"
+        "typescript": "4.6.4"
     }
 }

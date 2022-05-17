@@ -19,6 +19,8 @@ export async function testCompletion(
     expectedCompletionList: vscode.CompletionList,
     vertification: VertificationType,
 ): Promise<void> {
+    await vscode.workspace.openTextDocument(docUri);
+
     const actualCompletionList: vscode.CompletionList | undefined = await testCompletionBase(docUri, position);
 
     if (actualCompletionList === undefined) {
@@ -51,7 +53,12 @@ export async function testCompletion(
             );
 
             assert.equal(filteredItems.length, 1, `expected to find one item with label '${expectedItem.label}'`);
-            assert.equal(filteredItems[0].kind, expectedItem.kind, `item kind mismatch.`);
+
+            assert.equal(
+                filteredItems[0].kind,
+                expectedItem.kind,
+                `item kind mismatch. Label: ${expectedItem.label} Expected: ${expectedItem.kind} Actual: ${filteredItems[0].kind}`,
+            );
         });
     }
 }
