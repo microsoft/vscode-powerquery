@@ -25,6 +25,8 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
 // eslint-disable-next-line require-await
 export async function activateExtension(): Promise<void> {
     // The extensionId is `publisher.name` from package.json
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
 
     if (!ext) {

@@ -5,23 +5,24 @@ import * as LC from "vscode-languageclient/node";
 import * as path from "path";
 import * as vscode from "vscode";
 
-import * as Commands from "./commands";
-import { Constants } from "./constants";
+import * as CommandFn from "./commands";
+import { CommandConstant } from "./commandConstant";
 
 import { CancellationToken, Position, TextDocument, TextEdit, WorkspaceEdit } from "vscode";
 
 const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // Register commands
-    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeMText, Commands.escapeMText));
-    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeMText, Commands.unescapeMText));
-    commands.push(vscode.commands.registerTextEditorCommand(Constants.CommandEscapeJsonText, Commands.escapeJsonText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
 
     commands.push(
-        vscode.commands.registerTextEditorCommand(Constants.CommandUnescapeJsonText, Commands.unescapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
     );
+
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
 
     // The server is implemented in node
     const serverModule: string = context.asAbsolutePath(path.join("server", "dist", "server.js"));
@@ -59,7 +60,7 @@ export function activate(context: vscode.ExtensionContext): void {
     client = new LC.LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
 
     // Start the client. This will also launch the server
-    client.start();
+    await client.start();
 
     context.subscriptions.push(
         vscode.languages.registerRenameProvider(
