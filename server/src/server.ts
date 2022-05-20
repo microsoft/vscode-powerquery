@@ -312,6 +312,8 @@ function createAnalysisSettings(
         createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library, traceManager),
         library,
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
+        traceManager,
+        maybeInitialCorrelationId: undefined,
     };
 }
 

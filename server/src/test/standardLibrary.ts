@@ -58,6 +58,8 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
             PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, undefined, library, false),
         isWorkspaceCacheAllowed: false,
         library,
+        traceManager: PQP.Trace.NoOpTraceManagerInstance,
+        maybeInitialCorrelationId: undefined,
     };
 
     return PQLS.AnalysisUtils.createAnalysis(

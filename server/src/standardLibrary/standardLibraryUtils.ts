@@ -65,7 +65,7 @@ function mapExport(xport: StandardLibraryExport): PQLS.Library.TLibraryDefinitio
 
         return {
             kind: PQLS.Library.LibraryDefinitionKind.Function,
-            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType),
+            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType, PQP.Trace.NoOpTraceManagerInstance, undefined),
             description,
             asPowerQueryType,
             completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
