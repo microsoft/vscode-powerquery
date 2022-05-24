@@ -35,7 +35,7 @@ function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.Lib
         libraryDefinitionsByLocale.set(locale, mapped);
     }
 
-    return PQP.Assert.asDefined(libraryDefinitionsByLocale.get(locale));
+    return PQP.MapUtils.assertGet(libraryDefinitionsByLocale, locale);
 }
 
 const jsonByLocale: Map<string, StandardLibrary> = new Map([[PQP.Locale.en_US, StandardLibraryEnUs]]);
