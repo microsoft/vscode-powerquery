@@ -23,17 +23,19 @@ interface RenameIdentifierParams {
 interface ServerSettings {
     checkForDuplicateIdentifiers: boolean;
     checkInvokeExpressions: boolean;
-    locale: string;
     isBenchmarksEnabled: boolean;
     isWorkspaceCacheAllowed: boolean;
+    locale: string;
+    typeStrategy: PQLS.TypeStrategy;
 }
 
 const defaultServerSettings: ServerSettings = {
     checkForDuplicateIdentifiers: true,
     checkInvokeExpressions: false,
-    locale: PQP.DefaultLocale,
     isBenchmarksEnabled: false,
     isWorkspaceCacheAllowed: true,
+    locale: PQP.DefaultLocale,
+    typeStrategy: PQLS.TypeStrategy.Extended,
 };
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -317,10 +319,6 @@ function createAnalysisSettings(
     };
 }
 
-function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
-    return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
-}
-
 function createInspectionSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
@@ -331,9 +329,11 @@ function createInspectionSettings(
             locale: serverSettings.locale,
             traceManager,
         },
-        undefined,
-        library,
-        serverSettings.isWorkspaceCacheAllowed,
+        {
+            library,
+            isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
+            typeStrategy: serverSettings.typeStrategy,
+        },
     );
 }
 
@@ -407,8 +407,10 @@ function createValidationSettings(
     return PQLS.ValidationSettingsUtils.createValidationSettings(
         createInspectionSettings(library, traceManager),
         LanguageId,
-        serverSettings.checkForDuplicateIdentifiers,
-        serverSettings.checkInvokeExpressions,
+        {
+            checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
+            checkInvokeExpressions: serverSettings.checkInvokeExpressions,
+        },
     );
 }
 
@@ -419,14 +421,35 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
+    const maybeTypeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
+
+    const typeStrategy: PQLS.TypeStrategy = maybeTypeStrategy
+        ? deriveTypeStrategy(maybeTypeStrategy)
+        : PQLS.TypeStrategy.Extended;
 
     return {
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: config?.diagnostics?.experimental ?? false,
-        locale: config?.general?.locale ?? PQP.DefaultLocale,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
+        locale: config?.general?.locale ?? PQP.DefaultLocale,
+        typeStrategy,
     };
+}
+
+function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
+    return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+}
+
+function deriveTypeStrategy(value: string): PQLS.TypeStrategy {
+    switch (value) {
+        case PQLS.TypeStrategy.Extended:
+        case PQLS.TypeStrategy.Primitive:
+            return value;
+
+        default:
+            return PQLS.TypeStrategy.Extended;
+    }
 }
 
 function assertAsError<T>(value: T | Error): Error {
