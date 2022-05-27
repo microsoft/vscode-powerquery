@@ -55,9 +55,11 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
 
     const analysisSettings: AnalysisSettings = {
         createInspectionSettingsFn: () =>
-            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, undefined, library, false),
+            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, { library }),
         isWorkspaceCacheAllowed: false,
         library,
+        traceManager: PQP.Trace.NoOpTraceManagerInstance,
+        maybeInitialCorrelationId: undefined,
     };
 
     return PQLS.AnalysisUtils.createAnalysis(

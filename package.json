@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.34",
+    "version": "0.1.35",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -126,6 +126,16 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Specifies whether to enable experimental diagnostics features. This may result in false positives while the feature is under development."
+                },
+                "powerquery.diagnostics.typeStrategy": {
+                    "scope": "window",
+                    "type": "string",
+                    "default": "Extended",
+                    "description": "Sets what strategy is used by the type analysis. Extended is useful for small scripts but can hang on larger, complicated files. If performance isn't acceptable then fallback to Primitive.",
+                    "enum": [
+                        "Extended",
+                        "Primitive"
+                    ]
                 },
                 "powerquery.general.locale": {
                     "scope": "window",

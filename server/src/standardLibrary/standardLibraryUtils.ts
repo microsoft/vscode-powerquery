@@ -35,7 +35,7 @@ function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.Lib
         libraryDefinitionsByLocale.set(locale, mapped);
     }
 
-    return PQP.Assert.asDefined(libraryDefinitionsByLocale.get(locale));
+    return PQP.MapUtils.assertGet(libraryDefinitionsByLocale, locale);
 }
 
 const jsonByLocale: Map<string, StandardLibrary> = new Map([[PQP.Locale.en_US, StandardLibraryEnUs]]);
@@ -65,7 +65,7 @@ function mapExport(xport: StandardLibraryExport): PQLS.Library.TLibraryDefinitio
 
         return {
             kind: PQLS.Library.LibraryDefinitionKind.Function,
-            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType),
+            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType, PQP.Trace.NoOpTraceManagerInstance, undefined),
             description,
             asPowerQueryType,
             completionItemKind: assertGetCompletionItemKind(xport.completionItemType),

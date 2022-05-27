@@ -24,7 +24,7 @@ export function createStandardLibraryTypeResolver(
         else if (request.kind === PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value) {
             return maybeLibraryType;
         } else {
-            const key: string = TypeUtils.nameOf(maybeLibraryType);
+            const key: string = TypeUtils.nameOf(maybeLibraryType, PQP.Trace.NoOpTraceManagerInstance, undefined);
             const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
 
             if (maybeSmartTypeResolverFn === undefined) {
@@ -36,6 +36,8 @@ export function createStandardLibraryTypeResolver(
                 // If it's an invocation type then it's assumed we
                 // already confirmed the request is about a DefinedFunction.
                 TypeUtils.assertAsDefinedFunction(maybeLibraryType),
+                PQP.Trace.NoOpTraceManagerInstance,
+                undefined,
             );
 
             if (!isValidInvocation(typeChecked)) {
