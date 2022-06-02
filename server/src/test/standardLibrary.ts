@@ -9,9 +9,9 @@ import { MarkupContent, ParameterInformation, SignatureInformation } from "vscod
 import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 
-import { StandardLibraryUtils } from "../standardLibrary";
+import { LibraryUtils } from "../library";
 
-const standardLibrary: PQLS.Library.ILibrary = StandardLibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
+const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
 
 function assertGetHover(text: string): Promise<Hover> {
     return createAnalysis(text).getHover();
@@ -51,7 +51,7 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
         line: 0,
     };
 
-    const library: PQLS.Library.ILibrary = StandardLibraryUtils.getOrCreateStandardLibrary();
+    const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
         createInspectionSettingsFn: () =>
@@ -75,7 +75,7 @@ describe(`StandardLibrary`, () => {
             const definitionKey: string = "BinaryOccurrence.Required";
 
             const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                standardLibrary.libraryDefinitions.get(definitionKey);
+                library.libraryDefinitions.get(definitionKey);
 
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
@@ -93,7 +93,7 @@ describe(`StandardLibrary`, () => {
             const exportKey: string = "List.Distinct";
 
             const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                standardLibrary.libraryDefinitions.get(exportKey);
+                library.libraryDefinitions.get(exportKey);
 
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
@@ -111,7 +111,7 @@ describe(`StandardLibrary`, () => {
             const exportKey: string = "#date";
 
             const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                standardLibrary.libraryDefinitions.get(exportKey);
+                library.libraryDefinitions.get(exportKey);
 
             if (maybeLibraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);

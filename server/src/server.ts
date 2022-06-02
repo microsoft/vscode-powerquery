@@ -10,7 +10,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 
 import { formatError } from "./errorUtils";
-import { StandardLibraryUtils } from "./standardLibrary";
+import { LibraryUtils } from "./library";
 
 const LanguageId: string = "powerquery";
 
@@ -23,18 +23,22 @@ interface RenameIdentifierParams {
 interface ServerSettings {
     checkForDuplicateIdentifiers: boolean;
     checkInvokeExpressions: boolean;
+    experimental: boolean;
     isBenchmarksEnabled: boolean;
     isWorkspaceCacheAllowed: boolean;
     locale: string;
+    mode: "Power Query" | "SDK";
     typeStrategy: PQLS.TypeStrategy;
 }
 
 const defaultServerSettings: ServerSettings = {
     checkForDuplicateIdentifiers: true,
     checkInvokeExpressions: false,
+    experimental: false,
     isBenchmarksEnabled: false,
     isWorkspaceCacheAllowed: true,
     locale: PQP.DefaultLocale,
+    mode: "Power Query",
     typeStrategy: PQLS.TypeStrategy.Extended,
 };
 
@@ -112,7 +116,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
 
     const result: PQLS.ValidationResult = await PQLS.validate(
         document,
-        createValidationSettings(getLocalizedStandardLibrary(), traceManager),
+        createValidationSettings(getLocalizedLibrary(), traceManager),
     );
 
     await connection.sendDiagnostics({
@@ -296,12 +300,12 @@ function createAnalysis(
     position: PQLS.Position,
     traceManager: PQP.Trace.TraceManager,
 ): PQLS.Analysis {
-    const localizedStandardLibrary: PQLS.Library.ILibrary = getLocalizedStandardLibrary();
+    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedLibrary();
     document.uri;
 
     return PQLS.AnalysisUtils.createAnalysis(
         document,
-        createAnalysisSettings(localizedStandardLibrary, traceManager),
+        createAnalysisSettings(localizedLibrary, traceManager),
         position,
     );
 }
@@ -422,6 +426,7 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
     const maybeTypeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
+    const experimental: boolean = config?.diagnostics?.experimental;
 
     const typeStrategy: PQLS.TypeStrategy = maybeTypeStrategy
         ? deriveTypeStrategy(maybeTypeStrategy)
@@ -429,16 +434,37 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
 
     return {
         checkForDuplicateIdentifiers: true,
-        checkInvokeExpressions: config?.diagnostics?.experimental ?? false,
+        checkInvokeExpressions: experimental ?? false,
+        experimental,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
+        mode: deriveMode(config?.general?.mode),
         typeStrategy,
     };
 }
 
-function getLocalizedStandardLibrary(): PQLS.Library.ILibrary {
-    return StandardLibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+function getLocalizedLibrary(): PQLS.Library.ILibrary {
+    switch (serverSettings.mode) {
+        case "SDK":
+            return LibraryUtils.getOrCreateSdkLibrary(serverSettings.locale);
+
+        case "Power Query":
+            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+
+        default:
+            throw PQP.Assert.isNever(serverSettings.mode);
+    }
+}
+
+function deriveMode(value: string | undefined): "Power Query" | "SDK" {
+    switch (value) {
+        case "SDK":
+            return "SDK";
+
+        default:
+            return "Power Query";
+    }
 }
 
 function deriveTypeStrategy(value: string): PQLS.TypeStrategy {

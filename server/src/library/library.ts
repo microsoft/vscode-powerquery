@@ -2,23 +2,24 @@
 // Licensed under the MIT license.
 
 // The JSON output of a localized standard library.
-export type StandardLibrary = ReadonlyArray<StandardLibraryExport>;
+export type LibraryJson = ReadonlyArray<LibraryExportJson>;
 
-export interface StandardLibraryExport {
+export interface LibraryExportJson {
     readonly name: string;
-    readonly documentation: StandardLibraryDocumentation | null;
-    readonly functionParameters: ReadonlyArray<StandardLibraryFunctionParameter> | null;
+    readonly documentation: LibraryDocumentationJson | null;
+    readonly functionParameters: ReadonlyArray<LibraryFunctionParameterJson> | null;
     readonly completionItemType: number;
     readonly isDataSource: boolean;
     readonly dataType: string;
 }
 
-export interface StandardLibraryDocumentation {
-    readonly description: string;
+export interface LibraryDocumentationJson {
+    readonly description: string | null;
     readonly longDescription: string | null;
+    readonly category: string | null;
 }
 
-export interface StandardLibraryFunctionParameter {
+export interface LibraryFunctionParameterJson {
     readonly name: string;
     readonly parameterType: string;
     readonly isRequired: boolean;
@@ -28,12 +29,12 @@ export interface StandardLibraryFunctionParameter {
     readonly sampleValues: ReadonlyArray<string | number> | null;
     readonly allowedValues: ReadonlyArray<string | number> | null;
     readonly defaultValue: string | number | null;
-    readonly fields: ReadonlyArray<StandardLibraryField> | null;
+    readonly fields: ReadonlyArray<LibraryFieldJson> | null;
     readonly enumNames: ReadonlyArray<string> | null;
     readonly enumCaptions: ReadonlyArray<string> | ReadonlyArray<null> | null;
 }
 
-export interface StandardLibraryField {
+export interface LibraryFieldJson {
     readonly fieldName: string;
     readonly type: string;
     readonly isRequired: boolean;

@@ -5,18 +5,48 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { CompletionItemKind } from "@microsoft/powerquery-language-services";
 
-import * as StandardLibraryEnUs from "./bylocalization/enUs.json";
-import { StandardLibrary, StandardLibraryExport, StandardLibraryFunctionParameter } from "./standardLibrary";
-import { createStandardLibraryTypeResolver } from "./standardLibraryTypeResolver";
+import * as SdkLibraryJsonEnUs from "./sdk/sdk-enUs.json";
+import * as StandardLibraryJsonEnUs from "./standard/standard-enUs.json";
+import { LibraryExportJson, LibraryFunctionParameterJson, LibraryJson } from "./library";
+import { createLibraryTypeResolver } from "./libraryTypeResolver";
 
 export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibrary {
-    locale = locale ?? PQP.Locale.en_US;
+    return getOrCreateLibrary(
+        standardLibraryByLocale,
+        standardLibraryDefinitionsByLocale,
+        standardJsonByLocale,
+        locale ?? PQP.DefaultLocale,
+        StandardLibraryJsonEnUs,
+    );
+}
 
+export function getOrCreateSdkLibrary(locale?: string): PQLS.Library.ILibrary {
+    return getOrCreateLibrary(
+        sdkLibraryByLocale,
+        sdkLibraryDefinitionsByLocale,
+        sdkJsonByLocale,
+        locale ?? PQP.DefaultLocale,
+        SdkLibraryJsonEnUs,
+    );
+}
+
+function getOrCreateLibrary(
+    libraryByLocale: Map<string, PQLS.Library.ILibrary>,
+    definitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>>,
+    jsonByLocale: Map<string, LibraryJson>,
+    locale: string,
+    defaultJson: LibraryJson,
+): PQLS.Library.ILibrary {
     if (!libraryByLocale.has(locale)) {
-        const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateStandardLibraryDefinitions(locale);
+        const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
+            definitionsByLocale,
+            jsonByLocale,
+            locale,
+            defaultJson,
+        );
 
         libraryByLocale.set(locale, {
-            externalTypeResolver: createStandardLibraryTypeResolver(libraryDefinitions),
+            externalTypeResolver: createLibraryTypeResolver(libraryDefinitions),
             libraryDefinitions,
         });
     }
@@ -24,27 +54,34 @@ export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibra
     return PQP.Assert.asDefined(libraryByLocale.get(locale));
 }
 
-function getOrCreateStandardLibraryDefinitions(locale: string): PQLS.Library.LibraryDefinitions {
-    if (!libraryDefinitionsByLocale.has(locale)) {
-        const json: StandardLibrary = jsonByLocale.get(locale) ?? StandardLibraryEnUs;
+function getOrCreateLibraryDefinitions(
+    definitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>>,
+    jsonByLocale: Map<string, LibraryJson>,
+    locale: string,
+    defaultJson: LibraryJson,
+): PQLS.Library.LibraryDefinitions {
+    if (!definitionsByLocale.has(locale)) {
+        const json: LibraryJson = jsonByLocale.get(locale) ?? defaultJson;
 
         const mapped: Map<string, PQLS.Library.TLibraryDefinition> = new Map(
-            json.map((xport: StandardLibraryExport) => [xport.name, mapExport(xport)]),
+            json.map((xport: LibraryExportJson) => [xport.name, mapExport(xport)]),
         );
 
-        libraryDefinitionsByLocale.set(locale, mapped);
+        definitionsByLocale.set(locale, mapped);
     }
 
-    return PQP.MapUtils.assertGet(libraryDefinitionsByLocale, locale);
+    return PQP.MapUtils.assertGet(definitionsByLocale, locale);
 }
 
-const jsonByLocale: Map<string, StandardLibrary> = new Map([[PQP.Locale.en_US, StandardLibraryEnUs]]);
+const sdkLibraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
+const sdkLibraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
+const sdkJsonByLocale: Map<string, LibraryJson> = new Map([[PQP.Locale.en_US, SdkLibraryJsonEnUs]]);
 
-const libraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
+const standardLibraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
+const standardLibraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
+const standardJsonByLocale: Map<string, LibraryJson> = new Map([[PQP.Locale.en_US, StandardLibraryJsonEnUs]]);
 
-const libraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
-
-function mapExport(xport: StandardLibraryExport): PQLS.Library.TLibraryDefinition {
+function mapExport(xport: LibraryExportJson): PQLS.Library.TLibraryDefinition {
     const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.dataType);
     const label: string = xport.name;
     const description: string = xport.documentation?.description ?? "No description available";
@@ -83,14 +120,14 @@ function mapExport(xport: StandardLibraryExport): PQLS.Library.TLibraryDefinitio
 }
 
 function mapLibraryFunctionSignatureToType(
-    xport: StandardLibraryExport,
+    xport: LibraryExportJson,
     returnType: PQP.Language.Type.TPrimitiveType,
 ): PQP.Language.Type.DefinedFunction {
-    const xportParameters: ReadonlyArray<StandardLibraryFunctionParameter> = xport.functionParameters ?? [];
+    const xportParameters: ReadonlyArray<LibraryFunctionParameterJson> = xport.functionParameters ?? [];
 
     return PQP.Language.TypeUtils.createDefinedFunction(
         false,
-        xportParameters.map((parameter: StandardLibraryFunctionParameter) => {
+        xportParameters.map((parameter: LibraryFunctionParameterJson) => {
             const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(
                 parameter.parameterType,
             );
@@ -106,7 +143,7 @@ function mapLibraryFunctionSignatureToType(
     );
 }
 
-function mapParameterToLibraryParameter(parameter: StandardLibraryFunctionParameter): PQLS.Library.LibraryParameter {
+function mapParameterToLibraryParameter(parameter: LibraryFunctionParameterJson): PQLS.Library.LibraryParameter {
     const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.parameterType);
 
     return {
