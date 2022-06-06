@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.36",
+    "version": "0.1.37",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -110,22 +110,17 @@
             "type": "object",
             "title": "Power Query",
             "properties": {
-                "powerquery.trace.server": {
-                    "scope": "window",
-                    "type": "string",
-                    "enum": [
-                        "off",
-                        "messages",
-                        "verbose"
-                    ],
-                    "default": "off",
-                    "description": "Traces the communication between VS Code and the language server."
-                },
-                "powerquery.diagnostics.experimental": {
+                "powerquery.benchmark.enable": {
                     "scope": "window",
                     "type": "boolean",
                     "default": false,
-                    "description": "Specifies whether to enable experimental diagnostics features. This may result in false positives while the feature is under development."
+                    "description": "Recommended always off. Enables benchmark traces to be generated for the extension."
+                },
+                "powerquery.diagnostics.isWorkspaceCacheAllowed": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Recommended always on. Toggles internal caching causing performance degregation when off. Used to find hot paths in the extension."
                 },
                 "powerquery.diagnostics.typeStrategy": {
                     "scope": "window",
@@ -136,6 +131,12 @@
                         "Extended",
                         "Primitive"
                     ]
+                },
+                "powerquery.general.experimental": {
+                    "scope": "window",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Specifies whether to enable experimental features."
                 },
                 "powerquery.general.locale": {
                     "scope": "window",
@@ -187,17 +188,26 @@
                     ],
                     "default": "en-US"
                 },
-                "powerquery.diagnostics.isWorkspaceCacheAllowed": {
+                "powerquery.general.mode": {
                     "scope": "window",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Recommended always on. Toggles internal caching causing performance degregation when off. Used to find hot paths in the extension."
+                    "type": "string",
+                    "default": "Power Query",
+                    "description": "Changes what library functions are available.",
+                    "enum": [
+                        "Power Query",
+                        "SDK"
+                    ]
                 },
-                "powerquery.benchmark.enable": {
+                "powerquery.trace.server": {
                     "scope": "window",
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Recommended always off. Enables benchmark traces to be generated for the extension."
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the language server."
                 }
             }
         },

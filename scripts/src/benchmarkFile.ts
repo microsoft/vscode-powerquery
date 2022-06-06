@@ -7,7 +7,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { InspectionSettings } from "@microsoft/powerquery-language-services";
 import type { Position } from "vscode-languageserver-types";
 
-import { StandardLibraryUtils } from "../../server/src/standardLibrary";
+import { LibraryUtils } from "../../server/src/library";
 
 const args: ReadonlyArray<string> = process.argv;
 
@@ -49,7 +49,7 @@ let contents: string = "";
 
 const fileContents: string = fs.readFileSync(args[2], "utf8").replace(/^\uFEFF/, "");
 const position: Position = parsePosition(args[3]);
-const standardLibrary: PQLS.Library.ILibrary = StandardLibraryUtils.getOrCreateStandardLibrary();
+const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
 const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspectionSettings(
     {
@@ -58,7 +58,7 @@ const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspec
     },
     {
         isWorkspaceCacheAllowed: true,
-        library: standardLibrary,
+        library,
     },
 );
 

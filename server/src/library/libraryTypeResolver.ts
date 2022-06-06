@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// Contains smart type resolvers for standard library functions,
+// Contains smart type resolvers for library functions,
 // such as Table.AddColumn(...) returning a DefinedTable.
 
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 
-// Takes the definitions for a standard library and returns a type resolver.
-export function createStandardLibraryTypeResolver(
+// Takes the definitions for a library and returns a type resolver.
+export function createLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
     return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest): Type.TPowerQueryType | undefined => {
@@ -100,7 +100,7 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
     }
 }
 
-// We don't have a way to know when the standard library has a behavioral change.
+// We don't have a way to know when the library has a behavioral change.
 // The best we can do is check if a type signature changed by using TypeUtils.nameOf(invoked function).
 const SmartTypeResolverFns: ReadonlyMap<string, SmartTypeResolverFn> = new Map([
     [
