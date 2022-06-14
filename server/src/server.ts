@@ -39,7 +39,7 @@ const defaultServerSettings: ServerSettings = {
     isWorkspaceCacheAllowed: true,
     locale: PQP.DefaultLocale,
     mode: "Power Query",
-    typeStrategy: PQLS.TypeStrategy.Extended,
+    typeStrategy: PQLS.TypeStrategy.Primitive,
 };
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -136,12 +136,19 @@ connection.onDocumentFormatting(
 
         const document: TextDocument = maybeDocument;
 
+        const experimental: boolean = serverSettings.experimental;
+
         try {
-            return await PQLS.tryFormat(document, {
-                ...PQP.DefaultSettings,
-                indentationLiteral: PQF.IndentationLiteral.SpaceX4,
-                newlineLiteral: PQF.NewlineLiteral.Windows,
-            });
+            return await PQLS.tryFormat(
+                document,
+                {
+                    ...PQP.DefaultSettings,
+                    indentationLiteral: PQF.IndentationLiteral.SpaceX4,
+                    newlineLiteral: PQF.NewlineLiteral.Windows,
+                    maxWidth: experimental ? 120 : undefined,
+                },
+                experimental,
+            );
         } catch (err) {
             const error: Error = err as Error;
             const errorMessage: string = error.message;
@@ -426,21 +433,17 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
     const maybeTypeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
-    const experimental: boolean = config?.diagnostics?.experimental;
-
-    const typeStrategy: PQLS.TypeStrategy = maybeTypeStrategy
-        ? deriveTypeStrategy(maybeTypeStrategy)
-        : PQLS.TypeStrategy.Extended;
+    const experimental: boolean = config?.general?.experimental;
 
     return {
         checkForDuplicateIdentifiers: true,
-        checkInvokeExpressions: experimental ?? false,
+        checkInvokeExpressions: false,
         experimental,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
-        typeStrategy,
+        typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
     };
 }
 
@@ -474,7 +477,7 @@ function deriveTypeStrategy(value: string): PQLS.TypeStrategy {
             return value;
 
         default:
-            return PQLS.TypeStrategy.Extended;
+            throw new PQP.CommonError.InvariantError(`could not derive typeStrategy`);
     }
 }
 
