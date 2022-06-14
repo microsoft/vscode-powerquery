@@ -136,9 +136,7 @@ connection.onDocumentFormatting(
 
         const document: TextDocument = maybeDocument;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
-        const experimental: boolean = config?.general?.experimental;
+        const experimental: boolean = serverSettings.experimental;
 
         try {
             return await PQLS.tryFormat(
