@@ -39,7 +39,7 @@ const defaultServerSettings: ServerSettings = {
     isWorkspaceCacheAllowed: true,
     locale: PQP.DefaultLocale,
     mode: "Power Query",
-    typeStrategy: PQLS.TypeStrategy.Extended,
+    typeStrategy: PQLS.TypeStrategy.Primitive,
 };
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -437,19 +437,15 @@ async function fetchConfigurationSettings(): Promise<ServerSettings> {
     const maybeTypeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
     const experimental: boolean = config?.general?.experimental;
 
-    const typeStrategy: PQLS.TypeStrategy = maybeTypeStrategy
-        ? deriveTypeStrategy(maybeTypeStrategy)
-        : PQLS.TypeStrategy.Extended;
-
     return {
         checkForDuplicateIdentifiers: true,
-        checkInvokeExpressions: experimental ?? false,
+        checkInvokeExpressions: false,
         experimental,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
-        typeStrategy,
+        typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
     };
 }
 
@@ -483,7 +479,7 @@ function deriveTypeStrategy(value: string): PQLS.TypeStrategy {
             return value;
 
         default:
-            return PQLS.TypeStrategy.Extended;
+            throw new PQP.CommonError.InvariantError(`could not derive typeStrategy`);
     }
 }
 
