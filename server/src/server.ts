@@ -8,6 +8,7 @@ import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
+import { NoOpTraceManagerInstance } from "@microsoft/powerquery-parser/lib/powerquery-parser/common/trace";
 
 import { formatError } from "./errorUtils";
 import { LibraryUtils } from "./library";
@@ -46,10 +47,113 @@ const defaultServerSettings: ServerSettings = {
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
-const NoOpTraceManager: PQP.Trace.NoOpTraceManager = new PQP.Trace.NoOpTraceManager();
 
 let serverSettings: ServerSettings = defaultServerSettings;
 let hasConfigurationCapability: boolean = false;
+
+connection.onCompletion(
+    async (
+        textDocumentPosition: LS.TextDocumentPositionParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.CompletionItem[]> => {
+        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+
+        if (document) {
+            const traceManager: PQP.Trace.TraceManager = createTraceManager(
+                textDocumentPosition.textDocument.uri,
+                "onCompletion",
+                textDocumentPosition.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
+
+            try {
+                return await analysis.getAutocompleteItems();
+            } catch (error) {
+                connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
+
+                return [];
+            }
+        }
+
+        return [];
+    },
+);
+
+connection.onDidChangeConfiguration(async () => {
+    serverSettings = await fetchConfigurationSettings();
+    documents.all().forEach(validateDocument);
+});
+
+documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // TODO: pass actual incremental changes into the workspace cache
+    PQLS.documentClosed(event.document);
+
+    try {
+        return await validateDocument(event.document);
+    } catch (error) {
+        connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
+
+        return [];
+    }
+});
+
+documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // Clear any errors associated with this file
+    await connection.sendDiagnostics({
+        uri: event.document.uri,
+        version: event.document.version,
+        diagnostics: [],
+    });
+
+    PQLS.documentClosed(event.document);
+});
+
+connection.onDocumentSymbol(
+    async (
+        documentSymbolParams: LS.DocumentSymbolParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.DocumentSymbol[] | undefined> => {
+        const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
+
+        if (document) {
+            return await PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.isWorkspaceCacheAllowed);
+        }
+
+        return undefined;
+    },
+);
+
+connection.onHover(
+    async (textDocumentPosition: LS.TextDocumentPositionParams, _token: LS.CancellationToken): Promise<LS.Hover> => {
+        const emptyHover: LS.Hover = {
+            range: undefined,
+            contents: [],
+        };
+
+        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+
+        if (document === undefined) {
+            return emptyHover;
+        }
+
+        const traceManager: PQP.Trace.TraceManager = createTraceManager(
+            textDocumentPosition.textDocument.uri,
+            "onHover",
+            textDocumentPosition.position,
+        );
+
+        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
+
+        try {
+            return await analysis.getHover();
+        } catch (error) {
+            connection.console.error(`onHover error ${formatError(assertAsError(error))}`);
+
+            return emptyHover;
+        }
+    },
+);
 
 connection.onInitialize((params: LS.InitializeParams) => {
     const capabilities: LS.ServerCapabilities = {
@@ -82,34 +186,57 @@ connection.onInitialized(async () => {
     serverSettings = await fetchConfigurationSettings();
 });
 
-connection.onDidChangeConfiguration(async () => {
-    serverSettings = await fetchConfigurationSettings();
-    documents.all().forEach(validateDocument);
-});
+connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
+    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
 
-documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
-    // Clear any errors associated with this file
-    await connection.sendDiagnostics({
-        uri: event.document.uri,
-        version: event.document.version,
-        diagnostics: [],
-    });
+    if (document) {
+        const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "renameIdentifier");
+        const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
 
-    PQLS.documentClosed(event.document);
-});
+        try {
+            return await analysis.getRenameEdits(params.newName);
+        } catch (error) {
+            connection.console.error(`on powerquery/renameIdentifier error ${formatError(assertAsError(error))}`);
 
-documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
-    // TODO: pass actual incremental changes into the workspace cache
-    PQLS.documentClosed(event.document);
-
-    try {
-        return await validateDocument(event.document);
-    } catch (error) {
-        connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
-
-        return [];
+            return [];
+        }
     }
 });
+
+connection.onSignatureHelp(
+    async (
+        textDocumentPosition: LS.TextDocumentPositionParams,
+        _token: LS.CancellationToken,
+    ): Promise<LS.SignatureHelp> => {
+        const emptySignatureHelp: LS.SignatureHelp = {
+            signatures: [],
+            activeParameter: undefined,
+            activeSignature: 0,
+        };
+
+        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
+
+        if (document) {
+            const traceManager: PQP.Trace.TraceManager = createTraceManager(
+                textDocumentPosition.textDocument.uri,
+                "onSignatureHelp",
+                textDocumentPosition.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
+
+            try {
+                return await analysis.getSignatureHelp();
+            } catch (error) {
+                connection.console.error(`onSignatureHelp error ${formatError(assertAsError(error))}`);
+
+                return emptySignatureHelp;
+            }
+        }
+
+        return emptySignatureHelp;
+    },
+);
 
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "validateDocument");
@@ -167,133 +294,6 @@ connection.onDocumentFormatting(
         }
     },
 );
-
-connection.onCompletion(
-    async (
-        textDocumentPosition: LS.TextDocumentPositionParams,
-        _token: LS.CancellationToken,
-    ): Promise<LS.CompletionItem[]> => {
-        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
-
-        if (document) {
-            const traceManager: PQP.Trace.TraceManager = createTraceManager(
-                textDocumentPosition.textDocument.uri,
-                "onCompletion",
-                textDocumentPosition.position,
-            );
-
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
-
-            try {
-                return await analysis.getAutocompleteItems();
-            } catch (error) {
-                connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
-
-                return [];
-            }
-        }
-
-        return [];
-    },
-);
-
-connection.onDocumentSymbol(
-    async (
-        documentSymbolParams: LS.DocumentSymbolParams,
-        _token: LS.CancellationToken,
-    ): Promise<LS.DocumentSymbol[] | undefined> => {
-        const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
-
-        if (document) {
-            return await PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.isWorkspaceCacheAllowed);
-        }
-
-        return undefined;
-    },
-);
-
-connection.onHover(
-    async (textDocumentPosition: LS.TextDocumentPositionParams, _token: LS.CancellationToken): Promise<LS.Hover> => {
-        const emptyHover: LS.Hover = {
-            range: undefined,
-            contents: [],
-        };
-
-        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
-
-        if (document === undefined) {
-            return emptyHover;
-        }
-
-        const traceManager: PQP.Trace.TraceManager = createTraceManager(
-            textDocumentPosition.textDocument.uri,
-            "onHover",
-            textDocumentPosition.position,
-        );
-
-        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
-
-        try {
-            return await analysis.getHover();
-        } catch (error) {
-            connection.console.error(`onHover error ${formatError(assertAsError(error))}`);
-
-            return emptyHover;
-        }
-    },
-);
-
-connection.onSignatureHelp(
-    async (
-        textDocumentPosition: LS.TextDocumentPositionParams,
-        _token: LS.CancellationToken,
-    ): Promise<LS.SignatureHelp> => {
-        const emptySignatureHelp: LS.SignatureHelp = {
-            signatures: [],
-            activeParameter: undefined,
-            activeSignature: 0,
-        };
-
-        const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
-
-        if (document) {
-            const traceManager: PQP.Trace.TraceManager = createTraceManager(
-                textDocumentPosition.textDocument.uri,
-                "onSignatureHelp",
-                textDocumentPosition.position,
-            );
-
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
-
-            try {
-                return await analysis.getSignatureHelp();
-            } catch (error) {
-                connection.console.error(`onSignatureHelp error ${formatError(assertAsError(error))}`);
-
-                return emptySignatureHelp;
-            }
-        }
-
-        return emptySignatureHelp;
-    },
-);
-
-connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
-    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
-
-    if (document) {
-        try {
-            const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "renameIdentifier");
-            const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
-
-            return await analysis.getRenameEdits(params.newName);
-        } catch (error) {
-            connection.console.error(`on powerquery/renameIdentifier error ${formatError(assertAsError(error))}`);
-        }
-    }
-
-    return [];
-});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -405,9 +405,9 @@ function createTraceManager(
     position?: Position,
 ): PQP.Trace.TraceManager {
     if (serverSettings.isBenchmarksEnabled) {
-        return createBenchmarkTraceManager(uri, sourceAction, position) ?? NoOpTraceManager;
+        return createBenchmarkTraceManager(uri, sourceAction, position) ?? NoOpTraceManagerInstance;
     } else {
-        return NoOpTraceManager;
+        return NoOpTraceManagerInstance;
     }
 }
 
