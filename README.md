@@ -23,7 +23,7 @@ Displays function documentation if it exists, and validates the types for functi
 
 ## Code formatting
 
-Provides a formatter for the "Format Document" (Ctrl + Shift + F) command.
+Provides a formatter for the "Format Document" (Alt + Shift + F) command.
 
 ![Format Document](imgs/formatDocument.gif)
 
