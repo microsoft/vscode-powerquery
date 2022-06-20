@@ -8,6 +8,7 @@ import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
+import { DefinitionParams } from "vscode-languageserver/node";
 import { NoOpTraceManagerInstance } from "@microsoft/powerquery-parser/lib/powerquery-parser/common/trace";
 
 import { formatError } from "./errorUtils";
@@ -79,6 +80,30 @@ connection.onCompletion(
         return [];
     },
 );
+
+connection.onDefinition(async (parameters: DefinitionParams, _cancellationToken: LS.CancellationToken) => {
+    const document: TextDocument | undefined = documents.get(parameters.textDocument.uri);
+
+    if (document === undefined) {
+        return undefined;
+    }
+
+    const traceManager: PQP.Trace.TraceManager = createTraceManager(
+        parameters.textDocument.uri,
+        "onDefinition",
+        parameters.position,
+    );
+
+    const analysis: PQLS.Analysis = createAnalysis(document, parameters.position, traceManager);
+
+    try {
+        return await analysis.getDefinition();
+    } catch (error) {
+        connection.console.error(`onDefinition error ${formatError(assertAsError(error))}`);
+
+        return [];
+    }
+});
 
 connection.onDidChangeConfiguration(async () => {
     serverSettings = await fetchConfigurationSettings();
@@ -157,11 +182,11 @@ connection.onHover(
 
 connection.onInitialize((params: LS.InitializeParams) => {
     const capabilities: LS.ServerCapabilities = {
-        textDocumentSync: LS.TextDocumentSyncKind.Incremental,
-        documentFormattingProvider: true,
         completionProvider: {
             resolveProvider: false,
         },
+        definitionProvider: true,
+        documentFormattingProvider: true,
         documentSymbolProvider: {
             workDoneProgress: false,
         },
@@ -169,6 +194,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
         signatureHelpProvider: {
             triggerCharacters: ["(", ","],
         },
+        textDocumentSync: LS.TextDocumentSyncKind.Incremental,
     };
 
     hasConfigurationCapability = Boolean(params.capabilities.workspace?.configuration);
@@ -189,17 +215,19 @@ connection.onInitialized(async () => {
 connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
     const document: TextDocument | undefined = documents.get(params.textDocumentUri);
 
-    if (document) {
-        const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "renameIdentifier");
-        const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
+    if (document === undefined) {
+        return undefined;
+    }
 
-        try {
-            return await analysis.getRenameEdits(params.newName);
-        } catch (error) {
-            connection.console.error(`on powerquery/renameIdentifier error ${formatError(assertAsError(error))}`);
+    const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "renameIdentifier");
+    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
 
-            return [];
-        }
+    try {
+        return await analysis.getRenameEdits(params.newName);
+    } catch (error) {
+        connection.console.error(`on powerquery/renameIdentifier error ${formatError(assertAsError(error))}`);
+
+        return [];
     }
 });
 
