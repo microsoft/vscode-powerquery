@@ -5,6 +5,7 @@ import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
+import { CancellationTokenAdapter } from "./cancellationTokenAdapter";
 import { LibraryUtils } from "./library";
 
 const LanguageId: string = "powerquery";
@@ -41,9 +42,11 @@ export async function initializeServerSettings(connection: LS.Connection): Promi
 export function createAnalysisSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library, traceManager),
+        createInspectionSettingsFn: (): PQLS.InspectionSettings =>
+            createInspectionSettings(library, traceManager, cancellationToken),
         library,
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
         traceManager,
@@ -54,12 +57,16 @@ export function createAnalysisSettings(
 export function createInspectionSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.InspectionSettings {
     return PQLS.InspectionUtils.createInspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
             traceManager,
+            maybeCancellationToken: cancellationToken
+                ? new CancellationTokenAdapter(new PQP.TimedCancellationToken(5000), cancellationToken)
+                : undefined,
         },
         {
             library,
@@ -72,9 +79,10 @@ export function createInspectionSettings(
 export function createValidationSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.ValidationSettings {
     return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library, traceManager),
+        createInspectionSettings(library, traceManager, cancellationToken),
         LanguageId,
         {
             checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
