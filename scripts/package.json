@@ -29,7 +29,7 @@
     },
     "dependencies": {
         "@microsoft/powerquery-language-services": "0.3.36",
-        "@microsoft/powerquery-parser": "0.9.4",
+        "@microsoft/powerquery-parser": "0.9.6",
         "vscode-languageserver-textdocument": "1.0.4"
     },
     "devDependencies": {
