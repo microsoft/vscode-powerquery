@@ -1,20 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as fs from "fs";
 import * as LS from "vscode-languageserver/node";
-import * as path from "path";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { DefinitionParams } from "vscode-languageserver/node";
-import { NoOpTraceManagerInstance } from "@microsoft/powerquery-parser/lib/powerquery-parser/common/trace";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
+import * as SettingsUtils from "./settingsUtils";
+import * as TraceManagerUtils from "./traceManagerUtils";
 import { formatError } from "./errorUtils";
-import { LibraryUtils } from "./library";
-
-const LanguageId: string = "powerquery";
 
 interface RenameIdentifierParams {
     readonly textDocumentUri: string;
@@ -22,35 +18,10 @@ interface RenameIdentifierParams {
     readonly newName: string;
 }
 
-interface ServerSettings {
-    checkForDuplicateIdentifiers: boolean;
-    checkInvokeExpressions: boolean;
-    experimental: boolean;
-    isBenchmarksEnabled: boolean;
-    isWorkspaceCacheAllowed: boolean;
-    locale: string;
-    mode: "Power Query" | "SDK";
-    typeStrategy: PQLS.TypeStrategy;
-}
-
-const defaultServerSettings: ServerSettings = {
-    checkForDuplicateIdentifiers: true,
-    checkInvokeExpressions: false,
-    experimental: false,
-    isBenchmarksEnabled: false,
-    isWorkspaceCacheAllowed: true,
-    locale: PQP.DefaultLocale,
-    mode: "Power Query",
-    typeStrategy: PQLS.TypeStrategy.Primitive,
-};
-
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
-
-let serverSettings: ServerSettings = defaultServerSettings;
-let hasConfigurationCapability: boolean = false;
 
 connection.onCompletion(
     async (
@@ -60,7 +31,7 @@ connection.onCompletion(
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
         if (document) {
-            const traceManager: PQP.Trace.TraceManager = createTraceManager(
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
                 textDocumentPosition.textDocument.uri,
                 "onCompletion",
                 textDocumentPosition.position,
@@ -88,7 +59,7 @@ connection.onDefinition(async (parameters: DefinitionParams, _cancellationToken:
         return undefined;
     }
 
-    const traceManager: PQP.Trace.TraceManager = createTraceManager(
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
         parameters.textDocument.uri,
         "onDefinition",
         parameters.position,
@@ -106,7 +77,7 @@ connection.onDefinition(async (parameters: DefinitionParams, _cancellationToken:
 });
 
 connection.onDidChangeConfiguration(async () => {
-    serverSettings = await fetchConfigurationSettings();
+    await SettingsUtils.initializeServerSettings(connection);
     documents.all().forEach(validateDocument);
 });
 
@@ -142,7 +113,11 @@ connection.onDocumentSymbol(
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
 
         if (document) {
-            return await PQLS.getDocumentSymbols(document, PQP.DefaultSettings, serverSettings.isWorkspaceCacheAllowed);
+            return await PQLS.getDocumentSymbols(
+                document,
+                PQP.DefaultSettings,
+                SettingsUtils.getServerSettings().isWorkspaceCacheAllowed,
+            );
         }
 
         return undefined;
@@ -162,7 +137,7 @@ connection.onHover(
             return emptyHover;
         }
 
-        const traceManager: PQP.Trace.TraceManager = createTraceManager(
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
             textDocumentPosition.textDocument.uri,
             "onHover",
             textDocumentPosition.position,
@@ -197,7 +172,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
         textDocumentSync: LS.TextDocumentSyncKind.Incremental,
     };
 
-    hasConfigurationCapability = Boolean(params.capabilities.workspace?.configuration);
+    SettingsUtils.setHasConfigurationCapability(Boolean(params.capabilities.workspace?.configuration));
 
     return {
         capabilities,
@@ -205,11 +180,11 @@ connection.onInitialize((params: LS.InitializeParams) => {
 });
 
 connection.onInitialized(async () => {
-    if (hasConfigurationCapability) {
+    if (SettingsUtils.getHasConfigurationCapability()) {
         await connection.client.register(LS.DidChangeConfigurationNotification.type, undefined);
     }
 
-    serverSettings = await fetchConfigurationSettings();
+    await SettingsUtils.initializeServerSettings(connection);
 });
 
 connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
@@ -219,7 +194,7 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
         return undefined;
     }
 
-    const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "renameIdentifier");
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "renameIdentifier");
     const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
 
     try {
@@ -245,7 +220,7 @@ connection.onSignatureHelp(
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
         if (document) {
-            const traceManager: PQP.Trace.TraceManager = createTraceManager(
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
                 textDocumentPosition.textDocument.uri,
                 "onSignatureHelp",
                 textDocumentPosition.position,
@@ -267,11 +242,11 @@ connection.onSignatureHelp(
 );
 
 async function validateDocument(document: TextDocument): Promise<void> {
-    const traceManager: PQP.Trace.TraceManager = createTraceManager(document.uri, "validateDocument");
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
     const result: PQLS.ValidationResult = await PQLS.validate(
         document,
-        createValidationSettings(getLocalizedLibrary(), traceManager),
+        SettingsUtils.createValidationSettings(SettingsUtils.getLocalizedLibrary(), traceManager),
     );
 
     await connection.sendDiagnostics({
@@ -290,8 +265,7 @@ connection.onDocumentFormatting(
         }
 
         const document: TextDocument = maybeDocument;
-
-        const experimental: boolean = serverSettings.experimental;
+        const experimental: boolean = SettingsUtils.getServerSettings().experimental;
 
         try {
             return await PQLS.tryFormat(
@@ -335,178 +309,14 @@ function createAnalysis(
     position: PQLS.Position,
     traceManager: PQP.Trace.TraceManager,
 ): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedLibrary();
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedLibrary();
     document.uri;
 
     return PQLS.AnalysisUtils.createAnalysis(
         document,
-        createAnalysisSettings(localizedLibrary, traceManager),
+        SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager),
         position,
     );
-}
-
-function createAnalysisSettings(
-    library: PQLS.Library.ILibrary,
-    traceManager: PQP.Trace.TraceManager,
-): PQLS.AnalysisSettings {
-    return {
-        createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library, traceManager),
-        library,
-        isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
-        traceManager,
-        maybeInitialCorrelationId: undefined,
-    };
-}
-
-function createInspectionSettings(
-    library: PQLS.Library.ILibrary,
-    traceManager: PQP.Trace.TraceManager,
-): PQLS.InspectionSettings {
-    return PQLS.InspectionUtils.createInspectionSettings(
-        {
-            ...PQP.DefaultSettings,
-            locale: serverSettings.locale,
-            traceManager,
-        },
-        {
-            library,
-            isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
-            typeStrategy: serverSettings.typeStrategy,
-        },
-    );
-}
-
-function createBenchmarkTraceManager(
-    uri: string | undefined,
-    sourceAction: string,
-    position?: Position,
-): PQP.Trace.BenchmarkTraceManager | undefined {
-    if (!uri) {
-        return undefined;
-    }
-
-    let source: string = path.parse(uri).name;
-
-    // If untitled document
-    if (uri.startsWith("untitled:")) {
-        source = source.slice("untitled:".length);
-    }
-    // Else expect it to be a file
-    else {
-        source = path.parse(uri).name;
-    }
-
-    if (!source) {
-        return undefined;
-    }
-
-    if (position) {
-        sourceAction += `L${position.line}C${position.character}`;
-    }
-
-    const logDirectory: string = path.join(process.cwd(), "vscode-powerquery-logs");
-
-    if (!fs.existsSync(logDirectory)) {
-        fs.mkdirSync(logDirectory, { recursive: true });
-    }
-
-    let benchmarkUri: string;
-
-    // TODO: make this not O(n)
-    for (let iteration: number = 0; iteration < 1000; iteration += 1) {
-        benchmarkUri = path.join(logDirectory, `${source}_${sourceAction}_${iteration}.log`);
-
-        if (!fs.existsSync(benchmarkUri)) {
-            const writeStream: fs.WriteStream = fs.createWriteStream(benchmarkUri, { flags: "w" });
-
-            return new PQP.Trace.BenchmarkTraceManager((message: string) => writeStream.write(message));
-        }
-    }
-
-    // TODO: handle fallback if all iterations are taken
-    return undefined;
-}
-
-function createTraceManager(
-    uri: string | undefined,
-    sourceAction: string,
-    position?: Position,
-): PQP.Trace.TraceManager {
-    if (serverSettings.isBenchmarksEnabled) {
-        return createBenchmarkTraceManager(uri, sourceAction, position) ?? NoOpTraceManagerInstance;
-    } else {
-        return NoOpTraceManagerInstance;
-    }
-}
-
-function createValidationSettings(
-    library: PQLS.Library.ILibrary,
-    traceManager: PQP.Trace.TraceManager,
-): PQLS.ValidationSettings {
-    return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library, traceManager),
-        LanguageId,
-        {
-            checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
-            checkInvokeExpressions: serverSettings.checkInvokeExpressions,
-        },
-    );
-}
-
-async function fetchConfigurationSettings(): Promise<ServerSettings> {
-    if (!hasConfigurationCapability) {
-        return defaultServerSettings;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
-    const maybeTypeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
-    const experimental: boolean = config?.general?.experimental;
-
-    return {
-        checkForDuplicateIdentifiers: true,
-        checkInvokeExpressions: false,
-        experimental,
-        isBenchmarksEnabled: config?.benchmark?.enable ?? false,
-        isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
-        locale: config?.general?.locale ?? PQP.DefaultLocale,
-        mode: deriveMode(config?.general?.mode),
-        typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
-    };
-}
-
-function getLocalizedLibrary(): PQLS.Library.ILibrary {
-    switch (serverSettings.mode) {
-        case "SDK":
-            return LibraryUtils.getOrCreateSdkLibrary(serverSettings.locale);
-
-        case "Power Query":
-            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
-
-        default:
-            throw PQP.Assert.isNever(serverSettings.mode);
-    }
-}
-
-function deriveMode(value: string | undefined): "Power Query" | "SDK" {
-    switch (value) {
-        case "SDK":
-            return "SDK";
-
-        default:
-            return "Power Query";
-    }
-}
-
-function deriveTypeStrategy(value: string): PQLS.TypeStrategy {
-    switch (value) {
-        case PQLS.TypeStrategy.Extended:
-        case PQLS.TypeStrategy.Primitive:
-            return value;
-
-        default:
-            throw new PQP.CommonError.InvariantError(`could not derive typeStrategy`);
-    }
 }
 
 function assertAsError<T>(value: T | Error): Error {
