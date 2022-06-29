@@ -9,8 +9,9 @@ import { DefinitionParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
-import * as SettingsUtils from "./settingsUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
+import { ServerSettings, SettingsUtils } from "./settings.ts";
+import { CancellationTokenUtils } from "./cancellationToken";
 import { formatError } from "./errorUtils";
 
 interface RenameIdentifierParams {
@@ -27,7 +28,7 @@ const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocum
 connection.onCompletion(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
-        _cancellationToken: LS.CancellationToken,
+        cancellationToken: LS.CancellationToken,
     ): Promise<LS.CompletionItem[]> => {
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
@@ -38,7 +39,12 @@ connection.onCompletion(
                 textDocumentPosition.position,
             );
 
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(
+                document,
+                textDocumentPosition.position,
+                traceManager,
+                cancellationToken,
+            );
 
             try {
                 return await analysis.getAutocompleteItems();
@@ -53,7 +59,7 @@ connection.onCompletion(
     },
 );
 
-connection.onDefinition(async (parameters: DefinitionParams, _cancellationToken: LS.CancellationToken) => {
+connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: LS.CancellationToken) => {
     const document: TextDocument | undefined = documents.get(parameters.textDocument.uri);
 
     if (document === undefined) {
@@ -66,7 +72,7 @@ connection.onDefinition(async (parameters: DefinitionParams, _cancellationToken:
         parameters.position,
     );
 
-    const analysis: PQLS.Analysis = createAnalysis(document, parameters.position, traceManager);
+    const analysis: PQLS.Analysis = createAnalysis(document, parameters.position, traceManager, cancellationToken);
 
     try {
         return await analysis.getDefinition();
@@ -109,26 +115,34 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
 connection.onDocumentSymbol(
     async (
         documentSymbolParams: LS.DocumentSymbolParams,
-        _cancellationToken: LS.CancellationToken,
+        cancellationToken: LS.CancellationToken,
     ): Promise<LS.DocumentSymbol[] | undefined> => {
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
 
-        if (document) {
-            return await PQLS.getDocumentSymbols(
-                document,
-                PQP.DefaultSettings,
-                SettingsUtils.getServerSettings().isWorkspaceCacheAllowed,
-            );
+        if (!document) {
+            return undefined;
         }
 
-        return undefined;
+        const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
+
+        return await PQLS.getDocumentSymbols(
+            document,
+            {
+                ...PQP.DefaultSettings,
+                maybeCancellationToken: CancellationTokenUtils.createAdapter(
+                    cancellationToken,
+                    serverSettings.globalTimeoutInMs,
+                ),
+            },
+            serverSettings.isWorkspaceCacheAllowed,
+        );
     },
 );
 
 connection.onHover(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
-        _cancellationToken: LS.CancellationToken,
+        cancellationToken: LS.CancellationToken,
     ): Promise<LS.Hover> => {
         const emptyHover: LS.Hover = {
             range: undefined,
@@ -147,7 +161,12 @@ connection.onHover(
             textDocumentPosition.position,
         );
 
-        const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
+        const analysis: PQLS.Analysis = createAnalysis(
+            document,
+            textDocumentPosition.position,
+            traceManager,
+            cancellationToken,
+        );
 
         try {
             return await analysis.getHover();
@@ -199,7 +218,7 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
     }
 
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "renameIdentifier");
-    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager);
+    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager, undefined);
 
     try {
         return await analysis.getRenameEdits(params.newName);
@@ -215,7 +234,7 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
 connection.onSignatureHelp(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
-        _cancellationToken: LS.CancellationToken,
+        cancellationToken: LS.CancellationToken,
     ): Promise<LS.SignatureHelp> => {
         const emptySignatureHelp: LS.SignatureHelp = {
             signatures: [],
@@ -232,7 +251,12 @@ connection.onSignatureHelp(
                 textDocumentPosition.position,
             );
 
-            const analysis: PQLS.Analysis = createAnalysis(document, textDocumentPosition.position, traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(
+                document,
+                textDocumentPosition.position,
+                traceManager,
+                cancellationToken,
+            );
 
             try {
                 return await analysis.getSignatureHelp();
@@ -250,7 +274,7 @@ connection.onSignatureHelp(
 connection.onDocumentFormatting(
     async (
         documentfomattingParams: LS.DocumentFormattingParams,
-        _cancellationToken: LS.CancellationToken,
+        cancellationToken: LS.CancellationToken,
     ): Promise<LS.TextEdit[]> => {
         const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
 
@@ -259,7 +283,8 @@ connection.onDocumentFormatting(
         }
 
         const document: TextDocument = maybeDocument;
-        const experimental: boolean = SettingsUtils.getServerSettings().experimental;
+        const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
+        const experimental: boolean = serverSettings.experimental;
 
         try {
             return await PQLS.tryFormat(
@@ -268,6 +293,10 @@ connection.onDocumentFormatting(
                     ...PQP.DefaultSettings,
                     indentationLiteral: PQF.IndentationLiteral.SpaceX4,
                     newlineLiteral: PQF.NewlineLiteral.Windows,
+                    maybeCancellationToken: CancellationTokenUtils.createAdapter(
+                        cancellationToken,
+                        serverSettings.globalTimeoutInMs,
+                    ),
                     maxWidth: experimental ? 120 : undefined,
                 },
                 experimental,
@@ -302,13 +331,14 @@ function createAnalysis(
     document: TextDocument,
     position: PQLS.Position,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.Analysis {
     const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedLibrary();
     document.uri;
 
     return PQLS.AnalysisUtils.createAnalysis(
         document,
-        SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager),
+        SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager, cancellationToken),
         position,
     );
 }
@@ -318,7 +348,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
 
     const result: PQLS.ValidationResult = await PQLS.validate(
         document,
-        SettingsUtils.createValidationSettings(SettingsUtils.getLocalizedLibrary(), traceManager),
+        SettingsUtils.createValidationSettings(SettingsUtils.getLocalizedLibrary(), traceManager, undefined),
     );
 
     await connection.sendDiagnostics({

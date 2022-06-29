@@ -5,33 +5,13 @@ import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import { LibraryUtils } from "./library";
+import { DefaultServerSettings, ServerSettings } from "./settings";
+import { CancellationTokenUtils } from "../cancellationToken";
+import { LibraryUtils } from "../library";
 
 const LanguageId: string = "powerquery";
 
-interface ServerSettings {
-    checkForDuplicateIdentifiers: boolean;
-    checkInvokeExpressions: boolean;
-    experimental: boolean;
-    isBenchmarksEnabled: boolean;
-    isWorkspaceCacheAllowed: boolean;
-    locale: string;
-    mode: "Power Query" | "SDK";
-    typeStrategy: PQLS.TypeStrategy;
-}
-
-const defaultServerSettings: ServerSettings = {
-    checkForDuplicateIdentifiers: true,
-    checkInvokeExpressions: false,
-    experimental: false,
-    isBenchmarksEnabled: false,
-    isWorkspaceCacheAllowed: true,
-    locale: PQP.DefaultLocale,
-    mode: "Power Query",
-    typeStrategy: PQLS.TypeStrategy.Primitive,
-};
-
-let serverSettings: ServerSettings = defaultServerSettings;
+let serverSettings: ServerSettings = DefaultServerSettings;
 let hasConfigurationCapability: boolean = false;
 
 export async function initializeServerSettings(connection: LS.Connection): Promise<void> {
@@ -41,11 +21,14 @@ export async function initializeServerSettings(connection: LS.Connection): Promi
 export function createAnalysisSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: (): PQLS.InspectionSettings => createInspectionSettings(library, traceManager),
+        createInspectionSettingsFn: (): PQLS.InspectionSettings =>
+            createInspectionSettings(library, traceManager, cancellationToken),
         library,
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
+        symbolProviderTimeoutInMS: serverSettings.symbolTimeoutInMs,
         traceManager,
         maybeInitialCorrelationId: undefined,
     };
@@ -54,12 +37,16 @@ export function createAnalysisSettings(
 export function createInspectionSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.InspectionSettings {
     return PQLS.InspectionUtils.createInspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
             traceManager,
+            maybeCancellationToken: cancellationToken
+                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.globalTimeoutInMs)
+                : CancellationTokenUtils.createTimedCancellation(serverSettings.globalTimeoutInMs),
         },
         {
             library,
@@ -72,9 +59,10 @@ export function createInspectionSettings(
 export function createValidationSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.ValidationSettings {
     return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library, traceManager),
+        createInspectionSettings(library, traceManager, cancellationToken),
         LanguageId,
         {
             checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
@@ -85,7 +73,7 @@ export function createValidationSettings(
 
 export async function fetchConfigurationSettings(connection: LS.Connection): Promise<ServerSettings> {
     if (!hasConfigurationCapability) {
-        return defaultServerSettings;
+        return DefaultServerSettings;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,10 +85,12 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: false,
         experimental,
+        globalTimeoutInMs: config?.timeout?.globalTimeoutInMs,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
+        symbolTimeoutInMs: config?.timeout?.symbolTimeoutInMs,
         typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
     };
 }
