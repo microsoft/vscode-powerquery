@@ -14,6 +14,14 @@ export interface FormatErrorMetadata {
     readonly name: string;
 }
 
+export function assertAsError<T>(value: T | Error): Error {
+    if (value instanceof Error) {
+        return value;
+    }
+
+    throw new Error(`received an error value that isn't an instanceof Error`);
+}
+
 function formatErrorMetadata(error: Error): FormatErrorMetadata {
     let maybeChild: FormatErrorMetadata | undefined;
 
