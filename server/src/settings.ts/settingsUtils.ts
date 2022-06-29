@@ -44,8 +44,8 @@ export function createInspectionSettings(
             locale: serverSettings.locale,
             traceManager,
             maybeCancellationToken: cancellationToken
-                ? CancellationTokenUtils.create(cancellationToken, serverSettings.timeoutInMs)
-                : undefined,
+                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.timeoutInMs)
+                : CancellationTokenUtils.createTimedCancellation(serverSettings.timeoutInMs),
         },
         {
             library,

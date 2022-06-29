@@ -124,7 +124,7 @@ connection.onDocumentSymbol(
                 document,
                 {
                     ...PQP.DefaultSettings,
-                    maybeCancellationToken: CancellationTokenUtils.create(
+                    maybeCancellationToken: CancellationTokenUtils.createAdapter(
                         cancellationToken,
                         SettingsUtils.getServerSettings().timeoutInMs,
                     ),
@@ -304,7 +304,7 @@ connection.onDocumentFormatting(
                     ...PQP.DefaultSettings,
                     indentationLiteral: PQF.IndentationLiteral.SpaceX4,
                     newlineLiteral: PQF.NewlineLiteral.Windows,
-                    maybeCancellationToken: CancellationTokenUtils.create(
+                    maybeCancellationToken: CancellationTokenUtils.createAdapter(
                         cancellationToken,
                         serverSettings.timeoutInMs,
                     ),
