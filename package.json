@@ -198,11 +198,17 @@
                         "SDK"
                     ]
                 },
-                "powerquery.general.timeoutInMs": {
+                "powerquery.timeout.globalTimeoutInMs": {
                     "scope": "window",
                     "type": "number",
                     "default": 5000,
-                    "description": "Async timeout in milliseconds."
+                    "description": "Global async timeout in milliseconds."
+                },
+                "powerquery.timeout.symbolTimeoutInMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 2000,
+                    "description": "Symbol provider timeout in milliseconds."
                 },
                 "powerquery.trace.server": {
                     "scope": "window",

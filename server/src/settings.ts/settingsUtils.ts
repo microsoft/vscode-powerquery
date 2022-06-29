@@ -28,6 +28,7 @@ export function createAnalysisSettings(
             createInspectionSettings(library, traceManager, cancellationToken),
         library,
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
+        symbolProviderTimeoutInMS: serverSettings.symbolTimeoutInMs,
         traceManager,
         maybeInitialCorrelationId: undefined,
     };
@@ -44,8 +45,8 @@ export function createInspectionSettings(
             locale: serverSettings.locale,
             traceManager,
             maybeCancellationToken: cancellationToken
-                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.timeoutInMs)
-                : CancellationTokenUtils.createTimedCancellation(serverSettings.timeoutInMs),
+                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.globalTimeoutInMs)
+                : CancellationTokenUtils.createTimedCancellation(serverSettings.globalTimeoutInMs),
         },
         {
             library,
@@ -84,11 +85,12 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: false,
         experimental,
+        globalTimeoutInMs: config?.timeout?.globalTimeoutInMs,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
-        timeoutInMs: config?.general?.timeoutInMs,
+        symbolTimeoutInMs: config?.timeout?.symbolTimeoutInMs,
         typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
     };
 }
