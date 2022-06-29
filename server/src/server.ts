@@ -8,10 +8,11 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { DefinitionParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import * as SettingsUtils from "./settingsUtils";
+import * as SettingsUtils from "./settings.ts/settingsUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { CancellationTokenAdapter } from "./cancellationTokenAdapter";
+import { CancellationTokenUtils } from "./cancellationToken";
 import { formatError } from "./errorUtils";
+import { ServerSettings } from "./settings.ts";
 
 interface RenameIdentifierParams {
     readonly textDocumentUri: string;
@@ -123,9 +124,9 @@ connection.onDocumentSymbol(
                 document,
                 {
                     ...PQP.DefaultSettings,
-                    maybeCancellationToken: new CancellationTokenAdapter(
-                        new PQP.TimedCancellationToken(5000),
+                    maybeCancellationToken: CancellationTokenUtils.create(
                         cancellationToken,
+                        SettingsUtils.getServerSettings().timeoutInMs,
                     ),
                 },
                 SettingsUtils.getServerSettings().isWorkspaceCacheAllowed,
@@ -282,7 +283,10 @@ async function validateDocument(document: TextDocument): Promise<void> {
 }
 
 connection.onDocumentFormatting(
-    async (documentfomattingParams: LS.DocumentFormattingParams): Promise<LS.TextEdit[]> => {
+    async (
+        documentfomattingParams: LS.DocumentFormattingParams,
+        cancellationToken: LS.CancellationToken,
+    ): Promise<LS.TextEdit[]> => {
         const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
 
         if (maybeDocument === undefined) {
@@ -290,7 +294,8 @@ connection.onDocumentFormatting(
         }
 
         const document: TextDocument = maybeDocument;
-        const experimental: boolean = SettingsUtils.getServerSettings().experimental;
+        const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
+        const experimental: boolean = serverSettings.experimental;
 
         try {
             return await PQLS.tryFormat(
@@ -299,6 +304,10 @@ connection.onDocumentFormatting(
                     ...PQP.DefaultSettings,
                     indentationLiteral: PQF.IndentationLiteral.SpaceX4,
                     newlineLiteral: PQF.NewlineLiteral.Windows,
+                    maybeCancellationToken: CancellationTokenUtils.create(
+                        cancellationToken,
+                        serverSettings.timeoutInMs,
+                    ),
                     maxWidth: experimental ? 120 : undefined,
                 },
                 experimental,
