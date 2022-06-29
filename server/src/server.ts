@@ -119,21 +119,23 @@ connection.onDocumentSymbol(
     ): Promise<LS.DocumentSymbol[] | undefined> => {
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
 
-        if (document) {
-            return await PQLS.getDocumentSymbols(
-                document,
-                {
-                    ...PQP.DefaultSettings,
-                    maybeCancellationToken: CancellationTokenUtils.createAdapter(
-                        cancellationToken,
-                        SettingsUtils.getServerSettings().timeoutInMs,
-                    ),
-                },
-                SettingsUtils.getServerSettings().isWorkspaceCacheAllowed,
-            );
+        if (!document) {
+            return undefined;
         }
 
-        return undefined;
+        const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
+
+        return await PQLS.getDocumentSymbols(
+            document,
+            {
+                ...PQP.DefaultSettings,
+                maybeCancellationToken: CancellationTokenUtils.createAdapter(
+                    cancellationToken,
+                    serverSettings.timeoutInMs,
+                ),
+            },
+            serverSettings.isWorkspaceCacheAllowed,
+        );
     },
 );
 
