@@ -5,34 +5,13 @@ import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import { CancellationTokenAdapter } from "./cancellationTokenAdapter";
-import { LibraryUtils } from "./library";
+import { DefaultServerSettings, ServerSettings } from "./settings";
+import { CancellationTokenUtils } from "../cancellationToken";
+import { LibraryUtils } from "../library";
 
 const LanguageId: string = "powerquery";
 
-interface ServerSettings {
-    checkForDuplicateIdentifiers: boolean;
-    checkInvokeExpressions: boolean;
-    experimental: boolean;
-    isBenchmarksEnabled: boolean;
-    isWorkspaceCacheAllowed: boolean;
-    locale: string;
-    mode: "Power Query" | "SDK";
-    typeStrategy: PQLS.TypeStrategy;
-}
-
-const defaultServerSettings: ServerSettings = {
-    checkForDuplicateIdentifiers: true,
-    checkInvokeExpressions: false,
-    experimental: false,
-    isBenchmarksEnabled: false,
-    isWorkspaceCacheAllowed: true,
-    locale: PQP.DefaultLocale,
-    mode: "Power Query",
-    typeStrategy: PQLS.TypeStrategy.Primitive,
-};
-
-let serverSettings: ServerSettings = defaultServerSettings;
+let serverSettings: ServerSettings = DefaultServerSettings;
 let hasConfigurationCapability: boolean = false;
 
 export async function initializeServerSettings(connection: LS.Connection): Promise<void> {
@@ -65,7 +44,7 @@ export function createInspectionSettings(
             locale: serverSettings.locale,
             traceManager,
             maybeCancellationToken: cancellationToken
-                ? new CancellationTokenAdapter(new PQP.TimedCancellationToken(5000), cancellationToken)
+                ? CancellationTokenUtils.create(cancellationToken, serverSettings.timeoutInMs)
                 : undefined,
         },
         {
@@ -93,7 +72,7 @@ export function createValidationSettings(
 
 export async function fetchConfigurationSettings(connection: LS.Connection): Promise<ServerSettings> {
     if (!hasConfigurationCapability) {
-        return defaultServerSettings;
+        return DefaultServerSettings;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,6 +88,7 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
+        timeoutInMs: config?.general?.timeoutInMs,
         typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
     };
 }
