@@ -198,6 +198,12 @@
                         "SDK"
                     ]
                 },
+                "powerquery.general.timeoutInMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 5000,
+                    "description": "Async timeout in milliseconds."
+                },
                 "powerquery.trace.server": {
                     "scope": "window",
                     "type": "string",
