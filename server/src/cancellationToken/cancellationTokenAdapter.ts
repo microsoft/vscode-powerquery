@@ -19,10 +19,12 @@ export class CancellationTokenAdapter implements PQP.ICancellationToken {
     public throwIfCancelled(): void {
         if (this.isCancelled()) {
             this.parserCancellationToken.cancel();
+            this.parserCancellationToken.throwIfCancelled();
         }
     }
 
     public cancel(): void {
         this.parserCancellationToken.cancel();
+        this.throwIfCancelled();
     }
 }
