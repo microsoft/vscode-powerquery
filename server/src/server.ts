@@ -8,11 +8,11 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { DefinitionParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import * as SettingsUtils from "./settings.ts/settingsUtils";
+import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
+import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
 import { formatError } from "./errorUtils";
-import { ServerSettings } from "./settings.ts";
 
 interface RenameIdentifierParams {
     readonly textDocumentUri: string;
@@ -49,7 +49,7 @@ connection.onCompletion(
             try {
                 return await analysis.getAutocompleteItems();
             } catch (error) {
-                connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
+                connection.console.error(`onCompletion error ${formatError(ErrorUtils.assertAsError(error))}`);
 
                 return [];
             }
@@ -77,7 +77,7 @@ connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: 
     try {
         return await analysis.getDefinition();
     } catch (error) {
-        connection.console.error(`onDefinition error ${formatError(assertAsError(error))}`);
+        connection.console.error(`onDefinition error ${formatError(ErrorUtils.assertAsError(error))}`);
 
         return [];
     }
@@ -95,7 +95,7 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
     try {
         return await validateDocument(event.document);
     } catch (error) {
-        connection.console.error(`onCompletion error ${formatError(assertAsError(error))}`);
+        connection.console.error(`onCompletion error ${formatError(ErrorUtils.assertAsError(error))}`);
 
         return [];
     }
@@ -169,7 +169,7 @@ connection.onHover(
         try {
             return await analysis.getHover();
         } catch (error) {
-            connection.console.error(`onHover error ${formatError(assertAsError(error))}`);
+            connection.console.error(`onHover error ${formatError(ErrorUtils.assertAsError(error))}`);
 
             return emptyHover;
         }
@@ -221,7 +221,9 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
     try {
         return await analysis.getRenameEdits(params.newName);
     } catch (error) {
-        connection.console.error(`on powerquery/renameIdentifier error ${formatError(assertAsError(error))}`);
+        connection.console.error(
+            `on powerquery/renameIdentifier error ${formatError(ErrorUtils.assertAsError(error))}`,
+        );
 
         return [];
     }
@@ -257,7 +259,7 @@ connection.onSignatureHelp(
             try {
                 return await analysis.getSignatureHelp();
             } catch (error) {
-                connection.console.error(`onSignatureHelp error ${formatError(assertAsError(error))}`);
+                connection.console.error(`onSignatureHelp error ${formatError(ErrorUtils.assertAsError(error))}`);
 
                 return emptySignatureHelp;
             }
@@ -266,21 +268,6 @@ connection.onSignatureHelp(
         return emptySignatureHelp;
     },
 );
-
-async function validateDocument(document: TextDocument): Promise<void> {
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
-
-    const result: PQLS.ValidationResult = await PQLS.validate(
-        document,
-        SettingsUtils.createValidationSettings(SettingsUtils.getLocalizedLibrary(), traceManager, undefined),
-    );
-
-    await connection.sendDiagnostics({
-        uri: document.uri,
-        version: document.version,
-        diagnostics: result.diagnostics,
-    });
-}
 
 connection.onDocumentFormatting(
     async (
@@ -354,10 +341,17 @@ function createAnalysis(
     );
 }
 
-function assertAsError<T>(value: T | Error): Error {
-    if (value instanceof Error) {
-        return value;
-    }
+async function validateDocument(document: TextDocument): Promise<void> {
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
-    throw new Error(`received an error value that isn't an instanceof Error`);
+    const result: PQLS.ValidationResult = await PQLS.validate(
+        document,
+        SettingsUtils.createValidationSettings(SettingsUtils.getLocalizedLibrary(), traceManager, undefined),
+    );
+
+    await connection.sendDiagnostics({
+        uri: document.uri,
+        version: document.version,
+        diagnostics: result.diagnostics,
+    });
 }
