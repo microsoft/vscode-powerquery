@@ -5,14 +5,14 @@ import * as LS from "vscode-languageserver/node";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { DefinitionParams } from "vscode-languageserver/node";
+import * as vscode from "vscode";
+import { DefinitionParams, SemanticTokenModifiers, SemanticTokenTypes } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
-import { formatError } from "./errorUtils";
 
 interface RenameIdentifierParams {
     readonly textDocumentUri: string;
@@ -49,7 +49,9 @@ connection.onCompletion(
             try {
                 return await analysis.getAutocompleteItems();
             } catch (error) {
-                connection.console.error(`onCompletion error ${formatError(ErrorUtils.assertAsError(error))}`);
+                connection.console.error(
+                    `onCompletion error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
+                );
 
                 return [];
             }
@@ -77,7 +79,7 @@ connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: 
     try {
         return await analysis.getDefinition();
     } catch (error) {
-        connection.console.error(`onDefinition error ${formatError(ErrorUtils.assertAsError(error))}`);
+        connection.console.error(`onDefinition error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
 
         return [];
     }
@@ -95,7 +97,7 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
     try {
         return await validateDocument(event.document);
     } catch (error) {
-        connection.console.error(`onCompletion error ${formatError(ErrorUtils.assertAsError(error))}`);
+        connection.console.error(`onCompletion error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
 
         return [];
     }
@@ -171,7 +173,7 @@ connection.onHover(
         try {
             return await analysis.getHover();
         } catch (error) {
-            connection.console.error(`onHover error ${formatError(ErrorUtils.assertAsError(error))}`);
+            connection.console.error(`onHover error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
 
             return emptyHover;
         }
@@ -224,7 +226,7 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
         return await analysis.getRenameEdits(params.newName);
     } catch (error) {
         connection.console.error(
-            `on powerquery/renameIdentifier error ${formatError(ErrorUtils.assertAsError(error))}`,
+            `on powerquery/renameIdentifier error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
         );
 
         return [];
@@ -261,7 +263,9 @@ connection.onSignatureHelp(
             try {
                 return await analysis.getSignatureHelp();
             } catch (error) {
-                connection.console.error(`onSignatureHelp error ${formatError(ErrorUtils.assertAsError(error))}`);
+                connection.console.error(
+                    `onSignatureHelp error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
+                );
 
                 return emptySignatureHelp;
             }
@@ -318,6 +322,61 @@ connection.onDocumentFormatting(
             return [];
         }
     },
+);
+
+const tokenTypes: SemanticTokenTypes[] = [SemanticTokenTypes.parameter];
+
+const tokenModifiers: SemanticTokenModifiers[] = [
+    SemanticTokenModifiers.declaration,
+    SemanticTokenModifiers.defaultLibrary,
+];
+
+const semanticTokensLegend: vscode.SemanticTokensLegend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
+
+const documentSemanticTokensProvider: vscode.DocumentSemanticTokensProvider = {
+    async provideDocumentSemanticTokens(
+        document: vscode.TextDocument,
+        cancellationToken: LS.CancellationToken,
+    ): Promise<vscode.SemanticTokens> {
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+            document.uri.toString(),
+            "provideDocumentSemanticTokens",
+        );
+
+        const analysis: PQLS.Analysis = createAnalysis(
+            TextDocument.create(document.uri.toString(), document.languageId, document.version, document.getText()),
+            // We need to provide a Position but in this case we don't really care about that
+            { character: 0, line: 0 },
+            traceManager,
+            cancellationToken,
+        );
+
+        analysis.getPartialSemanticTokens();
+
+        const tokenBuilder: vscode.SemanticTokensBuilder = new vscode.SemanticTokensBuilder(semanticTokensLegend);
+
+        for (const partialSemanticToken of await analysis.getPartialSemanticTokens()) {
+            tokenBuilder.push(
+                new vscode.Range(
+                    new vscode.Position(
+                        partialSemanticToken.range.start.line,
+                        partialSemanticToken.range.start.character,
+                    ),
+                    new vscode.Position(partialSemanticToken.range.end.line, partialSemanticToken.range.end.character),
+                ),
+                partialSemanticToken.tokenType,
+                partialSemanticToken.tokenModifiers,
+            );
+        }
+
+        return tokenBuilder.build();
+    },
+};
+
+vscode.languages.registerDocumentSemanticTokensProvider(
+    { language: "powerquery" },
+    documentSemanticTokensProvider,
+    semanticTokensLegend,
 );
 
 // Make the text document manager listen on the connection

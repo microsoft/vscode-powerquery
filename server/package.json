@@ -25,7 +25,8 @@
     "main": "lib\\server.d.ts",
     "types": "lib\\server.d.ts",
     "engines": {
-        "node": ">=16.13.2"
+        "node": ">=16.13.2",
+        "vscode": "^1.40.0"
     },
     "dependencies": {
         "@microsoft/powerquery-formatter": "0.1.8",
