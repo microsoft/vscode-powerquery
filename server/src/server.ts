@@ -5,8 +5,7 @@ import * as LS from "vscode-languageserver/node";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import * as vscode from "vscode";
-import { DefinitionParams, SemanticTokenModifiers, SemanticTokenTypes } from "vscode-languageserver/node";
+import { DefinitionParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
@@ -18,6 +17,11 @@ interface RenameIdentifierParams {
     readonly textDocumentUri: string;
     readonly position: LS.Position;
     readonly newName: string;
+}
+
+interface SemanticTokenParams {
+    readonly textDocumentUri: string;
+    readonly cancellationToken: LS.CancellationToken;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -233,6 +237,26 @@ connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentif
     }
 });
 
+connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
+    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+
+    if (document === undefined) {
+        return [];
+    }
+
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
+
+    const analysis: PQLS.Analysis = createAnalysis(
+        document,
+        // We need to provide a Position but in this case we don't really care about that
+        { character: 0, line: 0 },
+        traceManager,
+        params.cancellationToken,
+    );
+
+    return await analysis.getPartialSemanticTokens();
+});
+
 connection.onSignatureHelp(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
@@ -322,61 +346,6 @@ connection.onDocumentFormatting(
             return [];
         }
     },
-);
-
-const tokenTypes: SemanticTokenTypes[] = [SemanticTokenTypes.parameter];
-
-const tokenModifiers: SemanticTokenModifiers[] = [
-    SemanticTokenModifiers.declaration,
-    SemanticTokenModifiers.defaultLibrary,
-];
-
-const semanticTokensLegend: vscode.SemanticTokensLegend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
-
-const documentSemanticTokensProvider: vscode.DocumentSemanticTokensProvider = {
-    async provideDocumentSemanticTokens(
-        document: vscode.TextDocument,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<vscode.SemanticTokens> {
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            document.uri.toString(),
-            "provideDocumentSemanticTokens",
-        );
-
-        const analysis: PQLS.Analysis = createAnalysis(
-            TextDocument.create(document.uri.toString(), document.languageId, document.version, document.getText()),
-            // We need to provide a Position but in this case we don't really care about that
-            { character: 0, line: 0 },
-            traceManager,
-            cancellationToken,
-        );
-
-        analysis.getPartialSemanticTokens();
-
-        const tokenBuilder: vscode.SemanticTokensBuilder = new vscode.SemanticTokensBuilder(semanticTokensLegend);
-
-        for (const partialSemanticToken of await analysis.getPartialSemanticTokens()) {
-            tokenBuilder.push(
-                new vscode.Range(
-                    new vscode.Position(
-                        partialSemanticToken.range.start.line,
-                        partialSemanticToken.range.start.character,
-                    ),
-                    new vscode.Position(partialSemanticToken.range.end.line, partialSemanticToken.range.end.character),
-                ),
-                partialSemanticToken.tokenType,
-                partialSemanticToken.tokenModifiers,
-            );
-        }
-
-        return tokenBuilder.build();
-    },
-};
-
-vscode.languages.registerDocumentSemanticTokensProvider(
-    { language: "powerquery" },
-    documentSemanticTokensProvider,
-    semanticTokensLegend,
 );
 
 // Make the text document manager listen on the connection
