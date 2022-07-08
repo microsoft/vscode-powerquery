@@ -68,10 +68,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             Subscriptions.SemanticTokensLegend,
         ),
     );
-
-    context.subscriptions.push(
-        vscode.languages.registerRenameProvider({ language: "powerquery" }, Subscriptions.createRenameProvider(client)),
-    );
 }
 
 export function deactivate(): Thenable<void> | undefined {

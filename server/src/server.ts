@@ -5,19 +5,13 @@ import * as LS from "vscode-languageserver/node";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { DefinitionParams } from "vscode-languageserver/node";
+import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
-
-interface RenameIdentifierParams {
-    readonly textDocumentUri: string;
-    readonly position: LS.Position;
-    readonly newName: string;
-}
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -195,6 +189,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
             workDoneProgress: false,
         },
         hoverProvider: true,
+        renameProvider: true,
         signatureHelpProvider: {
             triggerCharacters: ["(", ","],
         },
@@ -216,24 +211,26 @@ connection.onInitialized(async () => {
     await SettingsUtils.initializeServerSettings(connection);
 });
 
-connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
-    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.CancellationToken) => {
+    const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
 
     if (document === undefined) {
         return undefined;
     }
 
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "renameIdentifier");
-    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager, undefined);
+    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager, cancellationToken);
 
     try {
-        return await analysis.getRenameEdits(params.newName);
+        return {
+            changes: { [params.textDocument.uri.toString()]: await analysis.getRenameEdits(params.newName) },
+        };
     } catch (error) {
         connection.console.error(
             `on powerquery/renameIdentifier error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
         );
 
-        return [];
+        return {};
     }
 });
 
