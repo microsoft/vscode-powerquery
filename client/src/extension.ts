@@ -3,14 +3,11 @@
 
 import * as LC from "vscode-languageclient/node";
 import * as path from "path";
-import * as PQLS from "@microsoft/powerquery-language-services";
 import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
+import * as Subscriptions from "./subscriptions";
 import { CommandConstant } from "./commandConstant";
-
-import { CancellationToken, Position, TextDocument, TextEdit, WorkspaceEdit } from "vscode";
-import { SemanticTokenModifiers, SemanticTokenTypes } from "vscode-languageclient/node";
 
 const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
@@ -67,67 +64,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
         vscode.languages.registerDocumentSemanticTokensProvider(
             { language: "powerquery" },
-            {
-                async provideDocumentSemanticTokens(textDocument: TextDocument, cancellationToken: CancellationToken) {
-                    const semanticTokens: PQLS.PartialSemanticToken[] = await client.sendRequest<
-                        PQLS.PartialSemanticToken[]
-                    >("powerquery/semanticTokens", {
-                        textDocumentUri: textDocument.uri.toString(),
-                        cancellationToken,
-                    });
-
-                    const tokenBuilder: vscode.SemanticTokensBuilder = new vscode.SemanticTokensBuilder(
-                        semanticTokensLegend,
-                    );
-
-                    for (const partialSemanticToken of semanticTokens) {
-                        tokenBuilder.push(
-                            new vscode.Range(
-                                new vscode.Position(
-                                    partialSemanticToken.range.start.line,
-                                    partialSemanticToken.range.start.character,
-                                ),
-                                new vscode.Position(
-                                    partialSemanticToken.range.end.line,
-                                    partialSemanticToken.range.end.character,
-                                ),
-                            ),
-                            partialSemanticToken.tokenType,
-                            partialSemanticToken.tokenModifiers,
-                        );
-                    }
-
-                    return tokenBuilder.build();
-                },
-            },
-            semanticTokensLegend,
+            Subscriptions.createDocumentSemanticTokensProvider(client),
+            Subscriptions.SemanticTokensLegend,
         ),
     );
 
     context.subscriptions.push(
-        vscode.languages.registerRenameProvider(
-            { language: "powerquery" },
-            {
-                async provideRenameEdits(
-                    textDocument: TextDocument,
-                    position: Position,
-                    newName: string,
-                    token: CancellationToken,
-                ): Promise<WorkspaceEdit | undefined> {
-                    const textEdits: TextEdit[] = await client.sendRequest<TextEdit[]>("powerquery/renameIdentifier", {
-                        textDocumentUri: textDocument.uri.toString(),
-                        position,
-                        newName,
-                        token,
-                    });
-
-                    const res: WorkspaceEdit = new WorkspaceEdit();
-                    res.set(textDocument.uri, textEdits);
-
-                    return res;
-                },
-            },
-        ),
+        vscode.languages.registerRenameProvider({ language: "powerquery" }, Subscriptions.createRenameProvider(client)),
     );
 }
 
@@ -143,12 +86,3 @@ export function deactivate(): Thenable<void> | undefined {
 
     return client.stop();
 }
-
-const tokenTypes: SemanticTokenTypes[] = [SemanticTokenTypes.parameter];
-
-const tokenModifiers: SemanticTokenModifiers[] = [
-    SemanticTokenModifiers.declaration,
-    SemanticTokenModifiers.defaultLibrary,
-];
-
-const semanticTokensLegend: vscode.SemanticTokensLegend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
