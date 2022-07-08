@@ -6,9 +6,8 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
+import * as Subscriptions from "./subscriptions";
 import { CommandConstant } from "./commandConstant";
-
-import { CancellationToken, Position, TextDocument, TextEdit, WorkspaceEdit } from "vscode";
 
 const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
@@ -63,28 +62,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await client.start();
 
     context.subscriptions.push(
-        vscode.languages.registerRenameProvider(
+        vscode.languages.registerDocumentSemanticTokensProvider(
             { language: "powerquery" },
-            {
-                async provideRenameEdits(
-                    textDocument: TextDocument,
-                    position: Position,
-                    newName: string,
-                    token: CancellationToken,
-                ): Promise<WorkspaceEdit | undefined> {
-                    const textEdits: TextEdit[] = await client.sendRequest<TextEdit[]>("powerquery/renameIdentifier", {
-                        textDocumentUri: textDocument.uri.toString(),
-                        position,
-                        newName,
-                        token,
-                    });
-
-                    const res: WorkspaceEdit = new WorkspaceEdit();
-                    res.set(textDocument.uri, textEdits);
-
-                    return res;
-                },
-            },
+            Subscriptions.createDocumentSemanticTokensProvider(client),
+            Subscriptions.SemanticTokensLegend,
         ),
     );
 }

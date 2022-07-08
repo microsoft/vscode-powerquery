@@ -5,19 +5,17 @@ import * as LS from "vscode-languageserver/node";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { DefinitionParams } from "vscode-languageserver/node";
+import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
-import { formatError } from "./errorUtils";
 
-interface RenameIdentifierParams {
+interface SemanticTokenParams {
     readonly textDocumentUri: string;
-    readonly position: LS.Position;
-    readonly newName: string;
+    readonly cancellationToken: LS.CancellationToken;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -49,7 +47,9 @@ connection.onCompletion(
             try {
                 return await analysis.getAutocompleteItems();
             } catch (error) {
-                connection.console.error(`onCompletion error ${formatError(ErrorUtils.assertAsError(error))}`);
+                connection.console.error(
+                    `onCompletion error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
+                );
 
                 return [];
             }
@@ -77,7 +77,7 @@ connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: 
     try {
         return await analysis.getDefinition();
     } catch (error) {
-        connection.console.error(`onDefinition error ${formatError(ErrorUtils.assertAsError(error))}`);
+        connection.console.error(`onDefinition error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
 
         return [];
     }
@@ -95,7 +95,7 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
     try {
         return await validateDocument(event.document);
     } catch (error) {
-        connection.console.error(`onCompletion error ${formatError(ErrorUtils.assertAsError(error))}`);
+        connection.console.error(`onCompletion error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
 
         return [];
     }
@@ -171,7 +171,7 @@ connection.onHover(
         try {
             return await analysis.getHover();
         } catch (error) {
-            connection.console.error(`onHover error ${formatError(ErrorUtils.assertAsError(error))}`);
+            connection.console.error(`onHover error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
 
             return emptyHover;
         }
@@ -189,6 +189,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
             workDoneProgress: false,
         },
         hoverProvider: true,
+        renameProvider: true,
         signatureHelpProvider: {
             triggerCharacters: ["(", ","],
         },
@@ -210,25 +211,47 @@ connection.onInitialized(async () => {
     await SettingsUtils.initializeServerSettings(connection);
 });
 
-connection.onRequest("powerquery/renameIdentifier", async (params: RenameIdentifierParams) => {
-    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.CancellationToken) => {
+    const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
 
     if (document === undefined) {
         return undefined;
     }
 
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "renameIdentifier");
-    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager, undefined);
+    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager, cancellationToken);
 
     try {
-        return await analysis.getRenameEdits(params.newName);
+        return {
+            changes: { [params.textDocument.uri.toString()]: await analysis.getRenameEdits(params.newName) },
+        };
     } catch (error) {
         connection.console.error(
-            `on powerquery/renameIdentifier error ${formatError(ErrorUtils.assertAsError(error))}`,
+            `on powerquery/renameIdentifier error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
         );
 
+        return {};
+    }
+});
+
+connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
+    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+
+    if (document === undefined) {
         return [];
     }
+
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
+
+    const analysis: PQLS.Analysis = createAnalysis(
+        document,
+        // We need to provide a Position but in this case we don't really care about that
+        { character: 0, line: 0 },
+        traceManager,
+        params.cancellationToken,
+    );
+
+    return await analysis.getPartialSemanticTokens();
 });
 
 connection.onSignatureHelp(
@@ -261,7 +284,9 @@ connection.onSignatureHelp(
             try {
                 return await analysis.getSignatureHelp();
             } catch (error) {
-                connection.console.error(`onSignatureHelp error ${formatError(ErrorUtils.assertAsError(error))}`);
+                connection.console.error(
+                    `onSignatureHelp error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
+                );
 
                 return emptySignatureHelp;
             }

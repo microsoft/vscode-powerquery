@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-client",
-    "version": "0.0.48",
+    "version": "0.0.49",
     "description": "VS Code part of language server",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -29,6 +29,7 @@
     },
     "dependencies": {
         "@microsoft/powerquery-parser": "0.9.4",
+        "@microsoft/powerquery-language-services": "0.3.38",
         "vscode-languageclient": "8.0.1"
     },
     "devDependencies": {
