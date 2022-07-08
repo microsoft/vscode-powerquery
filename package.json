@@ -45,7 +45,7 @@
     "main": "./client/dist/extension",
     "engines": {
         "node": ">=16.13.2",
-        "vscode": "^1.22.0"
+        "vscode": "^1.40.0"
     },
     "capabilities": {
         "untrustedWorkspaces": {
