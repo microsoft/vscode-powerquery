@@ -20,13 +20,17 @@ export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibra
     );
 }
 
-export function getOrCreateSdkLibrary(locale?: string): PQLS.Library.ILibrary {
+export function getOrCreateSdkLibrary(
+    locale?: string,
+    currentModuleLibraryJson: LibraryJson = [],
+): PQLS.Library.ILibrary {
     return getOrCreateLibrary(
         sdkLibraryByLocale,
         sdkLibraryDefinitionsByLocale,
         sdkJsonByLocale,
         locale ?? PQP.DefaultLocale,
         SdkLibraryJsonEnUs,
+        currentModuleLibraryJson,
     );
 }
 
@@ -36,22 +40,39 @@ function getOrCreateLibrary(
     jsonByLocale: Map<string, LibraryJson>,
     locale: string,
     defaultJson: LibraryJson,
+    currentModuleLibraryJson: LibraryJson = [],
 ): PQLS.Library.ILibrary {
-    if (!libraryByLocale.has(locale)) {
+    if (currentModuleLibraryJson.length === 0) {
+        if (!libraryByLocale.has(locale)) {
+            const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
+                definitionsByLocale,
+                jsonByLocale,
+                locale,
+                defaultJson,
+                currentModuleLibraryJson,
+            );
+
+            libraryByLocale.set(locale, {
+                externalTypeResolver: createLibraryTypeResolver(libraryDefinitions),
+                libraryDefinitions,
+            });
+        }
+
+        return PQP.Assert.asDefined(libraryByLocale.get(locale));
+    } else {
         const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
             definitionsByLocale,
             jsonByLocale,
             locale,
             defaultJson,
+            currentModuleLibraryJson,
         );
 
-        libraryByLocale.set(locale, {
+        return {
             externalTypeResolver: createLibraryTypeResolver(libraryDefinitions),
             libraryDefinitions,
-        });
+        };
     }
-
-    return PQP.Assert.asDefined(libraryByLocale.get(locale));
 }
 
 function getOrCreateLibraryDefinitions(
@@ -59,6 +80,7 @@ function getOrCreateLibraryDefinitions(
     jsonByLocale: Map<string, LibraryJson>,
     locale: string,
     defaultJson: LibraryJson,
+    currentModuleLibraryJson: LibraryJson = [],
 ): PQLS.Library.LibraryDefinitions {
     if (!definitionsByLocale.has(locale)) {
         const json: LibraryJson = jsonByLocale.get(locale) ?? defaultJson;
@@ -70,7 +92,24 @@ function getOrCreateLibraryDefinitions(
         definitionsByLocale.set(locale, mapped);
     }
 
-    return PQP.MapUtils.assertGet(definitionsByLocale, locale);
+    let result: Map<string, PQLS.Library.TLibraryDefinition> = PQP.MapUtils.assertGet(definitionsByLocale, locale);
+
+    // we got module library for this definition call
+    if (currentModuleLibraryJson.length) {
+        // make sure we do immutable operation over here
+        const base: Map<string, PQLS.Library.TLibraryDefinition> = result;
+        result = new Map();
+
+        for (const [key, value] of base) {
+            result.set(key, value);
+        }
+
+        currentModuleLibraryJson.forEach((xport: LibraryExportJson) => {
+            result.set(xport.name, mapExport(xport));
+        });
+    }
+
+    return result;
 }
 
 const sdkLibraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();

@@ -10,6 +10,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
+import { AddOneTextDocumentToModuleLibraryResultType, LibraryJson, ModuleLibraries } from "./library";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
 
@@ -18,10 +19,16 @@ interface SemanticTokenParams {
     readonly cancellationToken: LS.CancellationToken;
 }
 
+interface ModuleLibraryUpdatedParams {
+    workspaceUriPath: string;
+    library: LibraryJson;
+}
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
+const moduleLibraries: ModuleLibraries = new ModuleLibraries();
 
 connection.onCompletion(
     async (
@@ -102,6 +109,9 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // remove the document from module library container and we no longer need to trace it
+    moduleLibraries.removeOneTextDocument(event.document);
+
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
         uri: event.document.uri,
@@ -254,6 +264,16 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     return await analysis.getPartialSemanticTokens();
 });
 
+connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
+    const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
+        params.workspaceUriPath,
+        params.library,
+    );
+
+    // need to validate those currently opened documents
+    void Promise.all(allTextDocuments.map(validateDocument));
+});
+
 connection.onSignatureHelp(
     async (
         textDocumentPosition: LS.TextDocumentPositionParams,
@@ -358,8 +378,11 @@ function createAnalysis(
     traceManager: PQP.Trace.TraceManager,
     cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedLibrary();
-    document.uri;
+    const { closestLibraryJson, cache }: AddOneTextDocumentToModuleLibraryResultType =
+        moduleLibraries.addOneTextDocument(document);
+
+    cache.localizedLibrary = cache.localizedLibrary ?? SettingsUtils.getLocalizedLibrary(closestLibraryJson);
+    const localizedLibrary: PQLS.Library.ILibrary = cache.localizedLibrary;
 
     return PQLS.AnalysisUtils.createAnalysis(
         document,
@@ -371,9 +394,16 @@ function createAnalysis(
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
+    // add the document into module library container, and we need to trace for its validation
+    const { closestLibraryJson, cache }: AddOneTextDocumentToModuleLibraryResultType =
+        moduleLibraries.addOneTextDocument(document);
+
+    // for validation, we have to forcefully update localizedLibrary to ensure it keeps up to the latest
+    cache.localizedLibrary = SettingsUtils.getLocalizedLibrary(closestLibraryJson);
+
     const result: PQLS.ValidationResult = await PQLS.validate(
         document,
-        SettingsUtils.createValidationSettings(SettingsUtils.getLocalizedLibrary(), traceManager, undefined),
+        SettingsUtils.createValidationSettings(cache.localizedLibrary, traceManager, undefined),
     );
 
     await connection.sendDiagnostics({
