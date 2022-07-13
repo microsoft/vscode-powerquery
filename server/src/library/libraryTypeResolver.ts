@@ -8,14 +8,26 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 
+export type LibraryDefinitionsGetter = () => PQLS.Library.LibraryDefinitions;
+
 // Takes the definitions for a library and returns a type resolver.
 export function createLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
+    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
 ): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
     return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest): Type.TPowerQueryType | undefined => {
-        const maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
+        let maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
             request.identifierLiteral,
         )?.asPowerQueryType;
+
+        if (!maybeLibraryType) {
+            otherLibraryDefinitionsGetters.some((oneLibraryDefinitionGetter: LibraryDefinitionsGetter) => {
+                const oneLibraryDefinitions: PQLS.Library.LibraryDefinitions = oneLibraryDefinitionGetter();
+                maybeLibraryType = oneLibraryDefinitions.get(request.identifierLiteral)?.asPowerQueryType;
+
+                return Boolean(maybeLibraryType);
+            });
+        }
 
         if (maybeLibraryType === undefined) {
             return undefined;

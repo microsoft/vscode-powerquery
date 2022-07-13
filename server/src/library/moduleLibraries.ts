@@ -1,29 +1,55 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { LibraryJson } from "./library";
+import { LibraryExportJson, LibraryJson } from "./library";
+import { LibraryDefinitionsGetter } from "./libraryTypeResolver";
+import { mapExport } from "./libraryUtils";
 
 export interface ModuleLibraryTrieNodeCache {
     localizedLibrary?: PQLS.Library.ILibrary;
 }
 
-export interface AddOneTextDocumentToModuleLibraryResultType {
-    closestLibraryJson: LibraryJson;
-    cache: ModuleLibraryTrieNodeCache;
-}
+export class ModuleLibraryTreeNode {
+    static defaultRoot: ModuleLibraryTreeNode = new ModuleLibraryTreeNode();
 
-class ModuleLibraryTrieNode {
-    static defaultRoot: ModuleLibraryTrieNode = new ModuleLibraryTrieNode();
-
-    public readonly cache: ModuleLibraryTrieNodeCache = {};
-    public libraryJson?: LibraryJson;
+    private _libraryJson?: LibraryJson;
     public textDocument?: TextDocument;
+    private readonly _libraryDefinitions: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
+    public readonly cache: ModuleLibraryTrieNodeCache = {};
 
-    public readonly children: Map<string, ModuleLibraryTrieNode> = new Map();
+    get isRoot(): boolean {
+        return !this.parent;
+    }
 
-    constructor(private readonly parent?: ModuleLibraryTrieNode, private readonly currentPath: string = "") {}
+    get libraryJson(): LibraryJson | undefined {
+        return this._libraryJson;
+    }
 
-    insert(paths: string[], visitorContext?: { closestLibraryJson: LibraryJson }): ModuleLibraryTrieNode {
+    set libraryJson(val: LibraryJson | undefined) {
+        this._libraryJson = val;
+        this._libraryDefinitions.clear();
+
+        if (val && Array.isArray(val)) {
+            val.forEach((xport: LibraryExportJson) => {
+                this._libraryDefinitions.set(xport.name, mapExport(xport));
+            });
+        }
+    }
+
+    get libraryDefinitions(): PQLS.Library.LibraryDefinitions {
+        return this._libraryDefinitions;
+    }
+
+    public libraryDefinitionsGetter: LibraryDefinitionsGetter = () => this.libraryDefinitions;
+
+    public readonly children: Map<string, ModuleLibraryTreeNode> = new Map();
+
+    constructor(private readonly parent?: ModuleLibraryTreeNode, private readonly currentPath: string = "") {}
+
+    insert(
+        paths: string[],
+        visitorContext?: { closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode },
+    ): ModuleLibraryTreeNode {
         if (paths.length === 0) {
             return this;
         }
@@ -31,18 +57,18 @@ class ModuleLibraryTrieNode {
         const currentPath: string = paths[0];
         paths = paths.slice(1);
 
-        let child: ModuleLibraryTrieNode;
+        let child: ModuleLibraryTreeNode;
 
-        const maybeOneChild: ModuleLibraryTrieNode | undefined = this.children.get(currentPath);
+        const maybeOneChild: ModuleLibraryTreeNode | undefined = this.children.get(currentPath);
 
         if (maybeOneChild) {
             child = maybeOneChild;
 
             if (visitorContext && child.libraryJson) {
-                visitorContext.closestLibraryJson = child.libraryJson;
+                visitorContext.closestModuleLibraryTreeNodeOfDefinitions = child;
             }
         } else {
-            child = new ModuleLibraryTrieNode(this, currentPath);
+            child = new ModuleLibraryTreeNode(this, currentPath);
             this.children.set(currentPath, child);
         }
 
@@ -53,6 +79,9 @@ class ModuleLibraryTrieNode {
         if (this.parent) {
             this.parent.children.delete(this.currentPath);
         }
+
+        this._libraryDefinitions.clear();
+        this._libraryJson = [];
     }
 
     collectTextDocumentBeneath(visitorContext: { textDocuments: TextDocument[] }): void {
@@ -70,8 +99,8 @@ class ModuleLibraryTrieNode {
  * A mutable container of module libraries by uri path
  */
 export class ModuleLibraries {
-    private readonly trieRoot: ModuleLibraryTrieNode = ModuleLibraryTrieNode.defaultRoot;
-    private readonly openedTextDocumentTreeNodeMap: Map<string, ModuleLibraryTrieNode> = new Map();
+    private readonly trieRoot: ModuleLibraryTreeNode = ModuleLibraryTreeNode.defaultRoot;
+    private readonly openedTextDocumentTreeNodeMap: Map<string, ModuleLibraryTreeNode> = new Map();
 
     static splitUriPath(uriPath: string): string[] {
         return uriPath.split("/").filter(Boolean);
@@ -80,30 +109,31 @@ export class ModuleLibraries {
     addOneModuleLibrary(uriPath: string, libraryJson: LibraryJson): TextDocument[] {
         const spitedPath: string[] = ModuleLibraries.splitUriPath(uriPath);
         const visitorContext: { textDocuments: [] } = { textDocuments: [] };
-        const theNode: ModuleLibraryTrieNode = this.trieRoot.insert(spitedPath);
+        const theNode: ModuleLibraryTreeNode = this.trieRoot.insert(spitedPath);
         theNode.libraryJson = libraryJson;
         theNode.collectTextDocumentBeneath(visitorContext);
 
         return visitorContext.textDocuments;
     }
 
-    addOneTextDocument(textDocument: TextDocument): AddOneTextDocumentToModuleLibraryResultType {
+    addOneTextDocument(textDocument: TextDocument): ModuleLibraryTreeNode {
         const spitedPath: string[] = ModuleLibraries.splitUriPath(textDocument.uri);
-        const visitorContext: { closestLibraryJson: LibraryJson } = { closestLibraryJson: [] };
-        const theNode: ModuleLibraryTrieNode = this.trieRoot.insert(spitedPath, visitorContext);
+
+        const visitorContext: { closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode } = {
+            closestModuleLibraryTreeNodeOfDefinitions: this.trieRoot,
+        };
+
+        const theNode: ModuleLibraryTreeNode = this.trieRoot.insert(spitedPath, visitorContext);
         theNode.textDocument = textDocument;
         this.openedTextDocumentTreeNodeMap.set(textDocument.uri, theNode);
 
-        return {
-            closestLibraryJson: visitorContext.closestLibraryJson,
-            cache: theNode.cache,
-        };
+        return visitorContext.closestModuleLibraryTreeNodeOfDefinitions;
     }
 
     removeOneTextDocument(textDocument: TextDocument): void {
         const theDocUri: string = textDocument.uri;
 
-        const maybeModuleLibraryTreeNode: ModuleLibraryTrieNode | undefined =
+        const maybeModuleLibraryTreeNode: ModuleLibraryTreeNode | undefined =
             this.openedTextDocumentTreeNodeMap.get(theDocUri);
 
         if (maybeModuleLibraryTreeNode) {

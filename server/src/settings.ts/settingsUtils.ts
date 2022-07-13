@@ -6,8 +6,9 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
-import { LibraryJson, LibraryUtils } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
+import { LibraryDefinitionsGetter } from "../library/libraryTypeResolver";
+import { LibraryUtils } from "../library";
 
 const LanguageId: string = "powerquery";
 
@@ -99,10 +100,12 @@ export function getServerSettings(): ServerSettings {
     return serverSettings;
 }
 
-export function getLocalizedLibrary(currentModuleLibraryJson: LibraryJson): PQLS.Library.ILibrary {
+export function getLocalizedLibrary(
+    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
+): PQLS.Library.ILibrary {
     switch (serverSettings.mode) {
         case "SDK":
-            return LibraryUtils.getOrCreateSdkLibrary(serverSettings.locale, currentModuleLibraryJson);
+            return LibraryUtils.getOrCreateSdkLibrary(serverSettings.locale, otherLibraryDefinitionsGetters);
 
         case "Power Query":
             return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
