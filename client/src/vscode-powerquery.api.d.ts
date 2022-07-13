@@ -42,6 +42,6 @@ export interface LibraryFieldJson {
     readonly fieldDescription: string | null;
 }
 
-export interface VscodePowerQueryApi {
+export interface PowerQueryApi {
     readonly onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson) => void;
 }
