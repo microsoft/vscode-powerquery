@@ -88,7 +88,7 @@ export class ModuleLibraryTreeNode {
     }
 
     collectTextDocumentBeneath(visitorContext: { textDocuments: TextDocument[] }): void {
-        for (const [, theNode] of this.children) {
+        for (const theNode of this.children.values()) {
             if (theNode.textDocument) {
                 visitorContext.textDocuments.push(theNode.textDocument);
             } else {
