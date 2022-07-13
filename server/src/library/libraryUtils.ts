@@ -7,8 +7,8 @@ import { CompletionItemKind } from "@microsoft/powerquery-language-services";
 
 import * as SdkLibraryJsonEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibraryJsonEnUs from "./standard/standard-enUs.json";
+import { createLibraryTypeResolver, LibraryDefinitionsGetter } from "./libraryTypeResolver";
 import { LibraryExportJson, LibraryFunctionParameterJson, LibraryJson } from "./library";
-import { createLibraryTypeResolver } from "./libraryTypeResolver";
 
 export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibrary {
     return getOrCreateLibrary(
@@ -20,13 +20,17 @@ export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibra
     );
 }
 
-export function getOrCreateSdkLibrary(locale?: string): PQLS.Library.ILibrary {
+export function getOrCreateSdkLibrary(
+    locale?: string,
+    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
+): PQLS.Library.ILibrary {
     return getOrCreateLibrary(
         sdkLibraryByLocale,
         sdkLibraryDefinitionsByLocale,
         sdkJsonByLocale,
         locale ?? PQP.DefaultLocale,
         SdkLibraryJsonEnUs,
+        otherLibraryDefinitionsGetters,
     );
 }
 
@@ -36,6 +40,7 @@ function getOrCreateLibrary(
     jsonByLocale: Map<string, LibraryJson>,
     locale: string,
     defaultJson: LibraryJson,
+    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
 ): PQLS.Library.ILibrary {
     if (!libraryByLocale.has(locale)) {
         const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
@@ -51,7 +56,19 @@ function getOrCreateLibrary(
         });
     }
 
-    return PQP.Assert.asDefined(libraryByLocale.get(locale));
+    const libraryOfNoExternals: PQLS.Library.ILibrary = PQP.Assert.asDefined(libraryByLocale.get(locale));
+
+    if (otherLibraryDefinitionsGetters.length) {
+        return {
+            externalTypeResolver: createLibraryTypeResolver(
+                libraryOfNoExternals.libraryDefinitions,
+                otherLibraryDefinitionsGetters,
+            ),
+            libraryDefinitions: libraryOfNoExternals.libraryDefinitions,
+        };
+    } else {
+        return libraryOfNoExternals;
+    }
 }
 
 function getOrCreateLibraryDefinitions(
@@ -81,7 +98,7 @@ const standardLibraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
 const standardLibraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
 const standardJsonByLocale: Map<string, LibraryJson> = new Map([[PQP.Locale.en_US, StandardLibraryJsonEnUs]]);
 
-function mapExport(xport: LibraryExportJson): PQLS.Library.TLibraryDefinition {
+export function mapExport(xport: LibraryExportJson): PQLS.Library.TLibraryDefinition {
     const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.dataType);
     const label: string = xport.name;
     const description: string = xport.documentation?.description ?? "No description available";

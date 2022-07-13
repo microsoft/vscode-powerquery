@@ -7,12 +7,13 @@ import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
 import * as Subscriptions from "./subscriptions";
+import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
 import { CommandConstant } from "./commandConstant";
 
 const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
     commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
     commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
@@ -68,6 +69,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             Subscriptions.SemanticTokensLegend,
         ),
     );
+
+    return Object.freeze({
+        onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson): void => {
+            void client.sendRequest("powerquery/moduleLibraryUpdated", {
+                workspaceUriPath,
+                library,
+            });
+        },
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {
