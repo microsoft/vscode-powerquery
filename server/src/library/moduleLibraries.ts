@@ -105,12 +105,12 @@ export class ModuleLibraries {
     private readonly trieRoot: ModuleLibraryTreeNode = ModuleLibraryTreeNode.defaultRoot;
     private readonly openedTextDocumentTreeNodeMap: Map<string, ModuleLibraryTreeNode> = new Map();
 
-    static splitUriPath(uriPath: string): string[] {
+    static splitPath(uriPath: string): string[] {
         return uriPath.split("/").filter(Boolean);
     }
 
     addOneModuleLibrary(uriPath: string, libraryJson: LibraryJson): TextDocument[] {
-        const spitedPath: string[] = ModuleLibraries.splitUriPath(uriPath);
+        const spitedPath: string[] = ModuleLibraries.splitPath(uriPath);
         const visitorContext: { textDocuments: [] } = { textDocuments: [] };
         const theNode: ModuleLibraryTreeNode = this.trieRoot.insert(spitedPath);
         theNode.libraryJson = libraryJson;
@@ -120,7 +120,7 @@ export class ModuleLibraries {
     }
 
     addOneTextDocument(textDocument: TextDocument): ModuleLibraryTreeNode {
-        const spitedPath: string[] = ModuleLibraries.splitUriPath(textDocument.uri);
+        const spitedPath: string[] = ModuleLibraries.splitPath(textDocument.uri);
 
         const visitorContext: { closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode } = {
             closestModuleLibraryTreeNodeOfDefinitions: this.trieRoot,

@@ -13,8 +13,7 @@ import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
-import { LibraryDefinitionsGetter } from "./library/libraryTypeResolver";
-import { ModuleLibraryTreeNode } from "./library/moduleLibraries";
+import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -22,8 +21,8 @@ interface SemanticTokenParams {
 }
 
 interface ModuleLibraryUpdatedParams {
-    workspaceUriPath: string;
-    library: LibraryJson;
+    readonly workspaceUriPath: string;
+    readonly library: LibraryJson;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -380,21 +379,10 @@ function createAnalysis(
     traceManager: PQP.Trace.TraceManager,
     cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.Analysis {
-    const externalLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [];
-
-    const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode =
-        moduleLibraries.addOneTextDocument(document);
-
-    // I do not believe there would be one m proj at the root of the file system
-    if (!closestModuleLibraryTreeNodeOfDefinitions.isRoot) {
-        externalLibraryDefinitionsGetters.push(closestModuleLibraryTreeNodeOfDefinitions.libraryDefinitionsGetter);
-    }
-
-    closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary =
-        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary ??
-        SettingsUtils.getLocalizedLibrary(externalLibraryDefinitionsGetters);
-
-    const localizedLibrary: PQLS.Library.ILibrary = closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary;
+    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
+        moduleLibraries,
+        document,
+    );
 
     return PQLS.AnalysisUtils.createAnalysis(
         document,
@@ -406,29 +394,15 @@ function createAnalysis(
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
-    const externalLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [];
-
-    // add the document into module library container, and we need to trace for its validation
-    const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode =
-        moduleLibraries.addOneTextDocument(document);
-
-    // I do not believe there would be one m proj at the root of the file system
-    if (!closestModuleLibraryTreeNodeOfDefinitions.isRoot) {
-        externalLibraryDefinitionsGetters.push(closestModuleLibraryTreeNodeOfDefinitions.libraryDefinitionsGetter);
-    }
-
-    // for validation, we have to forcefully update localizedLibrary to ensure it keeps up to the latest
-    closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary = SettingsUtils.getLocalizedLibrary(
-        externalLibraryDefinitionsGetters,
+    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
+        moduleLibraries,
+        document,
+        true,
     );
 
     const result: PQLS.ValidationResult = await PQLS.validate(
         document,
-        SettingsUtils.createValidationSettings(
-            closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary,
-            traceManager,
-            undefined,
-        ),
+        SettingsUtils.createValidationSettings(localizedLibrary, traceManager, undefined),
     );
 
     await connection.sendDiagnostics({

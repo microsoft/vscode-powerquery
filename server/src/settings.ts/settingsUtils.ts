@@ -4,11 +4,13 @@
 import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
+import { LibraryUtils, ModuleLibraries } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
 import { LibraryDefinitionsGetter } from "../library/libraryTypeResolver";
-import { LibraryUtils } from "../library";
+import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
 const LanguageId: string = "powerquery";
 
@@ -98,6 +100,36 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
 
 export function getServerSettings(): ServerSettings {
     return serverSettings;
+}
+
+export function getLocalizedModuleLibraryFromTextDocument(
+    moduleLibraries: ModuleLibraries,
+    document: TextDocument,
+    updateCache: boolean = false,
+): PQLS.Library.ILibrary {
+    const externalLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [];
+
+    // add the document into module library container, and we need to trace for its validation
+    const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode =
+        moduleLibraries.addOneTextDocument(document);
+
+    // I do not believe there would be one m proj at the root of the file system
+    if (!closestModuleLibraryTreeNodeOfDefinitions.isRoot) {
+        externalLibraryDefinitionsGetters.push(closestModuleLibraryTreeNodeOfDefinitions.libraryDefinitionsGetter);
+    }
+
+    if (updateCache) {
+        // for validation, we have to forcefully update localizedLibrary to ensure it keeps up to the latest
+        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary = getLocalizedLibrary(
+            externalLibraryDefinitionsGetters,
+        );
+    } else {
+        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary =
+            closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary ??
+            getLocalizedLibrary(externalLibraryDefinitionsGetters);
+    }
+
+    return closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary;
 }
 
 export function getLocalizedLibrary(
