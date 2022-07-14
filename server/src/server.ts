@@ -366,7 +366,10 @@ connection.onDocumentFormatting(
     },
 );
 
-// Map<document uri, cancellation token for a previous validation request>
+// The onChange event doesn't include a cancellation token, so we have to manage them ourselves,
+// done by keeping a Map<uri, existing cancellation token for uri>.
+// Whenever a new validation attempt begins we check if an existing token for the uri exists and cancels it.
+// Then we store ValidationSettings.maybeCancellationToken for the uri if one exists.
 const onValidateCancellationTokens: Map<string, PQP.ICancellationToken> = new Map();
 
 // Make the text document manager listen on the connection
