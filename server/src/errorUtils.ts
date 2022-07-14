@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as LS from "vscode-languageserver/node";
 import * as PQP from "@microsoft/powerquery-parser";
 
 export function formatError(error: Error): string {
@@ -14,12 +15,20 @@ export interface FormatErrorMetadata {
     readonly name: string;
 }
 
-export function assertAsError<T>(value: T | Error): Error {
+export function handleError(connection: LS.Connection, value: unknown, action: string): void {
+    let userMessage: string;
+
     if (value instanceof Error) {
-        return value;
+        const error: Error = value;
+        userMessage = error.message ?? `An unknown error occured during ${action}.`;
+        connection.console.error(formatError(error));
+    } else {
+        connection.console.warn(`unknown error value: ${value}`);
+
+        return;
     }
 
-    throw new Error(`received an error value that isn't an instanceof Error`);
+    connection.window.showErrorMessage(userMessage);
 }
 
 function formatErrorMetadata(error: Error): FormatErrorMetadata {

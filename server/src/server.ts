@@ -55,9 +55,7 @@ connection.onCompletion(
             try {
                 return await analysis.getAutocompleteItems();
             } catch (error) {
-                connection.console.error(
-                    `onCompletion error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
-                );
+                ErrorUtils.handleError(connection, error, "onComplection");
 
                 return [];
             }
@@ -85,7 +83,7 @@ connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: 
     try {
         return await analysis.getDefinition();
     } catch (error) {
-        connection.console.error(`onDefinition error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
+        connection.console.error(`onDefinition error ${ErrorUtils.handleError(connection, error, "onDefinition")}`);
 
         return [];
     }
@@ -103,7 +101,9 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
     try {
         return await validateDocument(event.document);
     } catch (error) {
-        connection.console.error(`onCompletion error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
+        connection.console.error(
+            `onCompletion error ${ErrorUtils.handleError(connection, error, "onDidContentChange")}`,
+        );
 
         return [];
     }
@@ -182,7 +182,7 @@ connection.onHover(
         try {
             return await analysis.getHover();
         } catch (error) {
-            connection.console.error(`onHover error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`);
+            ErrorUtils.handleError(connection, error, "onHover");
 
             return emptyHover;
         }
@@ -237,9 +237,7 @@ connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.Ca
             changes: { [params.textDocument.uri.toString()]: await analysis.getRenameEdits(params.newName) },
         };
     } catch (error) {
-        connection.console.error(
-            `on powerquery/renameIdentifier error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
-        );
+        ErrorUtils.handleError(connection, error, "onRenameRequest");
 
         return {};
     }
@@ -305,9 +303,7 @@ connection.onSignatureHelp(
             try {
                 return await analysis.getSignatureHelp();
             } catch (error) {
-                connection.console.error(
-                    `onSignatureHelp error ${ErrorUtils.formatError(ErrorUtils.assertAsError(error))}`,
-                );
+                ErrorUtils.handleError(connection, error, "onSignatureHelp");
 
                 return emptySignatureHelp;
             }
@@ -347,19 +343,8 @@ connection.onDocumentFormatting(
                 },
                 experimental,
             );
-        } catch (err) {
-            const error: Error = err as Error;
-            const errorMessage: string = error.message;
-            let userMessage: string;
-
-            // An already localized message was returned.
-            if (errorMessage) {
-                userMessage = errorMessage;
-            } else {
-                userMessage = "An unknown error occured during formatting.";
-            }
-
-            connection.window.showErrorMessage(userMessage);
+        } catch (error) {
+            ErrorUtils.handleError(connection, error, "onDocumentFormatting");
 
             return [];
         }
