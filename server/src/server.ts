@@ -411,11 +411,15 @@ async function validateDocument(document: TextDocument): Promise<void> {
         onValidateCancellationTokens.set(uri, maybeNewCancellationToken);
     }
 
-    const result: PQLS.ValidationResult = await PQLS.validate(document, validationSettings);
+    try {
+        const result: PQLS.ValidationResult = await PQLS.validate(document, validationSettings);
 
-    await connection.sendDiagnostics({
-        uri: document.uri,
-        version: document.version,
-        diagnostics: result.diagnostics,
-    });
+        await connection.sendDiagnostics({
+            uri: document.uri,
+            version: document.version,
+            diagnostics: result.diagnostics,
+        });
+    } catch (error) {
+        ErrorUtils.handleError(connection, error, "validateDocument");
+    }
 }
