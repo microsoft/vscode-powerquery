@@ -366,6 +366,9 @@ connection.onDocumentFormatting(
     },
 );
 
+// Map<document uri, cancellation token for a previous validation request>
+const onValidateCancellationTokens: Map<string, PQP.ICancellationToken> = new Map();
+
 // Make the text document manager listen on the connection
 // for open, change and close text document events
 documents.listen(connection);
@@ -400,10 +403,27 @@ async function validateDocument(document: TextDocument): Promise<void> {
         true,
     );
 
-    const result: PQLS.ValidationResult = await PQLS.validate(
-        document,
-        SettingsUtils.createValidationSettings(localizedLibrary, traceManager, undefined),
+    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
+        localizedLibrary,
+        traceManager,
+        undefined,
     );
+
+    const uri: string = document.uri.toString();
+    const existingCancellationToken: PQP.ICancellationToken | undefined = onValidateCancellationTokens.get(uri);
+
+    if (existingCancellationToken !== undefined) {
+        existingCancellationToken.cancel();
+        onValidateCancellationTokens.delete(uri);
+    }
+
+    const maybeNewCancellationToken: PQP.ICancellationToken | undefined = validationSettings.maybeCancellationToken;
+
+    if (maybeNewCancellationToken !== undefined) {
+        onValidateCancellationTokens.set(uri, maybeNewCancellationToken);
+    }
+
+    const result: PQLS.ValidationResult = await PQLS.validate(document, validationSettings);
 
     await connection.sendDiagnostics({
         uri: document.uri,
