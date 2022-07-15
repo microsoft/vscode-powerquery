@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -9,6 +10,7 @@ import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
+import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
@@ -99,7 +101,7 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
     PQLS.documentClosed(event.document);
 
     try {
-        return await validateDocument(event.document);
+        return await debouncedValidateDocument(event.document);
     } catch (error) {
         connection.console.error(
             `onCompletion error ${ErrorUtils.handleError(connection, error, "onDidContentChange")}`,
@@ -381,6 +383,12 @@ function createAnalysis(
         position,
     );
 }
+
+const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
+    FuncUtils.partitionFn(
+        () => FuncUtils.debounce(validateDocument, 50),
+        (textDocument: TextDocument) => textDocument.uri.toString(),
+    );
 
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
