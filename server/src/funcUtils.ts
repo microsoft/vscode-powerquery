@@ -41,7 +41,6 @@ export function partitionFn<This, Parameters extends unknown[], ReturnType>(
         const key: unknown = keyGenerator.apply(this, args);
 
         // Attempt to reuse a pre-generated function
-
         const fn: ((this: This, ...args: Parameters) => ReturnType) | undefined = cache.get(key);
 
         if (fn) {
