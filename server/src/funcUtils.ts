@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 export function debounce<F extends (...args: never) => void>(fn: F, timeout: number): F;
 
 export function debounce<This, Parameters extends unknown[]>(
