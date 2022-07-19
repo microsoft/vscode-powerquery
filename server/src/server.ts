@@ -93,7 +93,7 @@ connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: 
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
-    documents.all().forEach(validateDocument);
+    documents.all().forEach(debouncedValidateDocument);
 });
 
 documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
@@ -123,6 +123,26 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
     });
 
     PQLS.documentClosed(event.document);
+});
+
+connection.onFoldingRanges((params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) => {
+    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+    if (document === undefined) {
+        return [];
+    }
+
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onFoldingRanges");
+
+    const analysis: PQLS.Analysis = createAnalysis(
+        document,
+        // We need to provide a Position but in this case we don't really care about that
+        { character: 0, line: 0 },
+        traceManager,
+        cancellationToken,
+    );
+
+    return analysis.getFoldingRanges();
 });
 
 connection.onDocumentSymbol(
@@ -272,7 +292,7 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
     );
 
     // need to validate those currently opened documents
-    void Promise.all(allTextDocuments.map(validateDocument));
+    void Promise.all(allTextDocuments.map(debouncedValidateDocument));
 });
 
 connection.onSignatureHelp(
