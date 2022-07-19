@@ -125,26 +125,6 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
     PQLS.documentClosed(event.document);
 });
 
-connection.onFoldingRanges((params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-    if (document === undefined) {
-        return [];
-    }
-
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onFoldingRanges");
-
-    const analysis: PQLS.Analysis = createAnalysis(
-        document,
-        // We need to provide a Position but in this case we don't really care about that
-        { character: 0, line: 0 },
-        traceManager,
-        cancellationToken,
-    );
-
-    return analysis.getFoldingRanges();
-});
-
 connection.onDocumentSymbol(
     async (
         documentSymbolParams: LS.DocumentSymbolParams,
