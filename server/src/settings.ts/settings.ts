@@ -8,7 +8,6 @@ export interface ServerSettings {
     checkForDuplicateIdentifiers: boolean;
     checkInvokeExpressions: boolean;
     experimental: boolean;
-    globalTimeoutInMs: number;
     isBenchmarksEnabled: boolean;
     isWorkspaceCacheAllowed: boolean;
     locale: string;
@@ -20,7 +19,6 @@ export interface ServerSettings {
 export const DefaultServerSettings: ServerSettings = {
     checkForDuplicateIdentifiers: true,
     checkInvokeExpressions: false,
-    globalTimeoutInMs: 5000,
     experimental: false,
     isBenchmarksEnabled: false,
     isWorkspaceCacheAllowed: true,

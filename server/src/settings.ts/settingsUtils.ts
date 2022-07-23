@@ -27,11 +27,10 @@ export function createAnalysisSettings(
     cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: (): PQLS.InspectionSettings =>
-            createInspectionSettings(library, traceManager, cancellationToken),
-        library,
+        createCancellationTokenFn: () =>
+            CancellationTokenUtils.createTimedCancellation(serverSettings.symbolTimeoutInMs),
+        inspectionSettings: createInspectionSettings(library, traceManager, cancellationToken),
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
-        symbolProviderTimeoutInMS: serverSettings.symbolTimeoutInMs,
         traceManager,
         maybeInitialCorrelationId: undefined,
     };
@@ -48,8 +47,8 @@ export function createInspectionSettings(
             locale: serverSettings.locale,
             traceManager,
             maybeCancellationToken: cancellationToken
-                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.globalTimeoutInMs)
-                : CancellationTokenUtils.createTimedCancellation(serverSettings.globalTimeoutInMs),
+                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.symbolTimeoutInMs)
+                : CancellationTokenUtils.createTimedCancellation(serverSettings.symbolTimeoutInMs),
         },
         {
             library,
@@ -88,7 +87,6 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: false,
         experimental,
-        globalTimeoutInMs: config?.timeout?.globalTimeoutInMs,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,

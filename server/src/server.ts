@@ -5,7 +5,8 @@ import * as LS from "vscode-languageserver/node";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
+import { CommonError, Result, ResultUtils } from "@microsoft/powerquery-parser";
+import { DefinitionParams, Location, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
@@ -39,30 +40,28 @@ connection.onCompletion(
     ): Promise<LS.CompletionItem[]> => {
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
-        if (document) {
-            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-                textDocumentPosition.textDocument.uri,
-                "onCompletion",
-                textDocumentPosition.position,
-            );
-
-            const analysis: PQLS.Analysis = createAnalysis(
-                document,
-                textDocumentPosition.position,
-                traceManager,
-                cancellationToken,
-            );
-
-            try {
-                return await analysis.getAutocompleteItems();
-            } catch (error) {
-                ErrorUtils.handleError(connection, error, "onComplection");
-
-                return [];
-            }
+        if (document === undefined) {
+            return [];
         }
 
-        return [];
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+            textDocumentPosition.textDocument.uri,
+            "onCompletion",
+            textDocumentPosition.position,
+        );
+
+        const analysis: PQLS.Analysis = createAnalysis(document, traceManager, cancellationToken);
+
+        const result: Result<PQLS.Inspection.AutocompleteItem[] | undefined, CommonError.CommonError> =
+            await analysis.getAutocompleteItems(textDocumentPosition.position);
+
+        if (ResultUtils.isOk(result)) {
+            return result.value ? result.value : [];
+        } else {
+            ErrorUtils.handleError(connection, result.error, "onCompletion");
+
+            return [];
+        }
     },
 );
 
@@ -79,14 +78,18 @@ connection.onDefinition(async (parameters: DefinitionParams, cancellationToken: 
         parameters.position,
     );
 
-    const analysis: PQLS.Analysis = createAnalysis(document, parameters.position, traceManager, cancellationToken);
+    const analysis: PQLS.Analysis = createAnalysis(document, traceManager, cancellationToken);
 
-    try {
-        return await analysis.getDefinition();
-    } catch (error) {
-        connection.console.error(`onDefinition error ${ErrorUtils.handleError(connection, error, "onDefinition")}`);
+    const result: Result<Location[] | undefined, CommonError.CommonError> = await analysis.getDefinition(
+        parameters.position,
+    );
 
-        return [];
+    if (ResultUtils.isOk(result)) {
+        return result.value;
+    } else {
+        ErrorUtils.handleError(connection, result.error, "onDefinition");
+
+        return undefined;
     }
 });
 
@@ -143,7 +146,7 @@ connection.onDocumentSymbol(
                 ...PQP.DefaultSettings,
                 maybeCancellationToken: CancellationTokenUtils.createAdapter(
                     cancellationToken,
-                    serverSettings.globalTimeoutInMs,
+                    serverSettings.symbolTimeoutInMs,
                 ),
             },
             serverSettings.isWorkspaceCacheAllowed,
@@ -173,17 +176,16 @@ connection.onHover(
             textDocumentPosition.position,
         );
 
-        const analysis: PQLS.Analysis = createAnalysis(
-            document,
+        const analysis: PQLS.Analysis = createAnalysis(document, traceManager, cancellationToken);
+
+        const result: Result<LS.Hover | undefined, CommonError.CommonError> = await analysis.getHover(
             textDocumentPosition.position,
-            traceManager,
-            cancellationToken,
         );
 
-        try {
-            return await analysis.getHover();
-        } catch (error) {
-            ErrorUtils.handleError(connection, error, "onHover");
+        if (ResultUtils.isOk(result)) {
+            return result.value ? result.value : emptyHover;
+        } else {
+            ErrorUtils.handleError(connection, result.error, "onHover");
 
             return emptyHover;
         }
@@ -231,16 +233,23 @@ connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.Ca
     }
 
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "renameIdentifier");
-    const analysis: PQLS.Analysis = createAnalysis(document, params.position, traceManager, cancellationToken);
+    const analysis: PQLS.Analysis = createAnalysis(document, traceManager, cancellationToken);
 
-    try {
-        return {
-            changes: { [params.textDocument.uri.toString()]: await analysis.getRenameEdits(params.newName) },
-        };
-    } catch (error) {
-        ErrorUtils.handleError(connection, error, "onRenameRequest");
+    const result: Result<LS.TextEdit[] | undefined, CommonError.CommonError> = await analysis.getRenameEdits(
+        params.position,
+        params.newName,
+    );
 
-        return {};
+    if (ResultUtils.isOk(result)) {
+        return result.value
+            ? {
+                  changes: { [params.textDocument.uri.toString()]: result.value },
+              }
+            : undefined;
+    } else {
+        ErrorUtils.handleError(connection, result.error, "renameIdentifier");
+
+        return undefined;
     }
 });
 
@@ -252,14 +261,7 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
-
-    const analysis: PQLS.Analysis = createAnalysis(
-        document,
-        // We need to provide a Position but in this case we don't really care about that
-        { character: 0, line: 0 },
-        traceManager,
-        params.cancellationToken,
-    );
+    const analysis: PQLS.Analysis = createAnalysis(document, traceManager, params.cancellationToken);
 
     return await analysis.getPartialSemanticTokens();
 });
@@ -287,30 +289,29 @@ connection.onSignatureHelp(
 
         const document: TextDocument | undefined = documents.get(textDocumentPosition.textDocument.uri);
 
-        if (document) {
-            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-                textDocumentPosition.textDocument.uri,
-                "onSignatureHelp",
-                textDocumentPosition.position,
-            );
-
-            const analysis: PQLS.Analysis = createAnalysis(
-                document,
-                textDocumentPosition.position,
-                traceManager,
-                cancellationToken,
-            );
-
-            try {
-                return await analysis.getSignatureHelp();
-            } catch (error) {
-                ErrorUtils.handleError(connection, error, "onSignatureHelp");
-
-                return emptySignatureHelp;
-            }
+        if (document === undefined) {
+            return emptySignatureHelp;
         }
 
-        return emptySignatureHelp;
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+            textDocumentPosition.textDocument.uri,
+            "onSignatureHelp",
+            textDocumentPosition.position,
+        );
+
+        const analysis: PQLS.Analysis = createAnalysis(document, traceManager, cancellationToken);
+
+        const result: Result<LS.SignatureHelp | undefined, CommonError.CommonError> = await analysis.getSignatureHelp(
+            textDocumentPosition.position,
+        );
+
+        if (ResultUtils.isOk(result)) {
+            return result.value ? result.value : emptySignatureHelp;
+        } else {
+            ErrorUtils.handleError(connection, result.error, "onSignatureHelp");
+
+            return emptySignatureHelp;
+        }
     },
 );
 
@@ -338,7 +339,7 @@ connection.onDocumentFormatting(
                     newlineLiteral: PQF.NewlineLiteral.Windows,
                     maybeCancellationToken: CancellationTokenUtils.createAdapter(
                         cancellationToken,
-                        serverSettings.globalTimeoutInMs,
+                        serverSettings.symbolTimeoutInMs,
                     ),
                     maxWidth: experimental ? 120 : undefined,
                 },
@@ -367,7 +368,6 @@ connection.listen();
 
 function createAnalysis(
     document: TextDocument,
-    position: PQLS.Position,
     traceManager: PQP.Trace.TraceManager,
     cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.Analysis {
@@ -379,13 +379,12 @@ function createAnalysis(
     return PQLS.AnalysisUtils.createAnalysis(
         document,
         SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager, cancellationToken),
-        position,
     );
 }
 
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
-        () => FuncUtils.debounce(validateDocument, 50),
+        () => FuncUtils.debounce(validateDocument, 100),
         (textDocument: TextDocument) => textDocument.uri.toString(),
     );
 

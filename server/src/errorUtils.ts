@@ -27,7 +27,7 @@ export function handleError(connection: LS.Connection, value: unknown, action: s
     connection.window.showErrorMessage(userMessage);
 }
 
-function formatError(error: Error): string {
+export function formatError(error: Error): string {
     return JSON.stringify(formatErrorMetadata(error), null, 4);
 }
 

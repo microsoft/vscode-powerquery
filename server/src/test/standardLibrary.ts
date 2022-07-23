@@ -5,25 +5,33 @@ import "mocha";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { AnalysisSettings, Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
+import { Assert, CommonError, Result } from "@microsoft/powerquery-parser";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
-import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 
+import { CancellationTokenUtils } from "../cancellationToken";
 import { LibraryUtils } from "../library";
 
 const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
 
-function assertGetHover(text: string): Promise<Hover> {
-    return createAnalysis(text).getHover();
+function assertGetHover(text: string): Promise<Result<Hover | undefined, CommonError.CommonError>> {
+    const [analysis, position]: [PQLS.Analysis, Position] = createAnalysis(text);
+
+    return analysis.getHover(position);
 }
 
-function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
-    return createAnalysis(text).getSignatureHelp();
+function assertGetSignatureHelp(text: string): Promise<Result<SignatureHelp | undefined, CommonError.CommonError>> {
+    const [analysis, position]: [PQLS.Analysis, Position] = createAnalysis(text);
+
+    return analysis.getSignatureHelp(position);
 }
 
 async function assertHoverContentEquals(text: string, expected: string): Promise<void> {
-    const hover: Hover = await assertGetHover(text);
-    const markupContent: MarkupContent = assertAsMarkupContent(hover.contents);
+    const hover: Result<Hover | undefined, CommonError.CommonError> = await assertGetHover(text);
+    Assert.isOk(hover);
+    Assert.isDefined(hover.value);
+
+    const markupContent: MarkupContent = assertAsMarkupContent(hover.value.contents);
     expect(markupContent.value).to.equal(expected);
 }
 
@@ -43,7 +51,7 @@ function assertIsMarkupContent(value: Hover["contents"]): asserts value is Marku
     }
 }
 
-function createAnalysis(textWithPipe: string): PQLS.Analysis {
+function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
     const text: string = textWithPipe.replace("|", "");
 
     const position: Position = {
@@ -54,19 +62,17 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
     const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
-        createInspectionSettingsFn: () =>
-            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, { library }),
+        createCancellationTokenFn: (_action: string) => CancellationTokenUtils.createTimedCancellation(1000),
+        inspectionSettings: PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, { library }),
         isWorkspaceCacheAllowed: false,
-        library,
-        traceManager: PQP.Trace.NoOpTraceManagerInstance,
         maybeInitialCorrelationId: undefined,
+        traceManager: PQP.Trace.NoOpTraceManagerInstance,
     };
 
-    return PQLS.AnalysisUtils.createAnalysis(
-        PQLS.createTextDocument(textWithPipe, 1, text),
-        analysisSettings,
+    return [
+        PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), analysisSettings),
         position,
-    );
+    ];
 }
 
 describe(`StandardLibrary`, () => {
@@ -137,13 +143,17 @@ describe(`StandardLibrary`, () => {
             });
 
             it("getSignatureHelp", async () => {
-                const signatureHelp: SignatureHelp = await assertGetSignatureHelp("Table.AddColumn(|");
+                const signatureHelp: Result<SignatureHelp | undefined, CommonError.CommonError> =
+                    await assertGetSignatureHelp("Table.AddColumn(|");
 
-                expect(signatureHelp.activeParameter).to.equal(0);
-                expect(signatureHelp.activeSignature).to.equal(0);
-                expect(signatureHelp.signatures.length).to.equal(1);
+                Assert.isOk(signatureHelp);
+                Assert.isDefined(signatureHelp.value);
 
-                const signature: SignatureInformation = PQP.Assert.asDefined(signatureHelp.signatures[0]);
+                expect(signatureHelp.value.activeParameter).to.equal(0);
+                expect(signatureHelp.value.activeSignature).to.equal(0);
+                expect(signatureHelp.value.signatures.length).to.equal(1);
+
+                const signature: SignatureInformation = PQP.Assert.asDefined(signatureHelp.value.signatures[0]);
                 Assert.isDefined(signature.documentation);
 
                 expect(signature.documentation).to.equal(
