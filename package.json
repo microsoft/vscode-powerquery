@@ -198,6 +198,12 @@
                         "SDK"
                     ]
                 },
+                "powerquery.timeout.globalTimeoutInMs": {
+                    "scope": "window",
+                    "type": "number",
+                    "default": 5000,
+                    "description": "Global timeout in milliseconds."
+                },
                 "powerquery.timeout.symbolTimeoutInMs": {
                     "scope": "window",
                     "type": "number",

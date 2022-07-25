@@ -13,6 +13,7 @@ export interface ServerSettings {
     locale: string;
     mode: "Power Query" | "SDK";
     symbolTimeoutInMs: number;
+    globalTimeoutInMs: number;
     typeStrategy: PQLS.TypeStrategy;
 }
 
@@ -25,5 +26,6 @@ export const DefaultServerSettings: ServerSettings = {
     locale: PQP.DefaultLocale,
     mode: "Power Query",
     symbolTimeoutInMs: 2000,
+    globalTimeoutInMs: 5000,
     typeStrategy: PQLS.TypeStrategy.Primitive,
 };

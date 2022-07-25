@@ -91,6 +91,7 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
+        globalTimeoutInMs: config?.timeout?.globalTimeoutInMs,
         symbolTimeoutInMs: config?.timeout?.symbolTimeoutInMs,
         typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
     };

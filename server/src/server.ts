@@ -146,7 +146,7 @@ connection.onDocumentSymbol(
                 ...PQP.DefaultSettings,
                 maybeCancellationToken: CancellationTokenUtils.createAdapter(
                     cancellationToken,
-                    serverSettings.symbolTimeoutInMs,
+                    serverSettings.globalTimeoutInMs,
                 ),
             },
             serverSettings.isWorkspaceCacheAllowed,
@@ -339,7 +339,7 @@ connection.onDocumentFormatting(
                     newlineLiteral: PQF.NewlineLiteral.Windows,
                     maybeCancellationToken: CancellationTokenUtils.createAdapter(
                         cancellationToken,
-                        serverSettings.symbolTimeoutInMs,
+                        serverSettings.globalTimeoutInMs,
                     ),
                     maxWidth: experimental ? 120 : undefined,
                 },
