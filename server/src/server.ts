@@ -15,7 +15,6 @@ import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { CancellationTokenUtils } from "./cancellationToken";
-import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -134,23 +133,28 @@ connection.onDocumentSymbol(
     ): Promise<LS.DocumentSymbol[] | undefined> => {
         const document: TextDocument | undefined = documents.get(documentSymbolParams.textDocument.uri);
 
-        if (!document) {
+        if (document === undefined) {
             return undefined;
         }
 
-        const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
-
-        return await PQLS.getDocumentSymbols(
-            document,
-            {
-                ...PQP.DefaultSettings,
-                maybeCancellationToken: CancellationTokenUtils.createAdapter(
-                    cancellationToken,
-                    serverSettings.globalTimeoutInMs,
-                ),
-            },
-            serverSettings.isWorkspaceCacheAllowed,
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+            documentSymbolParams.textDocument.uri,
+            "onDocumentSymbol",
+            undefined,
         );
+
+        const analysis: PQLS.Analysis = createAnalysis(document, traceManager, cancellationToken);
+
+        const result: Result<LS.DocumentSymbol[] | undefined, CommonError.CommonError> =
+            await analysis.getDocumentSymbols();
+
+        if (ResultUtils.isOk(result)) {
+            return result.value ? result.value : undefined;
+        } else {
+            ErrorUtils.handleError(connection, result.error, "onDocumentSymbol");
+
+            return undefined;
+        }
     },
 );
 
@@ -371,7 +375,7 @@ function createAnalysis(
     traceManager: PQP.Trace.TraceManager,
     cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
         document,
     );
@@ -391,7 +395,7 @@ const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
-    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
         document,
         true,
@@ -418,7 +422,11 @@ async function validateDocument(document: TextDocument): Promise<void> {
     }
 
     try {
-        const result: PQLS.ValidationResult = await PQLS.validate(document, validationSettings);
+        const result: PQLS.ValidationResult = await PQLS.validate(
+            document,
+            SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager, undefined),
+            validationSettings,
+        );
 
         await connection.sendDiagnostics({
             uri: document.uri,
