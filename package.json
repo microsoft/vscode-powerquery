@@ -41,7 +41,7 @@
         "webpack-prod:server": "cd server && npm run webpack-prod",
         "vscode:prepublish": "npm run webpack-prod"
     },
-    "icon": "imgs/PQIcon_128.png",
+    "icon": "imgs/PQIcon_256.png",
     "main": "./client/dist/extension",
     "engines": {
         "node": ">=16.13.2",
