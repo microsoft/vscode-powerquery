@@ -152,7 +152,7 @@ function mapLibraryFunctionSignatureToType(
             return {
                 isNullable: primitiveType.isNullable,
                 isOptional: !parameter.isRequired,
-                maybeType: primitiveType.kind,
+                type: primitiveType.kind,
                 nameLiteral: parameter.name,
             };
         }),
@@ -167,7 +167,7 @@ function mapParameterToLibraryParameter(parameter: LibraryFunctionParameterJson)
         isNullable: primitiveType.isNullable,
         isOptional: false,
         label: parameter.name,
-        maybeDocumentation: parameter.description ?? undefined,
+        documentation: parameter.description ?? undefined,
         typeKind: primitiveType.kind,
     };
 }

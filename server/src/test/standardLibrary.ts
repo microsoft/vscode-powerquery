@@ -13,12 +13,51 @@ import { LibraryUtils } from "../library";
 
 const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
 
-function assertGetHover(text: string): Promise<Hover> {
-    return createAnalysis(text).getHover();
+class NoOpCancellationToken implements PQP.ICancellationToken {
+    isCancelled: () => boolean = () => false;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    throwIfCancelled: () => void = () => {};
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    cancel: () => void = () => {};
 }
 
-function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
-    return createAnalysis(text).getSignatureHelp();
+const NoOpCancellationTokenInstance: NoOpCancellationToken = new NoOpCancellationToken();
+
+async function assertGetHover(text: string): Promise<Hover> {
+    const [analysis, position]: [PQLS.Analysis, Position] = createAnalysis(text);
+
+    const result: PQP.Result<PQLS.Hover | undefined, PQP.CommonError.CommonError> = await analysis.getHover(
+        position,
+        NoOpCancellationTokenInstance,
+    );
+
+    Assert.isOk(result);
+
+    return (
+        result.value ?? {
+            range: undefined,
+            contents: [],
+        }
+    );
+}
+
+async function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
+    const [analysis, position]: [PQLS.Analysis, Position] = createAnalysis(text);
+
+    const result: PQP.Result<SignatureHelp | undefined, PQP.CommonError.CommonError> = await analysis.getSignatureHelp(
+        position,
+        NoOpCancellationTokenInstance,
+    );
+
+    Assert.isOk(result);
+
+    return (
+        result.value ?? {
+            signatures: [],
+            activeSignature: undefined,
+            activeParameter: undefined,
+        }
+    );
 }
 
 async function assertHoverContentEquals(text: string, expected: string): Promise<void> {
@@ -43,7 +82,7 @@ function assertIsMarkupContent(value: Hover["contents"]): asserts value is Marku
     }
 }
 
-function createAnalysis(textWithPipe: string): PQLS.Analysis {
+function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
     const text: string = textWithPipe.replace("|", "");
 
     const position: Position = {
@@ -54,19 +93,16 @@ function createAnalysis(textWithPipe: string): PQLS.Analysis {
     const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
-        createInspectionSettingsFn: () =>
-            PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, { library }),
+        inspectionSettings: PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, { library }),
         isWorkspaceCacheAllowed: false,
-        library,
         traceManager: PQP.Trace.NoOpTraceManagerInstance,
-        maybeInitialCorrelationId: undefined,
+        initialCorrelationId: undefined,
     };
 
-    return PQLS.AnalysisUtils.createAnalysis(
-        PQLS.createTextDocument(textWithPipe, 1, text),
-        analysisSettings,
+    return [
+        PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), analysisSettings),
         position,
-    );
+    ];
 }
 
 describe(`StandardLibrary`, () => {
