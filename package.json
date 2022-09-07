@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.42",
+    "version": "0.1.43",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -197,12 +197,6 @@
                         "Power Query",
                         "SDK"
                     ]
-                },
-                "powerquery.timeout.globalTimeoutInMs": {
-                    "scope": "window",
-                    "type": "number",
-                    "default": 5000,
-                    "description": "Global async timeout in milliseconds."
                 },
                 "powerquery.timeout.symbolTimeoutInMs": {
                     "scope": "window",
