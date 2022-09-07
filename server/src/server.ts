@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -59,7 +58,7 @@ connection.onCompletion(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? [];
         } else {
-            ErrorUtils.handleError(connection, result.error, "onComplection");
+            ErrorUtils.handleError(connection, result.error, "onCompletion");
 
             return [];
         }
@@ -106,9 +105,7 @@ documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocume
     try {
         return await debouncedValidateDocument(event.document);
     } catch (error) {
-        connection.console.error(
-            `onCompletion error ${ErrorUtils.handleError(connection, error, "onDidContentChange")}`,
-        );
+        ErrorUtils.handleError(connection, error, "onDidContentChange");
 
         return [];
     }
@@ -134,9 +131,7 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
     }
 
     const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onFoldingRanges");
-
     const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
     const result: PQP.Result<LS.FoldingRange[] | undefined, PQP.CommonError.CommonError> =
@@ -145,7 +140,7 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
     if (PQP.ResultUtils.isOk(result)) {
         return result.value ?? [];
     } else {
-        ErrorUtils.handleError(connection, result.error, "onComplection");
+        ErrorUtils.handleError(connection, result.error, "onFoldingRanges");
 
         return [];
     }
@@ -346,7 +341,7 @@ connection.onSignatureHelp(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? emptySignatureHelp;
         } else {
-            ErrorUtils.handleError(connection, result.error, "onRenameRequest");
+            ErrorUtils.handleError(connection, result.error, "onSignatureHelp");
 
             return emptySignatureHelp;
         }
@@ -354,11 +349,8 @@ connection.onSignatureHelp(
 );
 
 connection.onDocumentFormatting(
-    async (
-        documentfomattingParams: LS.DocumentFormattingParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.TextEdit[]> => {
-        const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
+    async (params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken): Promise<LS.TextEdit[]> => {
+        const maybeDocument: TextDocument | undefined = documents.get(params.textDocument.uri);
 
         if (maybeDocument === undefined) {
             return [];
