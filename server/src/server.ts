@@ -9,6 +9,7 @@ import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
+import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
 import { ServerSettings, SettingsUtils } from "./settings.ts";
@@ -57,7 +58,7 @@ connection.onCompletion(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? [];
         } else {
-            ErrorUtils.handleError(connection, result.error, "onComplection");
+            ErrorUtils.handleError(connection, result.error, "onCompletion");
 
             return [];
         }
@@ -97,16 +98,14 @@ connection.onDefinition(async (params: DefinitionParams, cancellationToken: LS.C
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
-    documents.all().forEach(validateDocument);
+    documents.all().forEach(debouncedValidateDocument);
 });
 
 documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     try {
-        return await validateDocument(event.document);
+        return await debouncedValidateDocument(event.document);
     } catch (error) {
-        connection.console.error(
-            `onCompletion error ${ErrorUtils.handleError(connection, error, "onDidContentChange")}`,
-        );
+        ErrorUtils.handleError(connection, error, "onDidContentChange");
 
         return [];
     }
@@ -122,6 +121,29 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
         version: event.document.version,
         diagnostics: [],
     });
+});
+
+connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) => {
+    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+    if (document === undefined) {
+        return [];
+    }
+
+    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onFoldingRanges");
+    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+    const result: PQP.Result<LS.FoldingRange[] | undefined, PQP.CommonError.CommonError> =
+        await analysis.getFoldingRanges(pqpCancellationToken);
+
+    if (PQP.ResultUtils.isOk(result)) {
+        return result.value ?? [];
+    } else {
+        ErrorUtils.handleError(connection, result.error, "onFoldingRanges");
+
+        return [];
+    }
 });
 
 connection.onDocumentSymbol(
@@ -283,7 +305,7 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
     );
 
     // need to validate those currently opened documents
-    void Promise.all(allTextDocuments.map(validateDocument));
+    void Promise.all(allTextDocuments.map(debouncedValidateDocument));
 });
 
 connection.onSignatureHelp(
@@ -319,7 +341,7 @@ connection.onSignatureHelp(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? emptySignatureHelp;
         } else {
-            ErrorUtils.handleError(connection, result.error, "onRenameRequest");
+            ErrorUtils.handleError(connection, result.error, "onSignatureHelp");
 
             return emptySignatureHelp;
         }
@@ -327,11 +349,8 @@ connection.onSignatureHelp(
 );
 
 connection.onDocumentFormatting(
-    async (
-        documentfomattingParams: LS.DocumentFormattingParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.TextEdit[]> => {
-        const maybeDocument: TextDocument | undefined = documents.get(documentfomattingParams.textDocument.uri);
+    async (params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken): Promise<LS.TextEdit[]> => {
+        const maybeDocument: TextDocument | undefined = documents.get(params.textDocument.uri);
 
         if (maybeDocument === undefined) {
             return [];
@@ -344,9 +363,9 @@ connection.onDocumentFormatting(
         try {
             return await PQLS.tryFormat(document, {
                 ...PQP.DefaultSettings,
+                cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
                 indentationLiteral: PQF.IndentationLiteral.SpaceX4,
                 newlineLiteral: PQF.NewlineLiteral.Windows,
-                cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
                 maxWidth: experimental ? 120 : undefined,
             });
         } catch (error) {
@@ -356,6 +375,12 @@ connection.onDocumentFormatting(
         }
     },
 );
+
+// The onChange event doesn't include a cancellation token, so we have to manage them ourselves,
+// done by keeping a Map<uri, existing cancellation token for uri>.
+// Whenever a new validation attempt begins we check if an existing token for the uri exists and cancels it.
+// Then we store ValidationSettings.maybeCancellationToken for the uri if one exists.
+const onValidateCancellationTokens: Map<string, PQP.ICancellationToken> = new Map();
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -376,6 +401,12 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
     );
 }
 
+const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
+    FuncUtils.partitionFn(
+        () => FuncUtils.debounce(validateDocument, 50),
+        (textDocument: TextDocument) => textDocument.uri.toString(),
+    );
+
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
@@ -385,23 +416,39 @@ async function validateDocument(document: TextDocument): Promise<void> {
         true,
     );
 
-    let result: PQLS.ValidationResult;
+    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
+        localizedLibrary,
+        traceManager,
+    );
 
-    try {
-        result = await PQLS.validate(
-            document,
-            SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager),
-            SettingsUtils.createValidationSettings(localizedLibrary, traceManager),
-        );
-    } catch (error) {
-        ErrorUtils.handleError(connection, error, "validateDocument");
+    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
+        localizedLibrary,
+        traceManager,
+    );
 
-        return;
+    const uri: string = document.uri.toString();
+    const existingCancellationToken: PQP.ICancellationToken | undefined = onValidateCancellationTokens.get(uri);
+
+    if (existingCancellationToken !== undefined) {
+        existingCancellationToken.cancel();
+        onValidateCancellationTokens.delete(uri);
     }
 
-    await connection.sendDiagnostics({
-        uri: document.uri,
-        version: document.version,
-        diagnostics: result.diagnostics,
-    });
+    const maybeNewCancellationToken: PQP.ICancellationToken | undefined = validationSettings.cancellationToken;
+
+    if (maybeNewCancellationToken !== undefined) {
+        onValidateCancellationTokens.set(uri, maybeNewCancellationToken);
+    }
+
+    try {
+        const result: PQLS.ValidationResult = await PQLS.validate(document, analysisSettings, validationSettings);
+
+        await connection.sendDiagnostics({
+            uri: document.uri,
+            version: document.version,
+            diagnostics: result.diagnostics,
+        });
+    } catch (error) {
+        ErrorUtils.handleError(connection, error, "validateDocument");
+    }
 }

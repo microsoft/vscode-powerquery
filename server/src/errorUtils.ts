@@ -4,10 +4,6 @@
 import * as LS from "vscode-languageserver/node";
 import * as PQP from "@microsoft/powerquery-parser";
 
-export function formatError(error: Error): string {
-    return JSON.stringify(formatErrorMetadata(error), null, 4);
-}
-
 export interface FormatErrorMetadata {
     readonly maybeChild: FormatErrorMetadata | undefined;
     readonly maybeTopOfStack: string | undefined;
@@ -29,6 +25,10 @@ export function handleError(connection: LS.Connection, value: unknown, action: s
     }
 
     connection.window.showErrorMessage(userMessage);
+}
+
+function formatError(error: Error): string {
+    return JSON.stringify(formatErrorMetadata(error), null, 4);
 }
 
 function formatErrorMetadata(error: Error): FormatErrorMetadata {
