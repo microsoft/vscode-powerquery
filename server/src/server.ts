@@ -418,8 +418,6 @@ const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
 
-    console.log("hello world");
-
     const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
         document,
