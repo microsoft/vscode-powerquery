@@ -24,32 +24,28 @@ export async function initializeServerSettings(connection: LS.Connection): Promi
 export function createAnalysisSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
-    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.AnalysisSettings {
     return {
-        createInspectionSettingsFn: (): PQLS.InspectionSettings =>
-            createInspectionSettings(library, traceManager, cancellationToken),
-        library,
+        inspectionSettings: createInspectionSettings(library, traceManager),
         isWorkspaceCacheAllowed: serverSettings.isWorkspaceCacheAllowed,
-        symbolProviderTimeoutInMS: serverSettings.symbolTimeoutInMs,
         traceManager,
-        maybeInitialCorrelationId: undefined,
+        initialCorrelationId: undefined,
     };
+}
+
+export function createCancellationToken(cancellationToken: LS.CancellationToken | undefined): PQP.ICancellationToken {
+    return CancellationTokenUtils.createAdapterOrTimedCancellation(cancellationToken, serverSettings.symbolTimeoutInMs);
 }
 
 export function createInspectionSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
-    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.InspectionSettings {
     return PQLS.InspectionUtils.createInspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
             traceManager,
-            maybeCancellationToken: cancellationToken
-                ? CancellationTokenUtils.createAdapter(cancellationToken, serverSettings.globalTimeoutInMs)
-                : CancellationTokenUtils.createTimedCancellation(serverSettings.globalTimeoutInMs),
         },
         {
             library,
@@ -62,10 +58,9 @@ export function createInspectionSettings(
 export function createValidationSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
-    cancellationToken: LS.CancellationToken | undefined,
 ): PQLS.ValidationSettings {
     return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library, traceManager, cancellationToken),
+        createInspectionSettings(library, traceManager),
         LanguageId,
         {
             checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
@@ -88,7 +83,6 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         checkForDuplicateIdentifiers: true,
         checkInvokeExpressions: false,
         experimental,
-        globalTimeoutInMs: config?.timeout?.globalTimeoutInMs,
         isBenchmarksEnabled: config?.benchmark?.enable ?? false,
         isWorkspaceCacheAllowed: config?.diagnostics?.isWorkspaceCacheAllowed ?? true,
         locale: config?.general?.locale ?? PQP.DefaultLocale,

@@ -18,4 +18,4 @@ server/**
 **/*.zip
 **/*.vsix
 imgs
-!imgs/PQIcon_128.png
+!imgs/PQIcon_256.png
