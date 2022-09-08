@@ -250,6 +250,8 @@ connection.onInitialized(async () => {
     }
 
     await SettingsUtils.initializeServerSettings(connection);
+
+    documents.all().forEach(debouncedValidateDocument);
 });
 
 connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.CancellationToken) => {
