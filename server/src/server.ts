@@ -291,10 +291,13 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
     const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-    try {
-        return await analysis.getPartialSemanticTokens(pqpCancellationToken);
-    } catch (error) {
-        ErrorUtils.handleError(connection, error, "semanticTokens");
+    const result: PQP.Result<PQLS.PartialSemanticToken[] | undefined, PQP.CommonError.CommonError> =
+        await analysis.getPartialSemanticTokens(pqpCancellationToken);
+
+    if (PQP.ResultUtils.isOk(result)) {
+        return result.value ?? [];
+    } else {
+        ErrorUtils.handleError(connection, result.error, "semanticTokens");
 
         return [];
     }
