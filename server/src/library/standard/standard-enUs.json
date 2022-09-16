@@ -1988,6 +1988,101 @@
     "dataType": "type"
   },
   {
+    "name": "Binary.View",
+    "documentation": {
+      "description": "Creates or extends a binary with user-defined handlers for query and action operations.",
+      "longDescription": null,
+      "category": "Binary"
+    },
+    "functionParameters": [
+      {
+        "name": "binary",
+        "parameterType": "nullable binary",
+        "isRequired": true,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "handlers",
+        "parameterType": "record",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemType": 3,
+    "isDataSource": false,
+    "dataType": "binary"
+  },
+  {
+    "name": "Binary.ViewError",
+    "documentation": {
+      "description": "Creates a modified error record which won't trigger a fallback when thrown by a handler defined on a view (via Binary.View).",
+      "longDescription": null,
+      "category": "Binary"
+    },
+    "functionParameters": [
+      {
+        "name": "errorRecord",
+        "parameterType": "record",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemType": 3,
+    "isDataSource": false,
+    "dataType": "record"
+  },
+  {
+    "name": "Binary.ViewFunction",
+    "documentation": {
+      "description": "Creates a function that can be intercepted by a handler defined on a view (via Binary.View).",
+      "longDescription": null,
+      "category": "Binary"
+    },
+    "functionParameters": [
+      {
+        "name": "function",
+        "parameterType": "function",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemType": 3,
+    "isDataSource": false,
+    "dataType": "function"
+  },
+  {
     "name": "BinaryEncoding.Base64",
     "documentation": {
       "description": "Constant to use as the encoding type when base-64 encoding is required.",
@@ -8041,7 +8136,7 @@
   {
     "name": "Duration.Days",
     "documentation": {
-      "description": "Returns the days part of this duration.",
+      "description": "Returns the days portion of a duration.",
       "longDescription": null,
       "category": "Duration"
     },
@@ -8122,7 +8217,7 @@
   {
     "name": "Duration.Hours",
     "documentation": {
-      "description": "Returns the hours part of this duration.",
+      "description": "Returns the hours portion of a duration.",
       "longDescription": null,
       "category": "Duration"
     },
@@ -8149,7 +8244,7 @@
   {
     "name": "Duration.Minutes",
     "documentation": {
-      "description": "Returns the minutes part of this duration.",
+      "description": "Returns the minutes portion of a duration.",
       "longDescription": null,
       "category": "Duration"
     },
@@ -8176,7 +8271,7 @@
   {
     "name": "Duration.Seconds",
     "documentation": {
-      "description": "Returns the seconds part of this duration.",
+      "description": "Returns the seconds portion of a duration.",
       "longDescription": null,
       "category": "Duration"
     },
@@ -12027,7 +12122,7 @@
   {
     "name": "List.Generate",
     "documentation": {
-      "description": "Generates a list given an initial value function, a condition function, a next function, and an optional transformation function on the values.",
+      "description": "Generates a list of values.",
       "longDescription": null,
       "category": "List.Generators"
     },
@@ -16961,8 +17056,22 @@
             "fieldDescription": null
           },
           {
+            "fieldName": "PreserveOrder",
+            "type": "nullable logical",
+            "isRequired": false,
+            "fieldCaption": null,
+            "fieldDescription": null
+          },
+          {
             "fieldName": "LegacyColumnNameEncoding",
             "type": "nullable logical",
+            "isRequired": false,
+            "fieldCaption": null,
+            "fieldDescription": null
+          },
+          {
+            "fieldName": "TypeMapping",
+            "type": "nullable text",
             "isRequired": false,
             "fieldCaption": null,
             "fieldDescription": null
@@ -18807,6 +18916,13 @@
           {
             "fieldName": "Implementation",
             "type": "nullable text",
+            "isRequired": false,
+            "fieldCaption": null,
+            "fieldDescription": null
+          },
+          {
+            "fieldName": "EnableColumnBinding",
+            "type": "nullable logical",
             "isRequired": false,
             "fieldCaption": null,
             "fieldDescription": null
@@ -22686,7 +22802,7 @@
   {
     "name": "Table.HasColumns",
     "documentation": {
-      "description": "indicates whether the table contains the specified column(s).",
+      "description": "Indicates whether the table contains the specified column(s).",
       "longDescription": null,
       "category": "Table.Column operations"
     },
@@ -25550,7 +25666,7 @@
   {
     "name": "Table.TransformColumns",
     "documentation": {
-      "description": "Applies transformation(s) of the form { column, transform }.",
+      "description": "Transforms the values of one or more columns.",
       "longDescription": null,
       "category": "Table.Transformation"
     },
@@ -30478,7 +30594,7 @@
     ],
     "completionItemType": 3,
     "isDataSource": false,
-    "dataType": "action"
+    "dataType": "any"
   },
   {
     "name": "ValueAction.CommitTransaction",
@@ -30505,7 +30621,7 @@
     ],
     "completionItemType": 3,
     "isDataSource": false,
-    "dataType": "action"
+    "dataType": "any"
   },
   {
     "name": "ValueAction.NativeStatement",
