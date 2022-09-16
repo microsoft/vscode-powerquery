@@ -1,10 +1,7 @@
 {
   "name": "powerquery",
   "scopeName": "source.powerquery",
-  "fileTypes": [
-    "pq",
-    "pqm"
-  ],
+  "fileTypes": ["pq", "pqm"],
   "uuid": "41968B57-12E6-4AC5-92A4-A837010E8B0A",
   "patterns": [
     {
@@ -46,7 +43,7 @@
   ],
   "repository": {
     "Keywords": {
-      "match": "\\b(?:(and|or|not)|(if|then|else)|(try|otherwise)|(as|each|in|is|let|meta|type|error)|(section|shared))\\b",
+      "match": "\\b(?:(and|or|not)|(if|then|else)|(try|catch|otherwise)|(as|each|in|is|let|meta|type|error)|(section|shared))\\b",
       "captures": {
         "1": {
           "name": "keyword.operator.word.logical.powerquery"
