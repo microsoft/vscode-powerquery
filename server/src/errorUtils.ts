@@ -14,7 +14,9 @@ export interface FormatErrorMetadata {
 export function handleError(connection: LS.Connection, value: unknown, action: string): void {
     let userMessage: string;
 
-    if (value instanceof Error) {
+    if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError) {
+        return;
+    } else if (value instanceof Error) {
         const error: Error = value;
         userMessage = error.message ?? `An unknown error occured during ${action}.`;
         connection.console.error(formatError(error));
