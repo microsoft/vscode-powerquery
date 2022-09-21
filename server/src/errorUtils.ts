@@ -15,18 +15,15 @@ export function handleError(connection: LS.Connection, value: unknown, action: s
     let userMessage: string;
 
     if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError) {
-        return;
+        connection.console.info(`CancellationError during ${action}.`);
     } else if (value instanceof Error) {
         const error: Error = value;
         userMessage = error.message ?? `An unknown error occured during ${action}.`;
         connection.console.error(formatError(error));
+        connection.window.showErrorMessage(userMessage);
     } else {
-        connection.console.warn(`unknown error value: ${value}`);
-
-        return;
+        connection.console.warn(`unknown error value '${value}' during ${action}.`);
     }
-
-    connection.window.showErrorMessage(userMessage);
 }
 
 function formatError(error: Error): string {
