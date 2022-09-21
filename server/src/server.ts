@@ -58,7 +58,7 @@ connection.onCompletion(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? [];
         } else {
-            ErrorUtils.handleError(connection, result.error, "onCompletion");
+            ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
 
             return [];
         }
@@ -90,7 +90,7 @@ connection.onDefinition(async (params: DefinitionParams, cancellationToken: LS.C
     if (PQP.ResultUtils.isOk(result)) {
         return result.value ?? [];
     } else {
-        ErrorUtils.handleError(connection, result.error, "onComplection");
+        ErrorUtils.handleError(connection, result.error, "onComplection", traceManager);
 
         return [];
     }
@@ -101,15 +101,9 @@ connection.onDidChangeConfiguration(async () => {
     documents.all().forEach(debouncedValidateDocument);
 });
 
-documents.onDidChangeContent(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
-    try {
-        return await debouncedValidateDocument(event.document);
-    } catch (error) {
-        ErrorUtils.handleError(connection, error, "onDidContentChange");
-
-        return [];
-    }
-});
+documents.onDidChangeContent(
+    async (event: LS.TextDocumentChangeEvent<TextDocument>) => await debouncedValidateDocument(event.document),
+);
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // remove the document from module library container and we no longer need to trace it
@@ -140,7 +134,7 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
     if (PQP.ResultUtils.isOk(result)) {
         return result.value ?? [];
     } else {
-        ErrorUtils.handleError(connection, result.error, "onFoldingRanges");
+        ErrorUtils.handleError(connection, result.error, "onFoldingRanges", traceManager);
 
         return [];
     }
@@ -174,8 +168,7 @@ connection.onDocumentSymbol(
         try {
             return PQLS.getDocumentSymbols(parseState.contextState.nodeIdMapCollection, pqpCancellationToken);
         } catch (error) {
-            ErrorUtils.handleError(connection, error, "onDocumentSymbol");
-
+            ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
             return undefined;
         }
     },
@@ -212,7 +205,7 @@ connection.onHover(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? emptyHover;
         } else {
-            ErrorUtils.handleError(connection, result.error, "onHover");
+            ErrorUtils.handleError(connection, result.error, "onHover", traceManager);
 
             return emptyHover;
         }
@@ -274,7 +267,7 @@ connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.Ca
     if (PQP.ResultUtils.isOk(result)) {
         return result.value ? { changes: { [document.uri]: result.value } } : undefined;
     } else {
-        ErrorUtils.handleError(connection, result.error, "onRenameRequest");
+        ErrorUtils.handleError(connection, result.error, "onRenameRequest", traceManager);
 
         return undefined;
     }
@@ -297,7 +290,7 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     if (PQP.ResultUtils.isOk(result)) {
         return result.value ?? [];
     } else {
-        ErrorUtils.handleError(connection, result.error, "semanticTokens");
+        ErrorUtils.handleError(connection, result.error, "semanticTokens", traceManager);
 
         return [];
     }
@@ -346,7 +339,7 @@ connection.onSignatureHelp(
         if (PQP.ResultUtils.isOk(result)) {
             return result.value ?? emptySignatureHelp;
         } else {
-            ErrorUtils.handleError(connection, result.error, "onSignatureHelp");
+            ErrorUtils.handleError(connection, result.error, "onSignatureHelp", traceManager);
 
             return emptySignatureHelp;
         }
@@ -361,6 +354,12 @@ connection.onDocumentFormatting(
             return [];
         }
 
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+            params.textDocument.uri,
+            "onDocumentFormatting",
+            undefined,
+        );
+
         const document: TextDocument = maybeDocument;
         const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
         const experimental: boolean = serverSettings.experimental;
@@ -369,12 +368,13 @@ connection.onDocumentFormatting(
             return await PQLS.tryFormat(document, {
                 ...PQP.DefaultSettings,
                 cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
+                traceManager,
                 indentationLiteral: PQF.IndentationLiteral.SpaceX4,
                 newlineLiteral: PQF.NewlineLiteral.Windows,
                 maxWidth: experimental ? 120 : undefined,
             });
         } catch (error) {
-            ErrorUtils.handleError(connection, error, "onDocumentFormatting");
+            ErrorUtils.handleError(connection, error, "onDocumentFormatting", traceManager);
 
             return [];
         }
@@ -454,6 +454,6 @@ async function validateDocument(document: TextDocument): Promise<void> {
             diagnostics: result.diagnostics,
         });
     } catch (error) {
-        ErrorUtils.handleError(connection, error, "validateDocument");
+        ErrorUtils.handleError(connection, error, "validateDocument", traceManager);
     }
 }
