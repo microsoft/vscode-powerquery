@@ -3,6 +3,7 @@
 
 import * as LS from "vscode-languageserver/node";
 import * as PQP from "@microsoft/powerquery-parser";
+import { Trace, TraceManager } from "@microsoft/powerquery-parser/lib/powerquery-parser/common/trace";
 
 export interface FormatErrorMetadata {
     readonly maybeChild: FormatErrorMetadata | undefined;
@@ -11,19 +12,36 @@ export interface FormatErrorMetadata {
     readonly name: string;
 }
 
-export function handleError(connection: LS.Connection, value: unknown, action: string): void {
-    let userMessage: string;
+export function handleError(
+    connection: LS.Connection,
+    value: unknown,
+    action: string,
+    traceManager: TraceManager,
+): void {
+    const trace: Trace = traceManager.entry("handleError", action, undefined);
+
+    let vscodeEmitter: (message: string) => void;
+    let vscodeMessage: string;
 
     if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError) {
-        connection.console.info(`CancellationError during ${action}.`);
+        vscodeEmitter = connection.console.info;
+        vscodeMessage = `CancellationError during ${action}.`;
     } else if (value instanceof Error) {
         const error: Error = value;
-        userMessage = error.message ?? `An unknown error occured during ${action}.`;
-        connection.console.error(formatError(error));
+        const userMessage: string = error.message ?? `An unknown error occured during ${action}.`;
+
+        vscodeEmitter = connection.console.error;
+        vscodeMessage = formatError(error);
+
         connection.window.showErrorMessage(userMessage);
     } else {
-        connection.console.warn(`unknown error value '${value}' during ${action}.`);
+        vscodeEmitter = connection.console.warn;
+        vscodeMessage = `unknown error value '${value}' during ${action}.`;
     }
+
+    vscodeEmitter(vscodeMessage);
+
+    trace.exit({ vscodeMessage });
 }
 
 function formatError(error: Error): string {
