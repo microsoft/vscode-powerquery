@@ -169,6 +169,7 @@ connection.onDocumentSymbol(
             return PQLS.getDocumentSymbols(parseState.contextState.nodeIdMapCollection, pqpCancellationToken);
         } catch (error) {
             ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
+
             return undefined;
         }
     },
