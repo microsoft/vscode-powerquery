@@ -12,8 +12,8 @@ import * as ErrorUtils from "./errorUtils";
 import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
-import { ServerSettings, SettingsUtils } from "./settings.ts";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
+import { SettingsUtils } from "./settings.ts";
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -362,20 +362,21 @@ connection.onDocumentFormatting(
         );
 
         const document: TextDocument = maybeDocument;
-        const serverSettings: ServerSettings = SettingsUtils.getServerSettings();
-        const experimental: boolean = serverSettings.experimental;
 
-        try {
-            return await PQLS.tryFormat(document, {
+        const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
+            document,
+            {
                 ...PQP.DefaultSettings,
+                ...PQF.DefaultSettings,
                 cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
                 traceManager,
-                indentationLiteral: PQF.IndentationLiteral.SpaceX4,
-                newlineLiteral: PQF.NewlineLiteral.Windows,
-                maxWidth: experimental ? 120 : undefined,
-            });
-        } catch (error) {
-            ErrorUtils.handleError(connection, error, "onDocumentFormatting", traceManager);
+            },
+        );
+
+        if (PQP.ResultUtils.isOk(result)) {
+            return result.value ?? [];
+        } else {
+            ErrorUtils.handleError(connection, result.error, "onDocumentFormatting", traceManager);
 
             return [];
         }
