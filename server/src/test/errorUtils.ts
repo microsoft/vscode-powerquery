@@ -18,7 +18,7 @@ function abridgedFormattedError(text: string): AbridgedFormatErrorMetadata {
 
 function stripMaybeTopOfStack(obj: FormatErrorMetadata): AbridgedFormatErrorMetadata {
     return {
-        maybeChild: obj.maybeChild ? stripMaybeTopOfStack(obj.maybeChild) : undefined,
+        maybeChild: obj.child ? stripMaybeTopOfStack(obj.child) : undefined,
         message: obj.message,
         name: obj.name,
     };

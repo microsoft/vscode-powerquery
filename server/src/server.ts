@@ -14,7 +14,6 @@ import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 import { SettingsUtils } from "./settings.ts";
-import { IndentationLiteral } from '@microsoft/powerquery-formatter';
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -350,9 +349,9 @@ connection.onSignatureHelp(
 
 connection.onDocumentFormatting(
     async (params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken): Promise<LS.TextEdit[]> => {
-        const maybeDocument: TextDocument | undefined = documents.get(params.textDocument.uri);
+        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-        if (maybeDocument === undefined) {
+        if (document === undefined) {
             return [];
         }
 
@@ -362,14 +361,11 @@ connection.onDocumentFormatting(
             undefined,
         );
 
-        const document: TextDocument = maybeDocument;
-
         const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
             document,
             {
                 ...PQP.DefaultSettings,
                 ...PQF.DefaultSettings,
-                indentationLiteral: IndentationLiteral.SpaceX4,
                 cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
                 traceManager,
             },
@@ -388,7 +384,7 @@ connection.onDocumentFormatting(
 // The onChange event doesn't include a cancellation token, so we have to manage them ourselves,
 // done by keeping a Map<uri, existing cancellation token for uri>.
 // Whenever a new validation attempt begins we check if an existing token for the uri exists and cancels it.
-// Then we store ValidationSettings.maybeCancellationToken for the uri if one exists.
+// Then we store ValidationSettings.cancellationToken for the uri if one exists.
 const onValidateCancellationTokens: Map<string, PQP.ICancellationToken> = new Map();
 
 // Make the text document manager listen on the connection
@@ -443,10 +439,10 @@ async function validateDocument(document: TextDocument): Promise<void> {
         onValidateCancellationTokens.delete(uri);
     }
 
-    const maybeNewCancellationToken: PQP.ICancellationToken | undefined = validationSettings.cancellationToken;
+    const newCancellationToken: PQP.ICancellationToken | undefined = validationSettings.cancellationToken;
 
-    if (maybeNewCancellationToken !== undefined) {
-        onValidateCancellationTokens.set(uri, maybeNewCancellationToken);
+    if (newCancellationToken !== undefined) {
+        onValidateCancellationTokens.set(uri, newCancellationToken);
     }
 
     try {

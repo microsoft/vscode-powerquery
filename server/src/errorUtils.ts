@@ -6,8 +6,8 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { Trace, TraceManager } from "@microsoft/powerquery-parser/lib/powerquery-parser/common/trace";
 
 export interface FormatErrorMetadata {
-    readonly maybeChild: FormatErrorMetadata | undefined;
-    readonly maybeTopOfStack: string | undefined;
+    readonly child: FormatErrorMetadata | undefined;
+    readonly topOfStack: string | undefined;
     readonly message: string | undefined;
     readonly name: string;
 }
@@ -49,21 +49,21 @@ export function formatError(error: Error): string {
 }
 
 function formatErrorMetadata(error: Error): FormatErrorMetadata {
-    let maybeChild: FormatErrorMetadata | undefined;
+    let child: FormatErrorMetadata | undefined;
 
     if (
         error instanceof PQP.CommonError.CommonError ||
         error instanceof PQP.Lexer.LexError.LexError ||
         error instanceof PQP.Parser.ParseError.ParseError
     ) {
-        maybeChild = formatErrorMetadata(error.innerError);
+        child = formatErrorMetadata(error.innerError);
     }
 
-    const maybeSplitLines: ReadonlyArray<string> | undefined = error.stack?.split("\n");
+    const splitLines: ReadonlyArray<string> | undefined = error.stack?.split("\n");
 
     return {
-        maybeChild,
-        maybeTopOfStack: maybeSplitLines !== undefined ? maybeSplitLines.slice(0, 4).join("\n") : undefined,
+        child,
+        topOfStack: splitLines?.slice(0, 4).join("\n"),
         message: error.message,
         name: error.constructor.name,
     };
