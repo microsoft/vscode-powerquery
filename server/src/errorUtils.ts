@@ -44,7 +44,7 @@ export function handleError(
     trace.exit({ vscodeMessage });
 }
 
-function formatError(error: Error): string {
+export function formatError(error: Error): string {
     return JSON.stringify(formatErrorMetadata(error), null, 4);
 }
 

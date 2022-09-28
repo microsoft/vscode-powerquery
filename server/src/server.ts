@@ -14,6 +14,7 @@ import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryJson, ModuleLibraries } from "./library";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 import { SettingsUtils } from "./settings.ts";
+import { IndentationLiteral } from '@microsoft/powerquery-formatter';
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -368,6 +369,7 @@ connection.onDocumentFormatting(
             {
                 ...PQP.DefaultSettings,
                 ...PQF.DefaultSettings,
+                indentationLiteral: IndentationLiteral.SpaceX4,
                 cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
                 traceManager,
             },
