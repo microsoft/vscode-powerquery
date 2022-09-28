@@ -76,7 +76,7 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: any = await connection.workspace.getConfiguration({ section: "powerquery" });
-    const maybeTypeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
+    const typeStrategy: PQLS.TypeStrategy | undefined = config?.diagnostics?.typeStrategy;
     const experimental: boolean = config?.general?.experimental;
 
     return {
@@ -88,7 +88,7 @@ export async function fetchConfigurationSettings(connection: LS.Connection): Pro
         locale: config?.general?.locale ?? PQP.DefaultLocale,
         mode: deriveMode(config?.general?.mode),
         symbolTimeoutInMs: config?.timeout?.symbolTimeoutInMs,
-        typeStrategy: maybeTypeStrategy ? deriveTypeStrategy(maybeTypeStrategy) : PQLS.TypeStrategy.Primitive,
+        typeStrategy: typeStrategy ? deriveTypeStrategy(typeStrategy) : PQLS.TypeStrategy.Primitive,
     };
 }
 

@@ -110,14 +110,12 @@ describe(`StandardLibrary`, () => {
         it("index const by name", () => {
             const definitionKey: string = "BinaryOccurrence.Required";
 
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
+            const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
                 library.libraryDefinitions.get(definitionKey);
 
-            if (maybeLibraryDefinition === undefined) {
+            if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
             }
-
-            const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
 
             expect(libraryDefinition.label).eq(definitionKey, "unexpected label");
             expect(libraryDefinition.description.length).greaterThan(0, "summary should not be empty");
@@ -128,14 +126,13 @@ describe(`StandardLibrary`, () => {
         it("index function by name", () => {
             const exportKey: string = "List.Distinct";
 
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
+            const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
                 library.libraryDefinitions.get(exportKey);
 
-            if (maybeLibraryDefinition === undefined) {
+            if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
 
-            const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
             assertIsFunction(libraryDefinition);
 
             expect(libraryDefinition.label !== null);
@@ -146,14 +143,13 @@ describe(`StandardLibrary`, () => {
         it("#date constructor", () => {
             const exportKey: string = "#date";
 
-            const maybeLibraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
+            const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
                 library.libraryDefinitions.get(exportKey);
 
-            if (maybeLibraryDefinition === undefined) {
+            if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
             }
 
-            const libraryDefinition: PQLS.Library.TLibraryDefinition = maybeLibraryDefinition;
             assertIsFunction(libraryDefinition);
 
             expect(libraryDefinition.label !== null);
