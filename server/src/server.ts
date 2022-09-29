@@ -445,15 +445,19 @@ async function validateDocument(document: TextDocument): Promise<void> {
         onValidateCancellationTokens.set(uri, newCancellationToken);
     }
 
-    try {
-        const result: PQLS.ValidationResult = await PQLS.validate(document, analysisSettings, validationSettings);
+    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
+        document,
+        analysisSettings,
+        validationSettings,
+    );
 
+    if (PQP.ResultUtils.isOk(result) && result.value) {
         await connection.sendDiagnostics({
             uri: document.uri,
             version: document.version,
-            diagnostics: result.diagnostics,
+            diagnostics: result.value.diagnostics,
         });
-    } catch (error) {
-        ErrorUtils.handleError(connection, error, "validateDocument", traceManager);
+    } else {
+        ErrorUtils.handleError(connection, result, "validateDocument", traceManager);
     }
 }
