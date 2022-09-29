@@ -7,18 +7,18 @@ import { expect } from "chai";
 import { formatError, FormatErrorMetadata } from "../errorUtils";
 
 type AbridgedFormatErrorMetadata = Pick<FormatErrorMetadata, "message" | "name"> & {
-    readonly maybeChild: AbridgedFormatErrorMetadata | undefined;
+    readonly child: AbridgedFormatErrorMetadata | undefined;
 };
 
 function abridgedFormattedError(text: string): AbridgedFormatErrorMetadata {
     const metadata: FormatErrorMetadata = JSON.parse(text);
 
-    return stripMaybeTopOfStack(metadata);
+    return stripTopOfStack(metadata);
 }
 
-function stripMaybeTopOfStack(obj: FormatErrorMetadata): AbridgedFormatErrorMetadata {
+function stripTopOfStack(obj: FormatErrorMetadata): AbridgedFormatErrorMetadata {
     return {
-        maybeChild: obj.maybeChild ? stripMaybeTopOfStack(obj.maybeChild) : undefined,
+        child: obj.child ? stripTopOfStack(obj.child) : undefined,
         message: obj.message,
         name: obj.name,
     };
@@ -30,7 +30,7 @@ describe(`errorUtils`, () => {
             const actual: AbridgedFormatErrorMetadata = abridgedFormattedError(formatError(new Error("foobar")));
 
             const expected: AbridgedFormatErrorMetadata = {
-                maybeChild: undefined,
+                child: undefined,
                 message: "foobar",
                 name: Error.name,
             };
@@ -44,8 +44,8 @@ describe(`errorUtils`, () => {
             );
 
             const expected: AbridgedFormatErrorMetadata = {
-                maybeChild: {
-                    maybeChild: undefined,
+                child: {
+                    child: undefined,
                     message: "InvariantError: 1 <> 2",
                     name: PQP.CommonError.InvariantError.name,
                 },
