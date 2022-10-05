@@ -36,13 +36,13 @@ const debouncedDocumentSymbols: (
     params: LS.DocumentSymbolParams,
     cancellationToken: LS.CancellationToken,
 ) => Promise<LS.DocumentSymbol[] | undefined> = FuncUtils.partitionFn(
-    () => FuncUtils.debounce(documentSymbols, 50),
+    () => FuncUtils.debounce(documentSymbols, 250),
     (params: LS.DocumentSymbolParams, _cancellationToken: LS.CancellationToken) => params.textDocument.uri.toString(),
 );
 
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
-        () => FuncUtils.debounce(validateDocument, 50),
+        () => FuncUtils.debounce(validateDocument, 250),
         (textDocument: TextDocument) => textDocument.uri.toString(),
     );
 

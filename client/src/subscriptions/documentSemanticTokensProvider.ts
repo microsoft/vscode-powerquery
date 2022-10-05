@@ -45,7 +45,7 @@ const debouncedSemanticTokenRequester: (
     textDocument: TextDocument,
     cancellationToken: CancellationToken,
 ) => Promise<vscode.SemanticTokens> = FuncUtils.partitionFn(
-    () => FuncUtils.debounce(semanticTokenRequester, 50),
+    () => FuncUtils.debounce(semanticTokenRequester, 250),
     (_client: LC.LanguageClient, textDocument: TextDocument, _cancellationToken: CancellationToken) =>
         textDocument.uri.toString(),
 );
