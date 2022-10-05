@@ -42,7 +42,7 @@ const debouncedDocumentSymbols: (
 
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
-        () => FuncUtils.debounce(validateDocument, 5000),
+        () => FuncUtils.debounce(validateDocument, 50),
         (textDocument: TextDocument) => textDocument.uri.toString(),
     );
 
