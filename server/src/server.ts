@@ -31,6 +31,21 @@ const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 const moduleLibraries: ModuleLibraries = new ModuleLibraries();
 
+const debouncedDocumentSymbols: (
+    this: unknown,
+    params: LS.DocumentSymbolParams,
+    cancellationToken: LS.CancellationToken,
+) => Promise<LS.DocumentSymbol[] | undefined> = FuncUtils.partitionFn(
+    () => FuncUtils.debounce(documentSymbols, 250),
+    (params: LS.DocumentSymbolParams, _cancellationToken: LS.CancellationToken) => params.textDocument.uri.toString(),
+);
+
+const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
+    FuncUtils.partitionFn(
+        () => FuncUtils.debounce(validateDocument, 250),
+        (textDocument: TextDocument) => textDocument.uri.toString(),
+    );
+
 connection.onCompletion(
     async (
         params: LS.TextDocumentPositionParams,
@@ -140,40 +155,7 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
     }
 });
 
-connection.onDocumentSymbol(
-    async (
-        params: LS.DocumentSymbolParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.DocumentSymbol[] | undefined> => {
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-        if (document === undefined) {
-            return undefined;
-        }
-
-        const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onDocumentSymbol",
-        );
-
-        const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-        const parseState: PQP.Parser.ParseState | undefined = await analysis.getParseState();
-
-        if (parseState === undefined) {
-            return undefined;
-        }
-
-        try {
-            return PQLS.getDocumentSymbols(parseState.contextState.nodeIdMapCollection, pqpCancellationToken);
-        } catch (error) {
-            ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
-
-            return undefined;
-        }
-    },
-);
+connection.onDocumentSymbol(debouncedDocumentSymbols);
 
 connection.onHover(
     async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken): Promise<LS.Hover> => {
@@ -406,11 +388,38 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
     );
 }
 
-const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
-    FuncUtils.partitionFn(
-        () => FuncUtils.debounce(validateDocument, 50),
-        (textDocument: TextDocument) => textDocument.uri.toString(),
+async function documentSymbols(
+    params: LS.DocumentSymbolParams,
+    cancellationToken: LS.CancellationToken,
+): Promise<LS.DocumentSymbol[] | undefined> {
+    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+    if (document === undefined) {
+        return undefined;
+    }
+
+    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
+
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+        params.textDocument.uri,
+        "onDocumentSymbol",
     );
+
+    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+    const parseState: PQP.Parser.ParseState | undefined = await analysis.getParseState();
+
+    if (parseState === undefined) {
+        return undefined;
+    }
+
+    try {
+        return PQLS.getDocumentSymbols(parseState.contextState.nodeIdMapCollection, pqpCancellationToken);
+    } catch (error) {
+        ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
+
+        return undefined;
+    }
+}
 
 async function validateDocument(document: TextDocument): Promise<void> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
