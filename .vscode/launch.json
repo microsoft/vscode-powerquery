@@ -17,6 +17,7 @@
             "name": "Attach to Server",
             "port": 6009,
             "restart": true,
+            "sourceMaps": true,
             "outFiles": ["${workspaceRoot}/server/dist/server.js"]
         },
         {
@@ -38,13 +39,7 @@
             "request": "launch",
             "name": "Run server unit tests",
             "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
-            "args": [
-                "--inspect",
-                "--colors",
-                "--timeout",
-                "999999",
-                "${workspaceFolder}/server/lib/test/**/*.js"
-            ],
+            "args": ["--inspect", "--colors", "--timeout", "999999", "${workspaceFolder}/server/lib/test/**/*.js"],
             "preLaunchTask": "Watch Server",
             "internalConsoleOptions": "openOnSessionStart"
         }
