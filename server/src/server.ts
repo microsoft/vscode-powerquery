@@ -31,15 +31,6 @@ const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 const moduleLibraries: ModuleLibraries = new ModuleLibraries();
 
-const debouncedDocumentSymbols: (
-    this: unknown,
-    params: LS.DocumentSymbolParams,
-    cancellationToken: LS.CancellationToken,
-) => Promise<LS.DocumentSymbol[] | undefined> = FuncUtils.partitionFn(
-    () => FuncUtils.debounce(documentSymbols, 250),
-    (params: LS.DocumentSymbolParams, _cancellationToken: LS.CancellationToken) => params.textDocument.uri.toString(),
-);
-
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
         () => FuncUtils.debounce(validateDocument, 250),
@@ -155,7 +146,7 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
     }
 });
 
-connection.onDocumentSymbol(debouncedDocumentSymbols);
+connection.onDocumentSymbol(documentSymbols);
 
 connection.onHover(
     async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken): Promise<LS.Hover> => {
