@@ -19,27 +19,22 @@ export function handleError(
     traceManager: TraceManager,
 ): void {
     const trace: Trace = traceManager.entry("handleError", action, undefined);
-
-    let vscodeEmitter: (message: string) => void;
     let vscodeMessage: string;
 
     if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError) {
-        vscodeEmitter = connection.console.info;
         vscodeMessage = `CancellationError during ${action}.`;
+        connection.console.info(vscodeMessage);
     } else if (value instanceof Error) {
         const error: Error = value;
         const userMessage: string = error.message ?? `An unknown error occured during ${action}.`;
-
-        vscodeEmitter = connection.console.error;
-        vscodeMessage = formatError(error);
-
         connection.window.showErrorMessage(userMessage);
-    } else {
-        vscodeEmitter = connection.console.warn;
-        vscodeMessage = `unknown error value '${value}' during ${action}.`;
-    }
 
-    vscodeEmitter(vscodeMessage);
+        vscodeMessage = formatError(error);
+        connection.console.error(vscodeMessage);
+    } else {
+        vscodeMessage = `unknown error value '${value}' during ${action}.`;
+        connection.console.warn(vscodeMessage);
+    }
 
     trace.exit({ vscodeMessage });
 }
