@@ -24,13 +24,17 @@ export function handleError(
     if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError) {
         vscodeMessage = `CancellationError during ${action}.`;
         connection.console.info(vscodeMessage);
+    } else if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.InvariantError) {
+        vscodeMessage = `InvariantError during ${action}.`;
+        connection.console.warn(vscodeMessage);
+        connection.console.warn(formatError(value.innerError));
     } else if (value instanceof Error) {
         const error: Error = value;
-        const userMessage: string = error.message ?? `An unknown error occured during ${action}.`;
-        connection.window.showErrorMessage(userMessage);
-
-        vscodeMessage = formatError(error);
+        // const userMessage: string = error.message ?? `An unknown error occured during ${action}.`;
+        // connection.window.showErrorMessage(userMessage);
+        vscodeMessage = `Unexpected Error during ${action}.`;
         connection.console.error(vscodeMessage);
+        connection.console.error(formatError(error));
     } else {
         vscodeMessage = `unknown error value '${value}' during ${action}.`;
         connection.console.warn(vscodeMessage);
