@@ -5,6 +5,8 @@ import * as LS from "vscode-languageserver/node";
 import * as PQP from "@microsoft/powerquery-parser";
 
 export class CancellationTokenAdapter implements PQP.ICancellationToken {
+    private cancelReason: string | undefined;
+
     constructor(
         protected readonly parserCancellationToken: PQP.ICancellationToken,
         protected readonly languageServerCancellationToken: LS.CancellationToken,
@@ -18,13 +20,13 @@ export class CancellationTokenAdapter implements PQP.ICancellationToken {
 
     public throwIfCancelled(): void {
         if (this.isCancelled()) {
-            this.parserCancellationToken.cancel();
+            this.parserCancellationToken.cancel(this.cancelReason ?? "Language server cancellation requested");
             this.parserCancellationToken.throwIfCancelled();
         }
     }
 
-    public cancel(): void {
-        this.parserCancellationToken.cancel();
-        this.throwIfCancelled();
+    public cancel(reason: string): void {
+        this.cancelReason = reason;
+        this.parserCancellationToken.cancel(reason);
     }
 }
