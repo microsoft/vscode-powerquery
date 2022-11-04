@@ -34,7 +34,7 @@ const moduleLibraries: ModuleLibraries = new ModuleLibraries();
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
         () => FuncUtils.debounce(validateDocument, 250),
-        (textDocument: TextDocument) => textDocument.uri.toString(),
+        (textDocument: TextDocument) => `validateDocument:${textDocument.uri.toString()}`,
     );
 
 connection.onCompletion(
@@ -435,7 +435,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
     const existingCancellationToken: PQP.ICancellationToken | undefined = onValidateCancellationTokens.get(uri);
 
     if (existingCancellationToken !== undefined) {
-        existingCancellationToken.cancel();
+        existingCancellationToken.cancel("A new validateDocument call was made.");
         onValidateCancellationTokens.delete(uri);
     }
 
