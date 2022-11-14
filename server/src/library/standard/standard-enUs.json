@@ -8699,6 +8699,18 @@
     "dataType": "any"
   },
   {
+    "name": "Excel.CurrentWorkbook",
+    "documentation": {
+      "description": "Returns the contents of the current Excel workbook.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": null,
+    "completionItemType": 3,
+    "isDataSource": true,
+    "dataType": "table"
+  },
+  {
     "name": "Excel.Workbook",
     "documentation": {
       "description": "Returns the contents of the Excel workbook.",
