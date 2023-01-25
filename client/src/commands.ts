@@ -3,6 +3,7 @@
 
 import * as PQP from "@microsoft/powerquery-parser";
 import * as vscode from "vscode";
+import { DataflowModel } from "./dataflowModel";
 
 // https://docs.microsoft.com/en-us/powerquery-m/m-spec-lexical-structure#character-escape-sequences
 
@@ -48,9 +49,15 @@ export async function extractDataflowDocument(): Promise<void> {
     const textEditor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
 
     if (textEditor) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dataflow: any = JSON.parse(textEditor.document.getText());
-        const content: string | undefined = dataflow["pbi:mashup"]?.document as string;
+        const dataflow: DataflowModel = JSON.parse(textEditor.document.getText());
+
+        if (!dataflow || !dataflow["pbi:mashup"]?.document) {
+            await vscode.window.showErrorMessage(`Unable to parse document as a dataflow.json model`);
+
+            return;
+        }
+
+        const content: string = dataflow["pbi:mashup"].document;
 
         // TODO: Can this be read from user settings/preferences?
         // The format command returns an error if we don't pass in any options.
