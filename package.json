@@ -95,7 +95,8 @@
         "menus": {
             "commandPalette": [
                 {
-                    "command": "powerquery.extractDataflowDocument"
+                    "command": "powerquery.extractDataflowDocument",
+                    "when": "editorFocus"
                 },
                 {
                     "command": "powerquery.mEscapeText",
