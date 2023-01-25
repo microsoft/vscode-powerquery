@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/typedef */
-/* eslint-disable promise/prefer-await-to-then */
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -46,52 +44,37 @@ export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.Tex
     });
 }
 
-export function extractDataflowDocument(): void {
+export async function extractDataflowDocument(): Promise<void> {
     const textEditor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
 
     if (textEditor) {
-        // const newFile: vscode.Uri = vscode.Uri.parse(`untitled: ${currentFileName}.pq`);
-        // const dataflow: any = JSON.parse(textEditor.document.getText());
-
-        // void vscode.workspace.openTextDocument(newFile).then(document => {
-        //     const edit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
-        //     const content: string | undefined = dataflow["pbi:mashup"]?.document as string;
-        //     edit.insert(newFile, new vscode.Position(0, 0), content ?? "<did not find document element>");
-
-        //     return vscode.workspace.applyEdit(edit).then(async success => {
-        //         if (success) {
-        //             await vscode.window.showTextDocument(document);
-        //         } else {
-        //             await vscode.window.showInformationMessage("Error!");
-        //         }
-        //     });
-        // });
-
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dataflow: any = JSON.parse(textEditor.document.getText());
         const content: string | undefined = dataflow["pbi:mashup"]?.document as string;
 
         // TODO: Can this be read from user settings/preferences?
+        // The format command returns an error if we don't pass in any options.
         const formattingOptions: vscode.FormattingOptions = {
             tabSize: 4,
             insertSpaces: true,
         };
 
-        void vscode.workspace.openTextDocument({ language: "powerquery", content }).then(document => {
-            void vscode.commands
-                .executeCommand("vscode.executeFormatDocumentProvider", document.uri, formattingOptions)
-                .then(textEdits => {
-                    const edits: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
-                    edits.set(document.uri, textEdits as vscode.TextEdit[]);
-
-                    void vscode.workspace.applyEdit(edits).then(async success => {
-                        if (success) {
-                            await vscode.window.showTextDocument(document);
-                        } else {
-                            await vscode.window.showInformationMessage("Error!");
-                        }
-                    });
-                });
+        const document: vscode.TextDocument = await vscode.workspace.openTextDocument({
+            language: "powerquery",
+            content,
         });
+
+        const textEdits: vscode.TextEdit[] = await vscode.commands.executeCommand(
+            "vscode.executeFormatDocumentProvider",
+            document.uri,
+            formattingOptions,
+        );
+
+        const edits: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
+        edits.set(document.uri, textEdits as vscode.TextEdit[]);
+
+        await vscode.workspace.applyEdit(edits);
+        await vscode.window.showTextDocument(document);
     }
 }
 
