@@ -96,7 +96,7 @@
             "commandPalette": [
                 {
                     "command": "powerquery.extractDataflowDocument",
-                    "when": "editorFocus"
+                    "when": "editorIsOpen && editorLangId == json"
                 },
                 {
                     "command": "powerquery.mEscapeText",
