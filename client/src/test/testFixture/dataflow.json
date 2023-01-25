@@ -1,0 +1,16 @@
+{
+	"name": "MyTestDataflow",
+	"ppdf:dataflowId": "12345678-2e1a-4af9-8b92-98152e0ba2da",
+	"ppdf:owner": {},
+	"version": "1.0",
+	"culture": "en-US",
+	"modifiedTime": "2023-01-25T18:11:13.6841777+00:00",
+	"pbi:mashup": {
+		"fastCombine": false,
+		"allowNativeQueries": false,
+		"queriesMetadata": {},
+		"document": "section Section1;\r\nshared Query1 = let\r\n  Source = Table.FromRecords({[textColumn=\"123\"]}),\r\nSource2 = Table.FromRecords({[textColumn=\"123\"]}),\r\nSource3 = Table.FromRecords({[textColumn=\"123\"]}),\r\nSource4 = Table.FromRecords({[textColumn=\"123\"]})\r\nin\r\nSource;\r\n",
+		"connectionOverrides": []
+	},
+	"entities": []
+}
