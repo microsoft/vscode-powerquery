@@ -57,7 +57,20 @@ export async function extractDataflowDocument(): Promise<void> {
             return;
         }
 
-        const content: string = dataflow["pbi:mashup"].document;
+        const mashupDocument: string = dataflow["pbi:mashup"].document;
+
+        const headerComments: string[] = [
+            `// name: ${dataflow.name}`,
+            `// dataflowId: ${dataflow["ppdf:dataflowId"]}`,
+            `// modifiedTime: ${dataflow.modifiedTime}`,
+        ];
+
+        const content: string = `${headerComments.join("\r\n")}\r\n${mashupDocument}`;
+
+        const document: vscode.TextDocument = await vscode.workspace.openTextDocument({
+            language: "powerquery",
+            content,
+        });
 
         // TODO: Can this be read from user settings/preferences?
         // The format command returns an error if we don't pass in any options.
@@ -66,21 +79,17 @@ export async function extractDataflowDocument(): Promise<void> {
             insertSpaces: true,
         };
 
-        const document: vscode.TextDocument = await vscode.workspace.openTextDocument({
-            language: "powerquery",
-            content,
-        });
-
         const textEdits: vscode.TextEdit[] = await vscode.commands.executeCommand(
             "vscode.executeFormatDocumentProvider",
             document.uri,
             formattingOptions,
         );
 
-        const edits: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
-        edits.set(document.uri, textEdits as vscode.TextEdit[]);
+        const formatEdit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
+        formatEdit.set(document.uri, textEdits as vscode.TextEdit[]);
 
-        await vscode.workspace.applyEdit(edits);
+        await vscode.workspace.applyEdit(formatEdit);
+
         await vscode.window.showTextDocument(document);
     }
 }
