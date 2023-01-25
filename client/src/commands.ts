@@ -3,6 +3,7 @@
 
 import * as PQP from "@microsoft/powerquery-parser";
 import * as vscode from "vscode";
+import path = require("path");
 import { DataflowModel } from "./dataflowModel";
 
 // https://docs.microsoft.com/en-us/powerquery-m/m-spec-lexical-structure#character-escape-sequences
@@ -67,10 +68,21 @@ export async function extractDataflowDocument(): Promise<void> {
 
         const content: string = `${headerComments.join("\r\n")}\r\n${mashupDocument}`;
 
-        const document: vscode.TextDocument = await vscode.workspace.openTextDocument({
-            language: "powerquery",
-            content,
-        });
+        const workspaceRoot: string = path.dirname(textEditor.document.fileName);
+
+        const currentEditorFileName: string = path.basename(
+            textEditor.document.fileName,
+            path.extname(textEditor.document.fileName),
+        );
+
+        const newFileUri: vscode.Uri = vscode.Uri.parse(
+            `untitled:${path.join(workspaceRoot, `${currentEditorFileName}.pq`)}`,
+        );
+
+        const document: vscode.TextDocument = await vscode.workspace.openTextDocument(newFileUri);
+        const contentEdit: vscode.WorkspaceEdit = new vscode.WorkspaceEdit();
+        contentEdit.insert(document.uri, new vscode.Position(0, 0), content);
+        await vscode.workspace.applyEdit(contentEdit);
 
         // TODO: Can this be read from user settings/preferences?
         // The format command returns an error if we don't pass in any options.
