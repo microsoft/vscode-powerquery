@@ -53,10 +53,18 @@ export async function extractDataflowDocument(): Promise<vscode.Uri | undefined>
         return undefined;
     }
 
-    const dataflow: DataflowModel = JSON.parse(textEditor.document.getText());
+    let dataflow: DataflowModel;
+
+    try {
+        dataflow = JSON.parse(textEditor.document.getText());
+    } catch (err) {
+        await vscode.window.showErrorMessage(`Failed to parse document. Error: ${JSON.stringify(err)}`);
+
+        return undefined;
+    }
 
     if (!dataflow || !dataflow["pbi:mashup"]?.document) {
-        await vscode.window.showErrorMessage(`Unable to parse document as a dataflow.json model`);
+        await vscode.window.showErrorMessage(`Failed to parse document as a dataflow.json model`);
 
         return undefined;
     }
