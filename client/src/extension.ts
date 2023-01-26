@@ -24,6 +24,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 
     commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
 
+    commands.push(
+        vscode.commands.registerCommand(CommandConstant.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
+    );
+
     // The server is implemented in node
     const serverModule: string = context.asAbsolutePath(path.join("server", "dist", "server.js"));
     // The debug options for the server

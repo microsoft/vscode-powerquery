@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.51",
+    "version": "0.1.52",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -57,6 +57,7 @@
     ],
     "activationEvents": [
         "onLanguage:powerquery",
+        "onCommand:powerquery.extractDataflowDocument",
         "onCommand:powerquery.mEscapeText",
         "onCommand:powerquery.mUnescapeText",
         "onCommand:powerquery.jsonEscapeText",
@@ -65,6 +66,11 @@
     "publisher": "PowerQuery",
     "contributes": {
         "commands": [
+            {
+                "command": "powerquery.extractDataflowDocument",
+                "title": "Extract document from dataflow.json",
+                "category": "powerquery"
+            },
             {
                 "command": "powerquery.mEscapeText",
                 "title": "Encode selection as an M text value",
@@ -88,6 +94,10 @@
         ],
         "menus": {
             "commandPalette": [
+                {
+                    "command": "powerquery.extractDataflowDocument",
+                    "when": "editorIsOpen && editorLangId == json"
+                },
                 {
                     "command": "powerquery.mEscapeText",
                     "when": "editorHasSelection"
