@@ -1,5 +1,5 @@
-[![](https://vsmarketplacebadge.apphb.com/version-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
-[![](https://vsmarketplacebadge.apphb.com/installs-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
+[![](https://vsmarketplacebadges.dev/version-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
+[![](https://vsmarketplacebadges.dev/installs-short/PowerQuery.vscode-powerquery.svg)](https://marketplace.visualstudio.com/items?itemName=PowerQuery.vscode-powerquery)
 
 # Power Query language service for VS Code
 
@@ -43,6 +43,12 @@ These commands require one or more text selections in the active editor window.
 | powerquery.jsonUnescapeText | Remove JSON string encoding from selection |
 | powerquery.mEscapeText      | Encode selection as an M text value        |
 | powerquery.mUnescapeText    | Remove M text encoding from selection      |
+
+A more specialized version of this command will extract the M Document from an entire model.json/dataflow.json document. This command requires the active document to be recognized as JSON.
+
+| Command                            | Label                              |
+| ---------------------------------- | ---------------------------------- |
+| powerquery.extractDataflowDocument | Extract M document from model.json |
 
 ## Related projects
 
