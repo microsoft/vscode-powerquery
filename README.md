@@ -44,6 +44,12 @@ These commands require one or more text selections in the active editor window.
 | powerquery.mEscapeText      | Encode selection as an M text value        |
 | powerquery.mUnescapeText    | Remove M text encoding from selection      |
 
+A more specialized version of this command will extract the M Document from an entire model.json/dataflow.json document. This command requires the active document to be recognized as JSON.
+
+| Command                            | Label                              |
+| ---------------------------------- | ---------------------------------- |
+| powerquery.extractDataflowDocument | Extract M document from model.json |
+
 ## Related projects
 
 -   [powerquery-parser](https://github.com/microsoft/powerquery-parser): A lexer + parser for Power Query. Also contains features such as type validation.
