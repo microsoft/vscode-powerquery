@@ -7,6 +7,7 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
+import { ExternalType } from "@microsoft/powerquery-language-services";
 
 export type LibraryDefinitionsGetter = () => PQLS.Library.LibraryDefinitions;
 
@@ -14,8 +15,8 @@ export type LibraryDefinitionsGetter = () => PQLS.Library.LibraryDefinitions;
 export function createLibraryTypeResolver(
     libraryDefinitions: PQLS.Library.LibraryDefinitions,
     otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
-): PQLS.Inspection.ExternalType.TExternalTypeResolverFn {
-    return (request: PQLS.Inspection.ExternalType.TExternalTypeRequest): Type.TPowerQueryType | undefined => {
+): ExternalType.TExternalTypeResolverFn {
+    return (request: ExternalType.TExternalTypeRequest): Type.TPowerQueryType | undefined => {
         let maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
             request.identifierLiteral,
         )?.asPowerQueryType;
@@ -33,7 +34,7 @@ export function createLibraryTypeResolver(
             return undefined;
         }
         // It's asking for a value, which we already have.
-        else if (request.kind === PQLS.Inspection.ExternalType.ExternalTypeRequestKind.Value) {
+        else if (request.kind === ExternalType.ExternalTypeRequestKind.Value) {
             return maybeLibraryType;
         } else {
             const key: string = TypeUtils.nameOf(maybeLibraryType, PQP.Trace.NoOpTraceManagerInstance, undefined);

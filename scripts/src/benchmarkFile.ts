@@ -5,7 +5,6 @@ import fs = require("fs");
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { InspectionSettings } from "@microsoft/powerquery-language-services";
-import type { Position } from "vscode-languageserver-types";
 
 import { LibraryUtils } from "../../server/src/library";
 
@@ -19,7 +18,7 @@ function throwInvalidPosition(): void {
     throw new Error("The Position argument isn't in the form of lineNumberInteger,characterNumberInteger");
 }
 
-function parsePosition(raw: string): Position {
+function parsePosition(raw: string): PQLS.Position {
     const components: ReadonlyArray<string> = raw.split(":").map((value: string) => value.trim());
 
     if (components.length !== 2) {
@@ -27,7 +26,7 @@ function parsePosition(raw: string): Position {
     }
 
     const chunk1: number = Number(components[0]);
-    const chunk2: number = Number(components[0]);
+    const chunk2: number = Number(components[1]);
 
     if (!Number.isInteger(chunk1) || !Number.isInteger(chunk2)) {
         throwInvalidPosition();
@@ -48,7 +47,7 @@ if (args.length < 4) {
 let contents: string = "";
 
 const fileContents: string = fs.readFileSync(args[2], "utf8").replace(/^\uFEFF/, "");
-const position: Position = parsePosition(args[3]);
+const position: PQLS.Position = parsePosition(args[3]);
 const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
 const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspectionSettings(

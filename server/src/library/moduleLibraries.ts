@@ -2,11 +2,11 @@
 // Licensed under the MIT license.
 
 import * as PQLS from "@microsoft/powerquery-language-services";
+import { Library, LibrarySymbol, LibrarySymbolUtils } from "@microsoft/powerquery-language-services";
+import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { LibraryExportJson, LibraryJson } from "./library";
 import { LibraryDefinitionsGetter } from "./libraryTypeResolver";
-import { mapExport } from "./libraryUtils";
 
 export interface ModuleLibraryTrieNodeCache {
     localizedLibrary?: PQLS.Library.ILibrary;
@@ -15,27 +15,55 @@ export interface ModuleLibraryTrieNodeCache {
 export class ModuleLibraryTreeNode {
     static defaultRoot: ModuleLibraryTreeNode = new ModuleLibraryTreeNode();
 
-    private _libraryJson?: LibraryJson;
+    private _librarySymbols?: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
+    private _libraryDefinitions: ReadonlyMap<string, PQLS.Library.TLibraryDefinition> = new Map();
     public textDocument?: TextDocument;
-    private readonly _libraryDefinitions: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
     public readonly cache: ModuleLibraryTrieNodeCache = {};
 
     get isRoot(): boolean {
         return !this.parent;
     }
 
-    get libraryJson(): LibraryJson | undefined {
-        return this._libraryJson;
+    get libraryJson(): ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined {
+        return this._librarySymbols;
     }
 
-    set libraryJson(val: LibraryJson | undefined) {
-        this._libraryJson = val;
-        this._libraryDefinitions.clear();
+    set libraryJson(val: ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined) {
+        this._librarySymbols = val;
+        this._libraryDefinitions = new Map();
 
         if (val && Array.isArray(val)) {
-            val.forEach((xport: LibraryExportJson) => {
-                this._libraryDefinitions.set(xport.name, mapExport(xport));
-            });
+            const libraryDefinitionsResult: PartialResult<
+                Library.LibraryDefinitions,
+                Library.LibraryDefinitions,
+                ReadonlyArray<LibrarySymbol.LibrarySymbol>
+            > = LibrarySymbolUtils.createLibraryDefinitions(val);
+
+            let libraryDefinitions: Library.LibraryDefinitions;
+            let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
+
+            if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
+                libraryDefinitions = libraryDefinitionsResult.value;
+                failedSymbols = [];
+            } else if (PartialResultUtils.isMixed(libraryDefinitionsResult)) {
+                libraryDefinitions = libraryDefinitionsResult.value;
+                failedSymbols = libraryDefinitionsResult.error;
+            } else {
+                libraryDefinitions = new Map();
+                failedSymbols = libraryDefinitionsResult.error;
+            }
+
+            this._libraryDefinitions = libraryDefinitions;
+
+            if (failedSymbols.length) {
+                const csvSymbolNames: string = failedSymbols
+                    .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
+                    .join(", ");
+
+                console.warn(
+                    `$libraryJson.setter failed to create library definitions for the following symbolNames: ${csvSymbolNames}`,
+                );
+            }
         }
     }
 
@@ -83,8 +111,8 @@ export class ModuleLibraryTreeNode {
             this.parent.children.delete(this.currentPath);
         }
 
-        this._libraryDefinitions.clear();
-        this._libraryJson = [];
+        this._libraryDefinitions = new Map();
+        this._librarySymbols = [];
     }
 
     collectTextDocumentBeneath(visitorContext: { textDocuments: TextDocument[] }): void {
@@ -109,7 +137,7 @@ export class ModuleLibraries {
         return uriPath.split("/").filter(Boolean);
     }
 
-    addOneModuleLibrary(uriPath: string, libraryJson: LibraryJson): TextDocument[] {
+    addOneModuleLibrary(uriPath: string, libraryJson: ReadonlyArray<LibrarySymbol.LibrarySymbol>): TextDocument[] {
         const spitedPath: string[] = ModuleLibraries.splitPath(uriPath);
         const visitorContext: { textDocuments: [] } = { textDocuments: [] };
         const theNode: ModuleLibraryTreeNode = this.trieRoot.insert(spitedPath);

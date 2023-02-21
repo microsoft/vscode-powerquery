@@ -1,53 +1,52 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { CompletionItemKind } from "@microsoft/powerquery-language-services";
+import { Library, LibrarySymbol, LibrarySymbolUtils } from "@microsoft/powerquery-language-services";
 
-import * as SdkLibraryJsonEnUs from "./sdk/sdk-enUs.json";
-import * as StandardLibraryJsonEnUs from "./standard/standard-enUs.json";
+import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
+import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
 import { createLibraryTypeResolver, LibraryDefinitionsGetter } from "./libraryTypeResolver";
-import { LibraryExportJson, LibraryFunctionParameterJson, LibraryJson } from "./library";
+import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 
-export function getOrCreateStandardLibrary(locale?: string): PQLS.Library.ILibrary {
+export function getOrCreateStandardLibrary(locale?: string): Library.ILibrary {
     return getOrCreateLibrary(
         standardLibraryByLocale,
         standardLibraryDefinitionsByLocale,
-        standardJsonByLocale,
+        standardLibrarySymbolByLocale,
         locale ?? PQP.DefaultLocale,
-        StandardLibraryJsonEnUs,
+        StandardLibrarySymbolsEnUs,
     );
 }
 
 export function getOrCreateSdkLibrary(
     locale?: string,
     otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
-): PQLS.Library.ILibrary {
+): Library.ILibrary {
     return getOrCreateLibrary(
         sdkLibraryByLocale,
         sdkLibraryDefinitionsByLocale,
-        sdkJsonByLocale,
+        sdkLibrarySymbols,
         locale ?? PQP.DefaultLocale,
-        SdkLibraryJsonEnUs,
+        SdkLibrarySymbolsEnUs,
         otherLibraryDefinitionsGetters,
     );
 }
 
 function getOrCreateLibrary(
-    libraryByLocale: Map<string, PQLS.Library.ILibrary>,
-    definitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>>,
-    jsonByLocale: Map<string, LibraryJson>,
+    libraryByLocale: Map<string, Library.ILibrary>,
+    definitionsByLocale: Map<string, Library.LibraryDefinitions>,
+    librarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
     locale: string,
-    defaultJson: LibraryJson,
+    defaultLibrarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
     otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
-): PQLS.Library.ILibrary {
+): Library.ILibrary {
     if (!libraryByLocale.has(locale)) {
-        const libraryDefinitions: PQLS.Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
+        const libraryDefinitions: Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
             definitionsByLocale,
-            jsonByLocale,
+            librarySymbolsByLocale,
             locale,
-            defaultJson,
+            defaultLibrarySymbols,
         );
 
         libraryByLocale.set(locale, {
@@ -56,7 +55,7 @@ function getOrCreateLibrary(
         });
     }
 
-    const libraryOfNoExternals: PQLS.Library.ILibrary = PQP.Assert.asDefined(libraryByLocale.get(locale));
+    const libraryOfNoExternals: Library.ILibrary = PQP.Assert.asDefined(libraryByLocale.get(locale));
 
     if (otherLibraryDefinitionsGetters.length) {
         return {
@@ -72,175 +71,61 @@ function getOrCreateLibrary(
 }
 
 function getOrCreateLibraryDefinitions(
-    definitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>>,
-    jsonByLocale: Map<string, LibraryJson>,
+    definitionsByLocale: Map<string, Library.LibraryDefinitions>,
+    librarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
     locale: string,
-    defaultJson: LibraryJson,
-): PQLS.Library.LibraryDefinitions {
+    defaultLibrarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
+): Library.LibraryDefinitions {
     if (!definitionsByLocale.has(locale)) {
-        const json: LibraryJson = jsonByLocale.get(locale) ?? defaultJson;
+        const librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol> =
+            librarySymbolsByLocale.get(locale) ?? defaultLibrarySymbols;
 
-        const mapped: Map<string, PQLS.Library.TLibraryDefinition> = new Map(
-            json.map((xport: LibraryExportJson) => [xport.name, mapExport(xport)]),
-        );
+        const libraryDefinitionsResult: PartialResult<
+            Library.LibraryDefinitions,
+            Library.LibraryDefinitions,
+            ReadonlyArray<LibrarySymbol.LibrarySymbol>
+        > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
-        definitionsByLocale.set(locale, mapped);
+        let libraryDefinitions: Library.LibraryDefinitions;
+        let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
+
+        if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
+            libraryDefinitions = libraryDefinitionsResult.value;
+            failedSymbols = [];
+        } else if (PartialResultUtils.isMixed(libraryDefinitionsResult)) {
+            libraryDefinitions = libraryDefinitionsResult.value;
+            failedSymbols = libraryDefinitionsResult.error;
+        } else {
+            libraryDefinitions = new Map();
+            failedSymbols = libraryDefinitionsResult.error;
+        }
+
+        if (failedSymbols.length) {
+            const csvSymbolNames: string = failedSymbols
+                .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
+                .join(", ");
+
+            console.warn(
+                `$libraryJson.setter failed to create library definitions for the following symbolNames: ${csvSymbolNames}`,
+            );
+        }
+
+        definitionsByLocale.set(locale, libraryDefinitions);
     }
 
     return PQP.MapUtils.assertGet(definitionsByLocale, locale);
 }
 
-const sdkLibraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
-const sdkLibraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
-const sdkJsonByLocale: Map<string, LibraryJson> = new Map([[PQP.Locale.en_US, SdkLibraryJsonEnUs]]);
+const sdkLibraryByLocale: Map<string, Library.ILibrary> = new Map();
+const sdkLibraryDefinitionsByLocale: Map<string, Library.LibraryDefinitions> = new Map();
 
-const standardLibraryByLocale: Map<string, PQLS.Library.ILibrary> = new Map();
-const standardLibraryDefinitionsByLocale: Map<string, Map<string, PQLS.Library.TLibraryDefinition>> = new Map();
-const standardJsonByLocale: Map<string, LibraryJson> = new Map([[PQP.Locale.en_US, StandardLibraryJsonEnUs]]);
+const sdkLibrarySymbols: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
+    [PQP.Locale.en_US, SdkLibrarySymbolsEnUs],
+]);
 
-export function mapExport(xport: LibraryExportJson): PQLS.Library.TLibraryDefinition {
-    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(xport.dataType);
-    const label: string = xport.name;
-    const description: string = xport.documentation?.description ?? "No description available";
+const standardLibraryByLocale: Map<string, Library.ILibrary> = new Map();
+const standardLibraryDefinitionsByLocale: Map<string, Library.LibraryDefinitions> = new Map();
 
-    if (primitiveType.kind === PQP.Language.Type.TypeKind.Type) {
-        return {
-            kind: PQLS.Library.LibraryDefinitionKind.Type,
-            label,
-            description,
-            asPowerQueryType: primitiveType,
-            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
-        };
-    } else if (xport.functionParameters) {
-        const asPowerQueryType: PQP.Language.Type.DefinedFunction = mapLibraryFunctionSignatureToType(
-            xport,
-            primitiveType,
-        );
-
-        return {
-            kind: PQLS.Library.LibraryDefinitionKind.Function,
-            label: PQP.Language.TypeUtils.nameOf(asPowerQueryType, PQP.Trace.NoOpTraceManagerInstance, undefined),
-            description,
-            asPowerQueryType,
-            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
-            parameters: xport.functionParameters.map(mapParameterToLibraryParameter),
-        };
-    } else {
-        return {
-            kind: PQLS.Library.LibraryDefinitionKind.Constant,
-            label,
-            description,
-            asPowerQueryType: primitiveType,
-            completionItemKind: assertGetCompletionItemKind(xport.completionItemType),
-        };
-    }
-}
-
-function mapLibraryFunctionSignatureToType(
-    xport: LibraryExportJson,
-    returnType: PQP.Language.Type.TPrimitiveType,
-): PQP.Language.Type.DefinedFunction {
-    const xportParameters: ReadonlyArray<LibraryFunctionParameterJson> = xport.functionParameters ?? [];
-
-    return PQP.Language.TypeUtils.createDefinedFunction(
-        false,
-        xportParameters.map((parameter: LibraryFunctionParameterJson) => {
-            const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(
-                parameter.parameterType,
-            );
-
-            return {
-                isNullable: primitiveType.isNullable,
-                isOptional: !parameter.isRequired,
-                type: primitiveType.kind,
-                nameLiteral: parameter.name,
-            };
-        }),
-        returnType,
-    );
-}
-
-function mapParameterToLibraryParameter(parameter: LibraryFunctionParameterJson): PQLS.Library.LibraryParameter {
-    const primitiveType: PQP.Language.Type.TPrimitiveType = assertPrimitiveTypeFromString(parameter.parameterType);
-
-    return {
-        isNullable: primitiveType.isNullable,
-        isOptional: false,
-        label: parameter.name,
-        documentation: parameter.description ?? undefined,
-        typeKind: primitiveType.kind,
-    };
-}
-
-function assertGetTypeKind(text: string): PQP.Language.Type.TypeKind {
-    if (!PQP.Language.ConstantUtils.isPrimitiveTypeConstant(text)) {
-        throw new Error(`unknown type: ${text}`);
-    }
-
-    return PQP.Language.TypeUtils.typeKindFromPrimitiveTypeConstantKind(text);
-}
-
-function assertGetCompletionItemKind(variant: number): CompletionItemKind {
-    switch (variant) {
-        case CompletionItemKind.Constant:
-        case CompletionItemKind.Constructor:
-        case CompletionItemKind.Enum:
-        case CompletionItemKind.EnumMember:
-        case CompletionItemKind.Event:
-        case CompletionItemKind.Field:
-        case CompletionItemKind.File:
-        case CompletionItemKind.Folder:
-        case CompletionItemKind.Function:
-        case CompletionItemKind.Interface:
-        case CompletionItemKind.Keyword:
-        case CompletionItemKind.Method:
-        case CompletionItemKind.Module:
-        case CompletionItemKind.Operator:
-        case CompletionItemKind.Property:
-        case CompletionItemKind.Reference:
-        case CompletionItemKind.Snippet:
-        case CompletionItemKind.Struct:
-        case CompletionItemKind.Text:
-        case CompletionItemKind.TypeParameter:
-        case CompletionItemKind.Unit:
-        case CompletionItemKind.Value:
-        case CompletionItemKind.Variable:
-            return variant;
-
-        default:
-            throw new PQP.CommonError.InvariantError(`unknown CompletionItemKind variant value`, { variant });
-    }
-}
-
-function assertPrimitiveTypeFromString(text: string): PQP.Language.Type.TPrimitiveType {
-    const split: ReadonlyArray<string> = text.split(" ");
-
-    let isNullable: boolean;
-    let typeKind: PQP.Language.Type.TypeKind;
-
-    switch (split.length) {
-        case 0:
-            throw new Error("expected parameter.type to be nullish");
-
-        case 1: {
-            isNullable = false;
-            typeKind = assertGetTypeKind(text);
-            break;
-        }
-
-        case 2: {
-            if (split[0] !== PQP.Language.Constant.LanguageConstant.Nullable) {
-                throw new Error(`expected first word in text to be ${PQP.Language.Constant.LanguageConstant.Nullable}`);
-            }
-
-            isNullable = true;
-            typeKind = assertGetTypeKind(split[1]);
-            break;
-        }
-
-        default:
-            throw new Error("expected text to be 1 or 2 words");
-    }
-
-    return PQP.Language.TypeUtils.createPrimitiveType(isNullable, typeKind);
-}
+const standardLibrarySymbolByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
+    [PQP.Locale.en_US, StandardLibrarySymbolsEnUs],
+]);

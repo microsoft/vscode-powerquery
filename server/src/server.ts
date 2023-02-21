@@ -11,8 +11,8 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import * as ErrorUtils from "./errorUtils";
 import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { LibraryJson, ModuleLibraries } from "./library";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
+import { ModuleLibraries } from "./library";
 import { SettingsUtils } from "./settings.ts";
 
 interface SemanticTokenParams {
@@ -22,7 +22,7 @@ interface SemanticTokenParams {
 
 interface ModuleLibraryUpdatedParams {
     readonly workspaceUriPath: string;
-    readonly library: LibraryJson;
+    readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
