@@ -86,9 +86,31 @@ function getOrCreateLibraryDefinitions(
             ReadonlyArray<LibrarySymbol.LibrarySymbol>
         > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
-        if (PartialResultUtils.isOk(libraryDefinitionsResult) || PartialResultUtils.isMixed(libraryDefinitionsResult)) {
-            definitionsByLocale.set(locale, libraryDefinitionsResult.value);
+        let libraryDefinitions: Library.LibraryDefinitions;
+        let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
+
+        if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
+            libraryDefinitions = libraryDefinitionsResult.value;
+            failedSymbols = [];
+        } else if (PartialResultUtils.isMixed(libraryDefinitionsResult)) {
+            libraryDefinitions = libraryDefinitionsResult.value;
+            failedSymbols = libraryDefinitionsResult.error;
+        } else {
+            libraryDefinitions = new Map();
+            failedSymbols = libraryDefinitionsResult.error;
         }
+
+        if (failedSymbols.length) {
+            const csvSymbolNames: string = failedSymbols
+                .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
+                .join(", ");
+
+            console.warn(
+                `$libraryJson.setter failed to create library definitions for the following symbolNames: ${csvSymbolNames}`,
+            );
+        }
+
+        definitionsByLocale.set(locale, libraryDefinitions);
     }
 
     return PQP.MapUtils.assertGet(definitionsByLocale, locale);
