@@ -6,9 +6,7 @@ import { Library, LibrarySymbol, LibrarySymbolUtils } from "@microsoft/powerquer
 import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-// import { LibraryExportJson, LibraryJson } from "./library";
 import { LibraryDefinitionsGetter } from "./libraryTypeResolver";
-// import { mapExport } from "./libraryUtils";
 
 export interface ModuleLibraryTrieNodeCache {
     localizedLibrary?: PQLS.Library.ILibrary;
@@ -38,7 +36,7 @@ export class ModuleLibraryTreeNode {
             const libraryDefinitionsResult: PartialResult<
                 Library.LibraryDefinitions,
                 Library.LibraryDefinitions,
-                ReadonlyArray<string>
+                ReadonlyArray<LibrarySymbol.LibrarySymbol>
             > = LibrarySymbolUtils.createLibraryDefinitions(val);
 
             if (

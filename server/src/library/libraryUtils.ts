@@ -83,7 +83,7 @@ function getOrCreateLibraryDefinitions(
         const libraryDefinitionsResult: PartialResult<
             Library.LibraryDefinitions,
             Library.LibraryDefinitions,
-            ReadonlyArray<string>
+            ReadonlyArray<LibrarySymbol.LibrarySymbol>
         > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
         if (PartialResultUtils.isOk(libraryDefinitionsResult) || PartialResultUtils.isMixed(libraryDefinitionsResult)) {
