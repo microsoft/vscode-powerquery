@@ -46,6 +46,17 @@ export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.Tex
     });
 }
 
+export function unescapeJsonTextToClipboard(textEditor: vscode.TextEditor): void {
+    textEditor.selections.forEach(async (selection: vscode.Selection) => {
+        try {
+            const replacement: string = removeJsonEncoding(textEditor.document.getText(selection));
+            await vscode.env.clipboard.writeText(replacement);
+        } catch (err) {
+            await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
+        }
+    });
+}
+
 export async function extractDataflowDocument(): Promise<vscode.Uri | undefined> {
     const textEditor: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
 

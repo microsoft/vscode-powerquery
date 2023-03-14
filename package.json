@@ -61,7 +61,8 @@
         "onCommand:powerquery.mEscapeText",
         "onCommand:powerquery.mUnescapeText",
         "onCommand:powerquery.jsonEscapeText",
-        "onCommand:powerquery.jsonUnescapeText"
+        "onCommand:powerquery.jsonUnescapeText",
+        "onCommand:powerquery.jsonUnescapeTextToClipboard"
     ],
     "publisher": "PowerQuery",
     "contributes": {
@@ -87,8 +88,13 @@
                 "category": "powerquery"
             },
             {
-                "command": "powerquery.jsonEscapeText",
-                "title": "Encode selection as JSON string",
+                "command": "powerquery.jsonUnescapeText",
+                "title": "Remove JSON string encoding from selection",
+                "category": "powerquery"
+            },
+            {
+                "command": "powerquery.jsonUnescapeTextToClipboard",
+                "title": "Encode selection as JSON string to the clipboard",
                 "category": "powerquery"
             }
         ],
@@ -112,6 +118,10 @@
                 },
                 {
                     "command": "powerquery.jsonEscapeText",
+                    "when": "editorHasSelection"
+                },
+                {
+                    "command": "powerquery.jsonUnescapeTextToClipboard",
                     "when": "editorHasSelection"
                 }
             ]

@@ -6,5 +6,6 @@ export const enum CommandConstant {
     EscapeJsonText = "powerquery.jsonEscapeText",
     EscapeMText = "powerquery.mEscapeText",
     UnescapeJsonText = "powerquery.jsonUnescapeText",
+    UnescapeJsonTextToClipboard = "powerquery.jsonUnescapeTextToClipboard",
     UnescapeMText = "powerquery.mUnescapeText",
 }
