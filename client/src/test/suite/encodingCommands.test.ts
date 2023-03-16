@@ -23,7 +23,6 @@ suite("Encode/Decode Commands", () => {
             CommandConstant.UnescapeMText,
             CommandConstant.EscapeJsonText,
             CommandConstant.UnescapeJsonText,
-            CommandConstant.UnescapeJsonTextToClipboard,
         ];
 
         const pqCommands: string[] = (await vscode.commands.getCommands(/* filterInternal */ true)).filter(

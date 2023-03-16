@@ -22,13 +22,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
         vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
     );
 
-    commands.push(
-        vscode.commands.registerTextEditorCommand(
-            CommandConstant.UnescapeJsonTextToClipboard,
-            CommandFn.unescapeJsonTextToClipboard,
-        ),
-    );
-
     commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
 
     commands.push(

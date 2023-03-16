@@ -35,13 +35,34 @@ export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextE
     });
 }
 
+function GetSetting(config: string, setting: string): string {
+    const value: string | undefined = vscode.workspace.getConfiguration(config).get(setting);
+
+    if (value == undefined) {
+        return "";
+    }
+
+    return value;
+}
+
 export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
     textEditor.selections.forEach(async (selection: vscode.Selection) => {
         try {
             const replacement: string = removeJsonEncoding(textEditor.document.getText(selection));
-            edit.replace(selection, replacement);
+
+            const target: string = GetSetting("powerquery.editor", "transformTarget");
+            // await vscode.window.showInformationMessage(`Target: ${target}`);
+
+            switch (target) {
+                case "clipboard":
+                    await vscode.env.clipboard.writeText(replacement);
+                    break;
+                case "inPlace":
+                default:
+                    edit.replace(selection, replacement);
+            }
         } catch (err) {
-            await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
+            await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${err}`);
         }
     });
 }

@@ -61,8 +61,7 @@
         "onCommand:powerquery.mEscapeText",
         "onCommand:powerquery.mUnescapeText",
         "onCommand:powerquery.jsonEscapeText",
-        "onCommand:powerquery.jsonUnescapeText",
-        "onCommand:powerquery.jsonUnescapeTextToClipboard"
+        "onCommand:powerquery.jsonUnescapeText"
     ],
     "publisher": "PowerQuery",
     "contributes": {
@@ -83,18 +82,13 @@
                 "category": "powerquery"
             },
             {
-                "command": "powerquery.jsonUnescapeText",
-                "title": "Remove JSON string encoding from selection",
+                "command": "powerquery.jsonEscapeText",
+                "title": "Encode selection as an JSON value",
                 "category": "powerquery"
             },
             {
                 "command": "powerquery.jsonUnescapeText",
                 "title": "Remove JSON string encoding from selection",
-                "category": "powerquery"
-            },
-            {
-                "command": "powerquery.jsonUnescapeTextToClipboard",
-                "title": "Encode selection as JSON string to the clipboard",
                 "category": "powerquery"
             }
         ],
@@ -234,6 +228,16 @@
                     ],
                     "default": "off",
                     "description": "Traces the communication between VS Code and the language server."
+                },
+                "powerquery.editor.transformTarget": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "inPlace",
+                        "clipboard"
+                    ],
+                    "default": "inPlace",
+                    "description": "Default target for text editor operations - allows the choice of in place (replacing the currently selected text) or storing the results on the clipboard."
                 }
             }
         },
