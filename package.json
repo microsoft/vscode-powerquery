@@ -82,13 +82,13 @@
                 "category": "powerquery"
             },
             {
-                "command": "powerquery.jsonEscapeText",
-                "title": "Encode selection as an JSON value",
+                "command": "powerquery.jsonUnescapeText",
+                "title": "Remove JSON string encoding from selection",
                 "category": "powerquery"
             },
             {
-                "command": "powerquery.jsonUnescapeText",
-                "title": "Remove JSON string encoding from selection",
+                "command": "powerquery.jsonEscapeText",
+                "title": "Encode selection as an JSON value",
                 "category": "powerquery"
             }
         ],
@@ -107,11 +107,11 @@
                     "when": "editorHasSelection"
                 },
                 {
-                    "command": "powerquery.jsonEscapeText",
+                    "command": "powerquery.jsonUnescapeText",
                     "when": "editorHasSelection"
                 },
                 {
-                    "command": "powerquery.jsonUnescapeText",
+                    "command": "powerquery.jsonEscapeText",
                     "when": "editorHasSelection"
                 }
             ]
