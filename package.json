@@ -107,15 +107,11 @@
                     "when": "editorHasSelection"
                 },
                 {
-                    "command": "powerquery.jsonUnescapeText",
-                    "when": "editorHasSelection"
-                },
-                {
                     "command": "powerquery.jsonEscapeText",
                     "when": "editorHasSelection"
                 },
                 {
-                    "command": "powerquery.jsonUnescapeTextToClipboard",
+                    "command": "powerquery.jsonUnescapeText",
                     "when": "editorHasSelection"
                 }
             ]
@@ -237,7 +233,7 @@
                         "clipboard"
                     ],
                     "default": "inPlace",
-                    "description": "Default target for text editor operations - allows the choice of in place (replacing the currently selected text) or storing the results on the clipboard."
+                    "description": "Default target for text transformation operations - allows the choice of in place (replacing the currently selected text) or storing the results on the clipboard."
                 }
             }
         },
