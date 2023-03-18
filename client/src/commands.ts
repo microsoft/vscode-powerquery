@@ -6,36 +6,7 @@ import * as vscode from "vscode";
 import path = require("path");
 import { DataflowModel } from "./dataflowModel";
 
-// https://docs.microsoft.com/en-us/powerquery-m/m-spec-lexical-structure#character-escape-sequences
-
-// TODO: Support arbitrary escape sequence lists: #(cr,cr,cr)
-export function escapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
-    textEditor.selections.forEach((selection: vscode.Selection) => {
-        const escapedText: string = PQP.Language.TextUtils.escape(textEditor.document.getText(selection));
-        edit.replace(selection, escapedText);
-    });
-}
-
-export function unescapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
-    textEditor.selections.forEach((selection: vscode.Selection) => {
-        const unescapedText: string = PQP.Language.TextUtils.unescape(textEditor.document.getText(selection));
-        edit.replace(selection, unescapedText);
-    });
-}
-
-export function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
-    textEditor.selections.forEach(async (selection: vscode.Selection) => {
-        try {
-            const replacement: string = JSON.stringify(textEditor.document.getText(selection));
-
-            edit.replace(selection, replacement);
-        } catch (err) {
-            await vscode.window.showErrorMessage(`Failed to escape as JSON string. Error: ${JSON.stringify(err)}`);
-        }
-    });
-}
-
-function GetSetting(config: string, setting: string): string {
+function getSetting(config: string, setting: string): string {
     const value: string | undefined = vscode.workspace.getConfiguration(config).get(setting);
 
     if (value == undefined) {
@@ -45,37 +16,68 @@ function GetSetting(config: string, setting: string): string {
     return value;
 }
 
-export function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): void {
-    textEditor.selections.forEach(async (selection: vscode.Selection) => {
-        try {
-            const replacement: string = removeJsonEncoding(textEditor.document.getText(selection));
+async function processText(
+    textEditor: vscode.TextEditor,
+    edit: vscode.TextEditorEdit,
+    processingFunction: (selection: string) => string,
+): Promise<void> {
+    const selectionSeparator: string = "\n-----------------------------\n";
+    const target: string = getSetting("powerquery.editor", "transformTarget");
 
-            const target: string = GetSetting("powerquery.editor", "transformTarget");
-            // await vscode.window.showInformationMessage(`Target: ${target}`);
+    try {
+        let textForClipboard: string = "";
 
-            switch (target) {
-                case "clipboard":
-                    await vscode.env.clipboard.writeText(replacement);
-                    break;
-                case "inPlace":
-                default:
-                    edit.replace(selection, replacement);
-            }
-        } catch (err) {
-            await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${err}`);
+        switch (target) {
+            case "clipboard":
+                textEditor.selections.forEach(async (selection: vscode.Selection) => {
+                    try {
+                        const replacement: string = processingFunction(textEditor.document.getText(selection));
+
+                        if (textForClipboard.length > 0) {
+                            textForClipboard += selectionSeparator;
+                        }
+
+                        textForClipboard += replacement;
+                    } catch (err) {
+                        await vscode.window.showErrorMessage(`Failed to transform text. Error: ${err}`);
+                    }
+                });
+
+                await vscode.env.clipboard.writeText(textForClipboard);
+                break;
+            case "inPlace":
+            default:
+                textEditor.selections.forEach(async (selection: vscode.Selection) => {
+                    try {
+                        const replacement: string = processingFunction(textEditor.document.getText(selection));
+                        edit.replace(selection, replacement);
+                    } catch (err) {
+                        await vscode.window.showErrorMessage(`Failed to transform text. Error: ${err}`);
+                    }
+                });
         }
-    });
+    } catch (err) {
+        await vscode.window.showErrorMessage(`Failed to transform text to ${target}. Error: ${err}`);
+    }
 }
 
-export function unescapeJsonTextToClipboard(textEditor: vscode.TextEditor): void {
-    textEditor.selections.forEach(async (selection: vscode.Selection) => {
-        try {
-            const replacement: string = removeJsonEncoding(textEditor.document.getText(selection));
-            await vscode.env.clipboard.writeText(replacement);
-        } catch (err) {
-            await vscode.window.showErrorMessage(`Failed to unescape as JSON. Error: ${JSON.stringify(err)}`);
-        }
-    });
+// https://docs.microsoft.com/en-us/powerquery-m/m-spec-lexical-structure#character-escape-sequences
+
+// TODO: Support arbitrary escape sequence lists: #(cr,cr,cr)
+export async function escapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): Promise<void> {
+    await processText(textEditor, edit, PQP.Language.TextUtils.escape);
+}
+
+export async function unescapeMText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): Promise<void> {
+    await processText(textEditor, edit, PQP.Language.TextUtils.unescape);
+}
+
+export async function escapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): Promise<void> {
+    await processText(textEditor, edit, JSON.stringify);
+}
+
+export async function unescapeJsonText(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): Promise<void> {
+    await processText(textEditor, edit, removeJsonEncoding);
 }
 
 export async function extractDataflowDocument(): Promise<vscode.Uri | undefined> {
