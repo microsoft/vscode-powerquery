@@ -31,7 +31,7 @@ Provides a formatter for the "Format Document" (Alt + Shift + F) command.
 
 ### String encoding/decoding
 
-These commands can be used to add/remove M and JSON string formatting to/from the currently selected text. This can be helpful when you need to encode an embedded SQL (or other) query in an M expression, or when you're working with files that contain embedded M expressions, such as Power BI Dataflow's [model.json](https://docs.microsoft.com/en-us/common-data-model/model-json) file, and Power Query traces.
+These commands can be used to add/remove M and JSON string formatting to/from the currently selected text. This can be helpful when you need to encode an embedded SQL (or other) query in an M expression, or when you're working with files that contain embedded M expressions, such as Power BI Dataflow's [model.json](https://docs.microsoft.com/en-us/common-data-model/model-json) file, and Power Query traces. There is a `powerquery.editor.transformTarget` setting in the extension to choose the target for the operation. `inPlace` (the default) replaces the currently selected text with the updated value. `clipboard` does not change the currently selected text, and puts the transformed text on the clipboard.
 
 These commands require one or more text selections in the active editor window.
 
@@ -44,7 +44,7 @@ These commands require one or more text selections in the active editor window.
 | powerquery.mEscapeText      | Encode selection as an M text value        |
 | powerquery.mUnescapeText    | Remove M text encoding from selection      |
 
-A more specialized version of this command will extract the M Document from an entire model.json/dataflow.json document. This command requires the active document to be recognized as JSON.
+A more specialized version of this command will extract the M Document from an entire model.json/dataflow.json document. This command requires the active document to be recognized as JSON. The result is a new PowerQuery document.
 
 | Command                            | Label                              |
 | ---------------------------------- | ---------------------------------- |

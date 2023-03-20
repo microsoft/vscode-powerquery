@@ -88,7 +88,7 @@
             },
             {
                 "command": "powerquery.jsonEscapeText",
-                "title": "Encode selection as JSON string",
+                "title": "Encode selection as a JSON value",
                 "category": "powerquery"
             }
         ],
@@ -224,6 +224,16 @@
                     ],
                     "default": "off",
                     "description": "Traces the communication between VS Code and the language server."
+                },
+                "powerquery.editor.transformTarget": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "inPlace",
+                        "clipboard"
+                    ],
+                    "default": "inPlace",
+                    "description": "Default target for text transformation operations - allows the choice of in place (replacing the currently selected text) or storing the results on the clipboard."
                 }
             }
         },
