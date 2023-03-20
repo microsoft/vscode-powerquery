@@ -3,6 +3,5 @@
     "typescript.tsc.autoDetect": "off",
     "typescript.preferences.quoteStyle": "single",
     "typescript.tsdk": "node_modules\\typescript\\lib",
-    "editor.formatOnSave": true,
-    "cSpell.words": ["powerquery"]
+    "editor.formatOnSave": true
 }
