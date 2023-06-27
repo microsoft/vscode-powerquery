@@ -18,6 +18,8 @@
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch",
         "test": "node ./lib/test/runTest.js",
+        "link:start": "npm link && npm uninstall @microsoft/powerquery-parser @microsoft/powerquery-language-services && git clean -xdf && npm install && npm link @microsoft/powerquery-parser @microsoft/powerquery-language-services",
+        "link:stop": "npm unlink @microsoft/powerquery-parser @microsoft/powerquery-language-services && git clean -xdf && npm install && npm install @microsoft/powerquery-parser@latest @microsoft/powerquery-language-services@latest --save-exact",
         "lint": "eslint src --ext ts",
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
         "webpack-dev": "node_modules\\.bin\\webpack --watch --mode development"
