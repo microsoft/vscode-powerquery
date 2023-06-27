@@ -50,7 +50,7 @@ const fileContents: string = fs.readFileSync(args[2], "utf8").replace(/^\uFEFF/,
 const position: PQLS.Position = parsePosition(args[3]);
 const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
-const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.createInspectionSettings(
+const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.inspectionSettings(
     {
         ...PQP.DefaultSettings,
         traceManager: new PQP.Trace.BenchmarkTraceManager((message: string) => (contents += message)),
