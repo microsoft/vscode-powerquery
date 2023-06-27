@@ -82,7 +82,7 @@ function getOrCreateLibraryDefinitions(
 
         const libraryDefinitionsResult: PartialResult<
             Library.LibraryDefinitions,
-            Library.LibraryDefinitions,
+            LibrarySymbolUtils.IncompleteLibraryDefinitions,
             ReadonlyArray<LibrarySymbol.LibrarySymbol>
         > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
@@ -92,9 +92,9 @@ function getOrCreateLibraryDefinitions(
         if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
             libraryDefinitions = libraryDefinitionsResult.value;
             failedSymbols = [];
-        } else if (PartialResultUtils.isMixed(libraryDefinitionsResult)) {
-            libraryDefinitions = libraryDefinitionsResult.value;
-            failedSymbols = libraryDefinitionsResult.error;
+        } else if (PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
+            libraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
+            failedSymbols = libraryDefinitionsResult.partial.invalidSymbols;
         } else {
             libraryDefinitions = new Map();
             failedSymbols = libraryDefinitionsResult.error;

@@ -18,6 +18,8 @@
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch",
         "test": "mocha --reporter mocha-multi-reporters --reporter-options configFile=src/test/mochaConfig.json -r ts-node/register src/test/**/*.ts",
+        "link:start": "npm link && npm uninstall @microsoft/powerquery-parser @microsoft/powerquery-formatter @microsoft/powerquery-language-services && git clean -xdf && npm install && npm link @microsoft/powerquery-parser @microsoft/powerquery-formatter @microsoft/powerquery-language-services",
+        "link:stop": "npm unlink @microsoft/powerquery-parser @microsoft/powerquery-formatter @microsoft/powerquery-language-services && git clean -xdf && npm install && npm install @microsoft/powerquery-parser@latest @microsoft/powerquery-formatter@latest @microsoft/powerquery-language-services@latest --save-exact",
         "lint": "eslint src --ext ts",
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
         "webpack-dev": "node_modules\\.bin\\webpack --watch --mode development"
@@ -28,9 +30,9 @@
         "node": ">=16.13.2"
     },
     "dependencies": {
-        "@microsoft/powerquery-formatter": "0.3.6",
+        "@microsoft/powerquery-formatter": "0.3.11",
         "@microsoft/powerquery-language-services": "0.6.12",
-        "@microsoft/powerquery-parser": "0.11.2",
+        "@microsoft/powerquery-parser": "0.15.5",
         "vscode-languageserver": "8.0.1",
         "vscode-languageserver-textdocument": "1.0.4",
         "vscode-languageserver-types": "3.17.1"

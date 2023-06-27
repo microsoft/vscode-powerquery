@@ -373,10 +373,7 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
         document,
     );
 
-    return PQLS.AnalysisUtils.createAnalysis(
-        document,
-        SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager),
-    );
+    return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
 }
 
 async function documentSymbols(
@@ -397,14 +394,22 @@ async function documentSymbols(
     );
 
     const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-    const parseState: PQP.Parser.ParseState | undefined = await analysis.getParseState();
 
-    if (parseState === undefined) {
+    const triedParseState: PQP.Result<PQP.Parser.ParseState | undefined, PQP.CommonError.CommonError> =
+        await analysis.getParseState();
+
+    if (PQP.ResultUtils.isError(triedParseState)) {
+        ErrorUtils.handleError(connection, triedParseState.error, "onDocumentSymbol", traceManager);
+
+        return undefined;
+    }
+
+    if (triedParseState.value === undefined) {
         return undefined;
     }
 
     try {
-        return PQLS.getDocumentSymbols(parseState.contextState.nodeIdMapCollection, pqpCancellationToken);
+        return PQLS.getDocumentSymbols(triedParseState.value.contextState.nodeIdMapCollection, pqpCancellationToken);
     } catch (error) {
         ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
 

@@ -5,8 +5,8 @@ import "mocha";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { AnalysisSettings, Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
+import { Assert, ResultUtils } from "@microsoft/powerquery-parser";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
-import { Assert } from "@microsoft/powerquery-parser";
 import { expect } from "chai";
 
 import { LibraryUtils } from "../library";
@@ -31,7 +31,7 @@ async function assertGetHover(text: string): Promise<Hover> {
         NoOpCancellationTokenInstance,
     );
 
-    Assert.isOk(result);
+    ResultUtils.assertIsOk(result);
 
     return (
         result.value ?? {
@@ -49,7 +49,7 @@ async function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
         NoOpCancellationTokenInstance,
     );
 
-    Assert.isOk(result);
+    ResultUtils.assertIsOk(result);
 
     return (
         result.value ?? {
@@ -93,16 +93,13 @@ function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
     const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
-        inspectionSettings: PQLS.InspectionUtils.createInspectionSettings(PQP.DefaultSettings, { library }),
+        inspectionSettings: PQLS.InspectionUtils.newInspectionSettings(PQP.DefaultSettings, { library }),
         isWorkspaceCacheAllowed: false,
         traceManager: PQP.Trace.NoOpTraceManagerInstance,
         initialCorrelationId: undefined,
     };
 
-    return [
-        PQLS.AnalysisUtils.createAnalysis(PQLS.createTextDocument(textWithPipe, 1, text), analysisSettings),
-        position,
-    ];
+    return [PQLS.AnalysisUtils.analysis(PQLS.textDocument(textWithPipe, 1, text), analysisSettings), position];
 }
 
 describe(`StandardLibrary`, () => {
