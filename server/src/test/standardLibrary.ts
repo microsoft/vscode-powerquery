@@ -93,7 +93,7 @@ function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
     const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
-        inspectionSettings: PQLS.InspectionUtils.newInspectionSettings(PQP.DefaultSettings, { library }),
+        inspectionSettings: PQLS.InspectionUtils.inspectionSettings(PQP.DefaultSettings, { library }),
         isWorkspaceCacheAllowed: false,
         traceManager: PQP.Trace.NoOpTraceManagerInstance,
         initialCorrelationId: undefined,

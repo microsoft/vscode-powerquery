@@ -41,7 +41,7 @@ export function createInspectionSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
 ): PQLS.InspectionSettings {
-    return PQLS.InspectionUtils.newInspectionSettings(
+    return PQLS.InspectionUtils.inspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
