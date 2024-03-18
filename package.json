@@ -63,14 +63,7 @@
     "categories": [
         "Programming Languages"
     ],
-    "activationEvents": [
-        "onLanguage:powerquery",
-        "onCommand:powerquery.extractDataflowDocument",
-        "onCommand:powerquery.mEscapeText",
-        "onCommand:powerquery.mUnescapeText",
-        "onCommand:powerquery.jsonEscapeText",
-        "onCommand:powerquery.jsonUnescapeText"
-    ],
+    "activationEvents": [],
     "publisher": "PowerQuery",
     "contributes": {
         "commands": [
