@@ -75,6 +75,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     );
 
     return Object.freeze({
+        // TODO: make async/return promise
         onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson): void => {
             void client.sendRequest("powerquery/moduleLibraryUpdated", {
                 workspaceUriPath,

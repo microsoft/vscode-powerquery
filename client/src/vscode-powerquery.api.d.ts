@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// TODO: Consolidate declarations between this file and librarySymbol.d.ts.
+
 // The JSON output of a localized standard library.
 export type LibraryJson = ReadonlyArray<LibraryExportJson>;
 
@@ -8,20 +10,19 @@ export interface LibraryExportJson {
     readonly name: string;
     readonly documentation: LibraryDocumentationJson | null;
     readonly functionParameters: ReadonlyArray<LibraryFunctionParameterJson> | null;
-    readonly completionItemType: number;
+    readonly completionItemKind: number;
     readonly isDataSource: boolean;
-    readonly dataType: string;
+    readonly type: string;
 }
 
 export interface LibraryDocumentationJson {
     readonly description: string | null;
     readonly longDescription: string | null;
-    readonly category: string | null;
 }
 
 export interface LibraryFunctionParameterJson {
     readonly name: string;
-    readonly parameterType: string;
+    readonly type: string;
     readonly isRequired: boolean;
     readonly isNullable: boolean;
     readonly caption: string | null;
@@ -35,11 +36,11 @@ export interface LibraryFunctionParameterJson {
 }
 
 export interface LibraryFieldJson {
-    readonly fieldName: string;
+    readonly name: string;
     readonly type: string;
     readonly isRequired: boolean;
-    readonly fieldCaption: string | null;
-    readonly fieldDescription: string | null;
+    readonly caption: string | null;
+    readonly description: string | null;
 }
 
 export interface PowerQueryApi {
