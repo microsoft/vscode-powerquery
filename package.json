@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.54",
+    "version": "0.1.55",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -52,8 +52,8 @@
     "icon": "imgs/PQIcon_256.png",
     "main": "./client/dist/extension",
     "engines": {
-        "node": ">=16.13.2",
-        "vscode": "^1.40.0"
+        "node": ">=18.17.0",
+        "vscode": "^1.87.0"
     },
     "capabilities": {
         "untrustedWorkspaces": {
@@ -63,14 +63,7 @@
     "categories": [
         "Programming Languages"
     ],
-    "activationEvents": [
-        "onLanguage:powerquery",
-        "onCommand:powerquery.extractDataflowDocument",
-        "onCommand:powerquery.mEscapeText",
-        "onCommand:powerquery.mUnescapeText",
-        "onCommand:powerquery.jsonEscapeText",
-        "onCommand:powerquery.jsonUnescapeText"
-    ],
+    "activationEvents": [],
     "publisher": "PowerQuery",
     "contributes": {
         "commands": [

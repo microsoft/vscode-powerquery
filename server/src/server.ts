@@ -270,6 +270,7 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 });
 
+// TODO: make async
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
     const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
         params.workspaceUriPath,

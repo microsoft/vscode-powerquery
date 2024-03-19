@@ -9,7 +9,7 @@ import { Assert, ResultUtils } from "@microsoft/powerquery-parser";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 import { expect } from "chai";
 
-import { LibraryUtils } from "../library";
+import { LibraryUtils, ModuleLibraries } from "../library";
 
 const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
 
@@ -195,6 +195,26 @@ describe(`StandardLibrary`, () => {
                 const fourthParameter: ParameterInformation = PQP.Assert.asDefined(parameters[3]);
                 expect(fourthParameter.label).to.equal("columnType");
             });
+        });
+    });
+});
+
+describe(`moduleLibraryUpdated`, () => {
+    describe(`single export`, () => {
+        // TODO: This is hardcoded for testing purposes but needs to be kept in sync with the actual SDK output.
+        const sdkJsonStr: string = `[{"name":"ExtensionTest.Contents","documentation":null,"completionItemKind":3,"functionParameters":[{"name":"message","type":"nullable text","isRequired":false,"isNullable":true,"caption":null,"description":null,"sampleValues":null,"allowedValues":null,"defaultValue":null,"fields":null,"enumNames":null,"enumCaptions":null}],"isDataSource":true,"type":"any"}]`;
+
+        it("SDK call format", () => {
+            const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
+            expect(libraryJson.length).to.equal(1, "expected 1 export");
+            expect(libraryJson[0].name).to.equal("ExtensionTest.Contents");
+        });
+
+        it("ModuleLibraries", () => {
+            const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
+            const moduleLibraries: ModuleLibraries = new ModuleLibraries();
+            moduleLibraries.addOneModuleLibrary("sdk", libraryJson);
+            expect(moduleLibraries.getLibraryCount()).to.equal(1, "expected 1 export");
         });
     });
 });

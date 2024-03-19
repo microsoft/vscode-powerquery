@@ -130,7 +130,7 @@ export class ModuleLibraryTreeNode {
  * A mutable container of module libraries by uri path
  */
 export class ModuleLibraries {
-    private readonly trieRoot: ModuleLibraryTreeNode = ModuleLibraryTreeNode.defaultRoot;
+    private readonly triedRoot: ModuleLibraryTreeNode = ModuleLibraryTreeNode.defaultRoot;
     private readonly openedTextDocumentTreeNodeMap: Map<string, ModuleLibraryTreeNode> = new Map();
 
     static splitPath(uriPath: string): string[] {
@@ -140,7 +140,7 @@ export class ModuleLibraries {
     addOneModuleLibrary(uriPath: string, libraryJson: ReadonlyArray<LibrarySymbol.LibrarySymbol>): TextDocument[] {
         const spitedPath: string[] = ModuleLibraries.splitPath(uriPath);
         const visitorContext: { textDocuments: [] } = { textDocuments: [] };
-        const theNode: ModuleLibraryTreeNode = this.trieRoot.insert(spitedPath);
+        const theNode: ModuleLibraryTreeNode = this.triedRoot.insert(spitedPath);
         theNode.libraryJson = libraryJson;
         theNode.collectTextDocumentBeneath(visitorContext);
 
@@ -151,10 +151,10 @@ export class ModuleLibraries {
         const spitedPath: string[] = ModuleLibraries.splitPath(textDocument.uri);
 
         const visitorContext: { closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode } = {
-            closestModuleLibraryTreeNodeOfDefinitions: this.trieRoot,
+            closestModuleLibraryTreeNodeOfDefinitions: this.triedRoot,
         };
 
-        const theNode: ModuleLibraryTreeNode = this.trieRoot.insert(spitedPath, visitorContext);
+        const theNode: ModuleLibraryTreeNode = this.triedRoot.insert(spitedPath, visitorContext);
         theNode.textDocument = textDocument;
         this.openedTextDocumentTreeNodeMap.set(textDocument.uri, theNode);
 
@@ -171,5 +171,16 @@ export class ModuleLibraries {
             this.openedTextDocumentTreeNodeMap.delete(theDocUri);
             maybeModuleLibraryTreeNode.remove();
         }
+    }
+
+    // Used for testing.
+    getLibraryCount(): number {
+        let count: number = 0;
+
+        this.triedRoot.children.forEach((node: ModuleLibraryTreeNode) => {
+            count += node.libraryJson?.length ?? 0;
+        });
+
+        return count;
     }
 }
