@@ -218,6 +218,19 @@
                         "SDK"
                     ]
                 },
+                "powerquery.general.additionalSymbolsDirectories": {
+                    "scope": "machine-overridable",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "markdownDescription": "One or more file system paths to directories containing M language symbols in json format. This setting is generally used to configure global symbols, but can also be overridden at the workspace level. Workspace specific symbols should be configured using the #powerquery.general.workspaceSymbolsDirectory setting."
+                },
+                "powerquery.general.workspaceSymbolsDirectory": {
+                    "scope": "machine-overridable",
+                    "type": "string",
+                    "markdownDescription": "File system path to a directory containing M language symbols in json format. This setting is generally used to configure symbols for a specific workspace. For global symbols, use the use #powerquery.general.additionalSymbolsDirectories setting."
+                },
                 "powerquery.timeout.symbolTimeoutInMs": {
                     "scope": "window",
                     "type": "number",
