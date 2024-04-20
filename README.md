@@ -72,12 +72,22 @@ npm run build
 
 ## How to run command line tests
 
+1. Generate extension webpack (required for UI tests):
+
 ```cmd
-cd server
+npm run webpack-prod
+```
+
+2. Run both client (UI) and server tests:
+
+```cmd
 npm run test
 ```
 
-There is also a UI test suite that can be run from VS Code.
+Tests can also be run through VS Code using the different debug profiles.
+
+-   `Language UI Test`: client tests (equivalent of running `npm run test:client`)
+-   `Run server unit tests`: server tests (equivalent of running `npm run test:server`)
 
 ## Generate vscode extension
 
