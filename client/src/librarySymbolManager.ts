@@ -70,8 +70,8 @@ export class LibrarySymbolManager {
 
         allSymbolFiles.forEach((value: [vscode.Uri, LibraryJson | undefined]) => {
             if (value[1] !== undefined) {
-                const fileName: string = LibrarySymbolManager.getModuleNameFromFileUri(value[0]);
-                validSymbolLibraries.push([fileName, value[1] as LibraryJson]);
+                const moduleName: string = LibrarySymbolManager.getModuleNameFromFileUri(value[0]);
+                validSymbolLibraries.push([moduleName, value[1] as LibraryJson]);
             }
         });
 

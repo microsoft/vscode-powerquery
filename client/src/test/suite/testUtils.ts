@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
@@ -36,8 +37,13 @@ export async function activateExtension(): Promise<void> {
     return ext.activate();
 }
 
-export const getDocPath: (p: string) => string = (p: string): string =>
-    path.resolve(__dirname, "../../../src/test/testFixture", p);
+const testFixurePath: string = "../../../src/test/testFixture";
+
+export function getTestFixturePath(): string {
+    return path.resolve(__dirname, testFixurePath);
+}
+
+export const getDocPath: (p: string) => string = (p: string): string => path.resolve(getTestFixturePath(), p);
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 
@@ -55,3 +61,6 @@ export enum Commands {
     Hover = "vscode.executeHoverProvider",
     SignatureHelp = "vscode.executeSignatureHelpProvider ",
 }
+
+export const randomDirName: (length?: number) => string = (length: number = 8): string =>
+    path.resolve(os.tmpdir(), Math.random().toString(16).substring(2, length));
