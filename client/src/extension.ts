@@ -8,24 +8,28 @@ import * as vscode from "vscode";
 import * as CommandFn from "./commands";
 import * as Subscriptions from "./subscriptions";
 import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
-import { CommandConstant } from "./commandConstant";
+import { CommandConstants } from "./constants";
 
 const commands: vscode.Disposable[] = [];
+const symbolDirectoryWatchers: Map<string, vscode.Disposable> = new Map<string, vscode.Disposable>();
+const registeredSymbolModules: string[] = [];
+
 let client: LC.LanguageClient;
 
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
+    // TODO: Dispose commands through context.subscriptions.
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstants.EscapeJsonText, CommandFn.escapeJsonText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstants.EscapeMText, CommandFn.escapeMText));
 
     commands.push(
-        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstants.UnescapeJsonText, CommandFn.unescapeJsonText),
     );
 
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstants.UnescapeMText, CommandFn.unescapeMText));
 
     commands.push(
-        vscode.commands.registerCommand(CommandConstant.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
+        vscode.commands.registerCommand(CommandConstants.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
     );
 
     // The server is implemented in node
@@ -63,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     // Create the language client and start the client.
     client = new LC.LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
 
-    // Start the client. This will also launch the server
+    // Start the client. This will also launch the server.
     await client.start();
 
     context.subscriptions.push(
@@ -74,15 +78,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
         ),
     );
 
-    return Object.freeze({
-        // TODO: make async/return promise
-        onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson): void => {
-            void client.sendRequest("powerquery/moduleLibraryUpdated", {
-                workspaceUriPath,
-                library,
-            });
-        },
-    });
+    // Read initial configuration and configure listener. This needs to be done after the server is running.
+    await processSymbolDirectories();
+
+    return Object.freeze(symbolApi);
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -91,9 +90,95 @@ export function deactivate(): Thenable<void> | undefined {
         commands.length = 0;
     }
 
-    if (!client) {
-        return undefined;
+    disposeSymbolWatchers();
+
+    return client?.stop();
+}
+
+async function processSymbolDirectories(): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("powerquery.client");
+    const additionalSymbolsDirectories: string[] = config.get("additionalSymbolsDirectories") ?? [];
+
+    // If we have previously registered symbols, clear them now.
+    if (registeredSymbolModules.length > 0) {
+        const existingModules: Map<string, null> = new Map();
+        registeredSymbolModules.map((module: string) => existingModules.set(module, null));
+        await symbolApi.setLibrarySymbols(existingModules);
     }
 
-    return client.stop();
+    const symbolFileActions: Thenable<[string, LibraryJson | undefined]>[] = [];
+
+    additionalSymbolsDirectories.forEach(async (directory: string) => {
+        const path: vscode.Uri = vscode.Uri.file(directory);
+        const stat: vscode.FileStat = await vscode.workspace.fs.stat(path);
+
+        // TODO: report that the path is invalid?
+        if (stat.type !== vscode.FileType.Directory) {
+            return;
+        }
+
+        const files: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(path);
+
+        files.forEach((file: [string, vscode.FileType]) => {
+            const fileName: string = file[0];
+            const fileType: vscode.FileType = file[1];
+
+            if (fileType === vscode.FileType.File && fileName.toLocaleLowerCase().endsWith(".json")) {
+                symbolFileActions.push(processSymbolFile(path, fileName));
+            }
+        });
+
+        const allSymbolFiles: [string, LibraryJson | undefined][] = await Promise.all(symbolFileActions);
+        const validSymbols: Map<string, LibraryJson> = new Map();
+
+        allSymbolFiles.forEach((result: [string, LibraryJson | undefined]) => {
+            if (result[1]) {
+                validSymbols.set(result[0], result[1]);
+            }
+        });
+
+        await symbolApi.setLibrarySymbols(validSymbols);
+
+        // TODO: setup file watcher
+
+        // const pattern = new vscode.RelativePattern(workspaceFolder, "Tests/**/*.query.pq");
+        // const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+    });
 }
+
+function disposeSymbolWatchers(): void {
+    symbolDirectoryWatchers.forEach((item: vscode.Disposable, _: string) => item.dispose());
+    symbolDirectoryWatchers.clear();
+}
+
+async function processSymbolFile(directory: vscode.Uri, file: string): Promise<[string, LibraryJson | undefined]> {
+    const fileUri: vscode.Uri = vscode.Uri.joinPath(directory, file);
+
+    const contents: Uint8Array = await vscode.workspace.fs.readFile(fileUri);
+    const text: string = new TextDecoder("utf-8").decode(contents);
+
+    try {
+        const library: LibraryJson = JSON.parse(text);
+
+        return [file, library];
+    } catch (e) {
+        // TODO: display the error?
+    }
+
+    return [file, undefined];
+}
+
+const symbolApi: PowerQueryApi = {
+    // TODO: Deprecate
+    onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson): void => {
+        void client.sendRequest("powerquery/moduleLibraryUpdated", {
+            workspaceUriPath,
+            library,
+        });
+    },
+    setLibrarySymbols: async (symbols: Map<string, LibraryJson | null>): Promise<void> => {
+        await client.sendRequest("powerquery/setLibrarySymbols", {
+            symbols,
+        });
+    },
+};

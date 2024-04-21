@@ -45,4 +45,5 @@ export interface LibraryFieldJson {
 
 export interface PowerQueryApi {
     readonly onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson) => void;
+    readonly setLibrarySymbols: (symbols: Map<string, LibraryJson | null>) => Promise<void>;
 }

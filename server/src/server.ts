@@ -25,6 +25,10 @@ interface ModuleLibraryUpdatedParams {
     readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 }
 
+interface SetLibrarySymbolsParams {
+    symbols: Map<string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null>;
+}
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
@@ -202,6 +206,12 @@ connection.onInitialize((params: LS.InitializeParams) => {
             triggerCharacters: ["(", ","],
         },
         textDocumentSync: LS.TextDocumentSyncKind.Incremental,
+        workspace: {
+            // TODO: Disabling until we've fully tested support for multiple workspace folders
+            workspaceFolders: {
+                supported: false,
+            },
+        },
     };
 
     SettingsUtils.setHasConfigurationCapability(Boolean(params.capabilities.workspace?.configuration));
@@ -270,7 +280,6 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 });
 
-// TODO: make async
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
     const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
         params.workspaceUriPath,
@@ -279,6 +288,22 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
 
     // need to validate those currently opened documents
     void Promise.all(allTextDocuments.map(debouncedValidateDocument));
+});
+
+connection.onRequest("powerquery/setLibrarySymbols", async (params: SetLibrarySymbolsParams): Promise<void[]> => {
+    const allTextDocuments: TextDocument[] = [];
+
+    params.symbols.forEach((value: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null, key: string) => {
+        connection.console.warn(`Received ${key} with count: ${value?.length}`);
+    });
+
+    // const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
+    //     params.workspaceUriPath,
+    //     params.library,
+    // );
+
+    // need to validate those currently opened documents
+    return Promise.all(allTextDocuments.map(debouncedValidateDocument));
 });
 
 connection.onSignatureHelp(

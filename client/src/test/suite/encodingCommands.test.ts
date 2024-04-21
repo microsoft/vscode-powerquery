@@ -3,7 +3,7 @@
 
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { CommandConstant } from "../../commandConstant";
+import { CommandConstants } from "../../constants";
 import { expect } from "chai";
 
 import * as TestUtils from "./testUtils";
@@ -19,10 +19,10 @@ suite("Encode/Decode Commands", () => {
 
     test("Commands are registered", async () => {
         const commands: string[] = [
-            CommandConstant.EscapeMText,
-            CommandConstant.UnescapeMText,
-            CommandConstant.EscapeJsonText,
-            CommandConstant.UnescapeJsonText,
+            CommandConstants.EscapeMText,
+            CommandConstants.UnescapeMText,
+            CommandConstants.EscapeJsonText,
+            CommandConstants.UnescapeJsonText,
         ];
 
         const pqCommands: string[] = (await vscode.commands.getCommands(/* filterInternal */ true)).filter(
@@ -36,29 +36,29 @@ suite("Encode/Decode Commands", () => {
         const content: string = 'Encode \t\t and \r\n and "quotes" but not this #(tab)';
         const expected: string = 'Encode #(tab)#(tab) and #(cr,lf) and ""quotes"" but not this #(#)(tab)';
 
-        await runEncodeTest(content, expected, CommandConstant.EscapeMText);
+        await runEncodeTest(content, expected, CommandConstants.EscapeMText);
     });
 
     test("M Unescape", async () => {
         const content: string = 'Encode #(tab)#(tab) and #(cr)#(lf) and ""quotes"" but not this #(#)(tab)';
         const expected: string = 'Encode \t\t and \r\n and "quotes" but not this #(tab)';
 
-        await runEncodeTest(content, expected, CommandConstant.UnescapeMText);
+        await runEncodeTest(content, expected, CommandConstants.UnescapeMText);
     });
 
     test("JSON Escape", async () => {
-        await runEncodeTest(mToEncode, jsonToDecode, CommandConstant.EscapeJsonText);
+        await runEncodeTest(mToEncode, jsonToDecode, CommandConstants.EscapeJsonText);
     });
 
     test("JSON Unescape (existing quotes)", async () => {
         const content: string = '"let\\r\\n  #\\"id\\" = \\"m text\\"\\" here\\"\\r\\nin\\r\\n  #\\"id\\""';
         const expected: string = 'let\r\n  #"id" = "m text"" here"\r\nin\r\n  #"id"';
 
-        await runEncodeTest(content, expected, CommandConstant.UnescapeJsonText);
+        await runEncodeTest(content, expected, CommandConstants.UnescapeJsonText);
     });
 
     test("JSON Unescape (no quotes)", async () => {
-        await runEncodeTest(jsonToDecode, mToEncode, CommandConstant.UnescapeJsonText);
+        await runEncodeTest(jsonToDecode, mToEncode, CommandConstants.UnescapeJsonText);
     });
 });
 
