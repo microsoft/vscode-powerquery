@@ -8,6 +8,8 @@ import * as vscode from "vscode";
 import { LibraryJson } from "./vscode-powerquery.api";
 import { LibrarySymbolClient } from "./librarySymbolClient";
 
+const ErrorMessagePrefix: string = "Error processing symbol directory path. Please update your configuration.";
+
 const SymbolFileExtension: string = ".json";
 const SymbolFileEncoding: string = "utf-8";
 
@@ -27,7 +29,18 @@ export class LibrarySymbolManager {
 
         // Fetch the full list of files to process.
         const fileDiscovery: Promise<vscode.Uri[]>[] = [];
-        const directoryUris: vscode.Uri[] = directories.map((d: string) => vscode.Uri.file(d));
+
+        const directoryUris: vscode.Uri[] = directories.map((d: string) => {
+            const normalized: string = path.normalize(d);
+
+            if (d !== normalized) {
+                this.clientTrace?.info(`Normalized symbol file path '${d}' => '${normalized}'`);
+            }
+
+            return vscode.Uri.file(normalized);
+        });
+
+        // TODO: Remove duplicate directories?
 
         directoryUris.forEach((d: vscode.Uri) => {
             fileDiscovery.push(this.getSymbolFilesFromDirectory(d));
@@ -54,7 +67,7 @@ export class LibrarySymbolManager {
             }
         });
 
-        this.clientTrace?.info(`Registering symbol files. Count: ${validSymbolLibraries.length}`);
+        this.clientTrace?.info(`Registering symbol files. Total file count: ${validSymbolLibraries.length}`);
 
         await this.librarySymbolClient
             .setLibrarySymbols(validSymbolLibraries)
@@ -64,21 +77,31 @@ export class LibrarySymbolManager {
                 ),
             );
 
-        // TODO: setup file watcher
-        // const pattern = new vscode.RelativePattern(workspaceFolder, "Tests/**/*.query.pq");
-        // const watcher = vscode.workspace.createFileSystemWatcher(pattern);
-
         return this.registeredSymbolModules;
     }
 
     public async getSymbolFilesFromDirectory(directory: vscode.Uri): Promise<vscode.Uri[]> {
-        const stat: vscode.FileStat = await vscode.workspace.fs.stat(directory);
+        let isDirectoryValid: boolean = false;
 
-        if (stat.type !== vscode.FileType.Directory) {
-            this.clientTrace?.warn(
-                `Symbol path does not exist or is invalid '${directory.toString()}'. FileType: ${stat.type}`,
+        try {
+            const stat: vscode.FileStat = await vscode.workspace.fs.stat(directory);
+
+            if (stat.type !== vscode.FileType.Directory) {
+                this.clientTrace?.error(
+                    `${ErrorMessagePrefix} '${directory.toString()}' is not a directory.`,
+                    JSON.stringify(stat),
+                );
+            } else {
+                isDirectoryValid = true;
+            }
+        } catch (error) {
+            this.clientTrace?.error(
+                `${ErrorMessagePrefix} Exception while processing '${directory.toString()}'.`,
+                error,
             );
+        }
 
+        if (!isDirectoryValid) {
             return [];
         }
 
@@ -109,7 +132,8 @@ export class LibrarySymbolManager {
             return [fileUri, library];
         } catch (error) {
             this.clientTrace?.error(
-                `Error processing ${fileUri.toString()} as symbol library. Error: ${JSON.stringify(error)}`,
+                `${ErrorMessagePrefix} Error processing '${fileUri.toString()}' as symbol library.`,
+                error,
             );
         }
 

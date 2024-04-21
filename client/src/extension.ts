@@ -115,6 +115,10 @@ async function configureSymbolDirectories(): Promise<void> {
         ConfigurationConstants.AdditionalSymbolsDirectories,
     );
 
+    // TODO: Should we fix/remove invalid and malformed directory path values?
+    // For example, a quoted path "c:\path\to\file" will be considered invalid and reported as an error.
+    // We could modify values and write them back to the original config locations.
+
     await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories);
 
     // TODO: Configure file system watchers

@@ -142,7 +142,10 @@
                     "items": {
                         "type": "string"
                     },
-                    "markdownDescription": "One or more file system paths to directories containing M language symbols in json format."
+                    "examples": [
+                        "c:\\PowerQuerySymbols\\"
+                    ],
+                    "markdownDescription": "One or more absolute file system paths to directories containing M language symbols in json format."
                 },
                 "powerquery.diagnostics.isWorkspaceCacheAllowed": {
                     "scope": "window",
