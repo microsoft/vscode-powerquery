@@ -6,17 +6,19 @@ import * as vscode from "vscode";
 
 import { LibraryJson } from "./vscode-powerquery.api";
 import { LibrarySymbolClient } from "./librarySymbolClient";
-import { registeredSymbolModules } from "./extension";
 
 // We want to group all symbol modules into a single request to avoid multiple rounds of processing.
-export async function processSymbolDirectories(librarySymbolClient: LibrarySymbolClient): Promise<void> {
+export async function processSymbolDirectories(
+    librarySymbolClient: LibrarySymbolClient,
+    currentSymbolModules: string[] = [],
+): Promise<string[]> {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("powerquery.client");
     const additionalSymbolsDirectories: string[] = config.get("additionalSymbolsDirectories") ?? [];
 
     // If we have previously registered symbols, clear them now.
-    if (registeredSymbolModules.length > 0) {
-        const existingModules: [string, null][] = registeredSymbolModules.map((module: string) => [module, null]);
-        await librarySymbolClient.setLibrarySymbols(existingModules).then(() => (registeredSymbolModules.length = 0));
+    if (currentSymbolModules.length > 0) {
+        const existingModules: [string, null][] = currentSymbolModules.map((module: string) => [module, null]);
+        await librarySymbolClient.setLibrarySymbols(existingModules);
     }
 
     // Fetch the full list of files to process.
@@ -49,6 +51,8 @@ export async function processSymbolDirectories(librarySymbolClient: LibrarySymbo
 
     // Register the symbols and track the module file names locally so the
     // file system watcher handlers can do the right thing.
+    const registeredSymbolModules: string[] = [];
+
     await librarySymbolClient
         .setLibrarySymbols(validSymbolLibraries)
         .then(() =>
@@ -58,6 +62,8 @@ export async function processSymbolDirectories(librarySymbolClient: LibrarySymbo
     // TODO: setup file watcher
     // const pattern = new vscode.RelativePattern(workspaceFolder, "Tests/**/*.query.pq");
     // const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+
+    return registeredSymbolModules;
 }
 
 export async function processSymbolDirectory(directory: string): Promise<vscode.Uri[]> {

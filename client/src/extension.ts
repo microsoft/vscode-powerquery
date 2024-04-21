@@ -14,10 +14,10 @@ import { processSymbolDirectories } from "./symbolUtils";
 
 const commands: vscode.Disposable[] = [];
 const symbolDirectoryWatchers: Map<string, vscode.Disposable> = new Map<string, vscode.Disposable>();
-export const registeredSymbolModules: string[] = [];
 
 let client: LC.LanguageClient;
 let librarySymbolClient: LibrarySymbolClient;
+// let registeredSymbolModules: string[] = [];
 
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
