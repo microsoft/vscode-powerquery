@@ -11,9 +11,9 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import * as ErrorUtils from "./errorUtils";
 import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
+import { getLocalizedModuleLibraryFromTextDocument } from "./settings/settingsUtils";
 import { ModuleLibraries } from "./library";
-import { SettingsUtils } from "./settings.ts";
+import { SettingsUtils } from "./settings";
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;

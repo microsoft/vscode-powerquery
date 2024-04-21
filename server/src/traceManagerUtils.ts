@@ -7,7 +7,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { NoOpTraceManagerInstance } from "@microsoft/powerquery-parser/lib/powerquery-parser/common/trace";
 import { Position } from "vscode-languageserver-textdocument";
 
-import { SettingsUtils } from "./settings.ts";
+import { SettingsUtils } from "./settings";
 
 export function createTraceManager(
     uri: string | undefined,
