@@ -5,8 +5,8 @@ import * as LC from "vscode-languageclient/node";
 import * as path from "path";
 import * as vscode from "vscode";
 
-import { LibraryJson } from "./vscode-powerquery.api";
-import { LibrarySymbolClient } from "./librarySymbolClient";
+import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
+import { Convert } from "./libraryExportJSON";
 
 const ErrorMessagePrefix: string = "Error processing symbol directory path. Please update your configuration.";
 
@@ -14,11 +14,19 @@ const SymbolFileExtension: string = ".json";
 const SymbolFileEncoding: string = "utf-8";
 
 export type MinimalClientTrace = Pick<LC.BaseLanguageClient, "debug" | "info" | "warn" | "error">;
+export type MinimalFileSystem = Pick<vscode.FileSystem, "readDirectory" | "readFile" | "stat">;
 
 export class LibrarySymbolManager {
     private readonly registeredSymbolModules: string[] = [];
+    private readonly fs: vscode.FileSystem;
 
-    constructor(private librarySymbolClient: LibrarySymbolClient, private clientTrace?: MinimalClientTrace) {}
+    constructor(
+        private librarySymbolClient: PowerQueryApi,
+        private clientTrace?: MinimalClientTrace,
+        fs?: vscode.FileSystem,
+    ) {
+        this.fs = fs ?? vscode.workspace.fs;
+    }
 
     public async refreshSymbolDirectories(directories?: string[]): Promise<readonly string[]> {
         await this.clearAllRegisteredSymbolModules();
@@ -84,7 +92,7 @@ export class LibrarySymbolManager {
         let isDirectoryValid: boolean = false;
 
         try {
-            const stat: vscode.FileStat = await vscode.workspace.fs.stat(directory);
+            const stat: vscode.FileStat = await this.fs.stat(directory);
 
             if (stat.type !== vscode.FileType.Directory) {
                 this.clientTrace?.error(
@@ -105,7 +113,7 @@ export class LibrarySymbolManager {
             return [];
         }
 
-        const files: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(directory);
+        const files: [string, vscode.FileType][] = await this.fs.readDirectory(directory);
 
         // We only want .json files.
         return files
@@ -123,9 +131,9 @@ export class LibrarySymbolManager {
 
     public async processSymbolFile(fileUri: vscode.Uri): Promise<[vscode.Uri, LibraryJson | undefined]> {
         try {
-            const contents: Uint8Array = await vscode.workspace.fs.readFile(fileUri);
+            const contents: Uint8Array = await this.fs.readFile(fileUri);
             const text: string = new TextDecoder(SymbolFileEncoding).decode(contents);
-            const library: LibraryJson = JSON.parse(text);
+            const library: LibraryJson = Convert.toLibraryExportJSON(text);
 
             this.clientTrace?.debug(`Loaded symbol file '${fileUri.toString()}'. Symbol count: ${library.length}`);
 
