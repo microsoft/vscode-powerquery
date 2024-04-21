@@ -69,11 +69,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 
     // Create the language client and start the client.
     client = new LC.LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
+    librarySymbolClient = new LibrarySymbolClient(client);
 
     // Start the client. This will also launch the server.
-    await client.start();
-
-    librarySymbolClient = new LibrarySymbolClient(client);
+    await client.start().then(async () => {
+        // Read initial configuration and configure listener.
+        // This should be done after the server is running.
+        await processSymbolDirectories(librarySymbolClient);
+    });
 
     // TODO: Move this to the LSP based API.
     context.subscriptions.push(
@@ -83,9 +86,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
             Subscriptions.SemanticTokensLegend,
         ),
     );
-
-    // Read initial configuration and configure listener. This needs to be done after the server is running.
-    await processSymbolDirectories(librarySymbolClient);
 
     return Object.freeze(librarySymbolClient);
 }
@@ -98,7 +98,7 @@ export function deactivate(): Thenable<void> | undefined {
 
     disposeSymbolWatchers();
 
-    return client?.stop();
+    return client.stop();
 }
 
 function disposeSymbolWatchers(): void {
