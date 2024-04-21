@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as LC from "vscode-languageclient/node";
+import * as vscode from "vscode";
 
 import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
 
@@ -22,12 +23,18 @@ export class LibrarySymbolClient implements PowerQueryApi {
         }
     }
 
-    // TODO: Add cancellation token.
-    public async setLibrarySymbols(librarySymbols: [string, LibraryJson | null][]): Promise<void> {
+    public async setLibrarySymbols(
+        librarySymbols: [string, LibraryJson | null][],
+        token?: vscode.CancellationToken,
+    ): Promise<void> {
         if (this.lsClient?.isRunning()) {
-            await this.lsClient.sendRequest("powerquery/setLibrarySymbols", {
-                librarySymbols,
-            });
+            await this.lsClient.sendRequest(
+                "powerquery/setLibrarySymbols",
+                {
+                    librarySymbols,
+                },
+                token,
+            );
         }
     }
 }

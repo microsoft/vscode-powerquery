@@ -45,6 +45,7 @@ export interface LibraryFieldJson {
 }
 
 // TODO: Rename and deprecate old API once the PQ SDK has been updated.
+// TODO: Expose cancellation tokens in this api.
 export interface PowerQueryApi {
     readonly onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson) => void;
     readonly setLibrarySymbols: (librarySymbols: [string, LibraryJson | null][]) => Promise<void>;
