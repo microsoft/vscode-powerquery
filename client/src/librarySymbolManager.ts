@@ -8,6 +8,9 @@ import * as vscode from "vscode";
 import { LibraryJson } from "./vscode-powerquery.api";
 import { LibrarySymbolClient } from "./librarySymbolClient";
 
+const SymbolFileExtension: string = ".json";
+const SymbolFileEncoding: string = "utf-8";
+
 export type MinimalClientTrace = Pick<LC.BaseLanguageClient, "debug" | "info" | "warn" | "error">;
 
 export class LibrarySymbolManager {
@@ -86,7 +89,7 @@ export class LibrarySymbolManager {
             .map((value: [string, vscode.FileType]): vscode.Uri | undefined => {
                 const fileName: string = value[0];
 
-                if (value[1] === vscode.FileType.File && fileName.toLocaleLowerCase().endsWith(".json")) {
+                if (value[1] === vscode.FileType.File && fileName.toLocaleLowerCase().endsWith(SymbolFileExtension)) {
                     return vscode.Uri.joinPath(directory, fileName);
                 }
 
@@ -98,7 +101,7 @@ export class LibrarySymbolManager {
     public async processSymbolFile(fileUri: vscode.Uri): Promise<[vscode.Uri, LibraryJson | undefined]> {
         try {
             const contents: Uint8Array = await vscode.workspace.fs.readFile(fileUri);
-            const text: string = new TextDecoder("utf-8").decode(contents);
+            const text: string = new TextDecoder(SymbolFileEncoding).decode(contents);
             const library: LibraryJson = JSON.parse(text);
 
             this.clientTrace?.debug(`Loaded symbol file '${fileUri.toString()}'. Symbol count: ${library.length}`);
@@ -114,7 +117,7 @@ export class LibrarySymbolManager {
     }
 
     private static getModuleNameFromFileUri(fileUri: vscode.Uri): string {
-        return path.basename(fileUri.fsPath, "json");
+        return path.basename(fileUri.fsPath, SymbolFileExtension);
     }
 
     private async clearAllRegisteredSymbolModules(): Promise<void> {
