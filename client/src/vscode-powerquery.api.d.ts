@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// TODO: This file should be automatically generated.
 // TODO: Consolidate declarations between this file and librarySymbol.d.ts.
 
 // The JSON output of a localized standard library.
@@ -45,5 +46,5 @@ export interface LibraryFieldJson {
 
 export interface PowerQueryApi {
     readonly onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson) => void;
-    readonly setLibrarySymbols: (symbols: Map<string, LibraryJson | null>) => Promise<void>;
+    readonly setLibrarySymbols: (librarySymbols: [string, LibraryJson | null][]) => Promise<void>;
 }

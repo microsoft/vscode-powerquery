@@ -95,55 +95,58 @@ export function deactivate(): Thenable<void> | undefined {
     return client?.stop();
 }
 
+// We want to group all symbol modules into a single request to avoid multiple rounds of processing.
 async function processSymbolDirectories(): Promise<void> {
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("powerquery.client");
     const additionalSymbolsDirectories: string[] = config.get("additionalSymbolsDirectories") ?? [];
 
     // If we have previously registered symbols, clear them now.
     if (registeredSymbolModules.length > 0) {
-        const existingModules: Map<string, null> = new Map();
-        registeredSymbolModules.map((module: string) => existingModules.set(module, null));
-        await symbolApi.setLibrarySymbols(existingModules);
+        const existingModules: [string, null][] = registeredSymbolModules.map((module: string) => [module, null]);
+        await symbolApi.setLibrarySymbols(existingModules).then(() => (registeredSymbolModules.length = 0));
     }
 
-    const symbolFileActions: Thenable<[string, LibraryJson | undefined]>[] = [];
+    // Fetch the full list of files to process.
+    const fileDiscovery: Thenable<vscode.Uri[]>[] = [];
 
-    additionalSymbolsDirectories.forEach(async (directory: string) => {
-        const path: vscode.Uri = vscode.Uri.file(directory);
-        const stat: vscode.FileStat = await vscode.workspace.fs.stat(path);
-
-        // TODO: report that the path is invalid?
-        if (stat.type !== vscode.FileType.Directory) {
-            return;
-        }
-
-        const files: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(path);
-
-        files.forEach((file: [string, vscode.FileType]) => {
-            const fileName: string = file[0];
-            const fileType: vscode.FileType = file[1];
-
-            if (fileType === vscode.FileType.File && fileName.toLocaleLowerCase().endsWith(".json")) {
-                symbolFileActions.push(processSymbolFile(path, fileName));
-            }
-        });
-
-        const allSymbolFiles: [string, LibraryJson | undefined][] = await Promise.all(symbolFileActions);
-        const validSymbols: Map<string, LibraryJson> = new Map();
-
-        allSymbolFiles.forEach((result: [string, LibraryJson | undefined]) => {
-            if (result[1]) {
-                validSymbols.set(result[0], result[1]);
-            }
-        });
-
-        await symbolApi.setLibrarySymbols(validSymbols);
-
-        // TODO: setup file watcher
-
-        // const pattern = new vscode.RelativePattern(workspaceFolder, "Tests/**/*.query.pq");
-        // const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+    additionalSymbolsDirectories.forEach((directory: string) => {
+        fileDiscovery.push(processSymbolDirectory(directory));
     });
+
+    // TODO: check for duplicate module file names and only take the last one.
+    // This would allow a connector developer to override a symbol library generated
+    // with an older version of their connector.
+
+    const symbolFileActions: Thenable<[vscode.Uri, LibraryJson | undefined]>[] = [];
+    const files: vscode.Uri[] = (await Promise.all(fileDiscovery)).flat();
+
+    files.forEach((fileUri: vscode.Uri) => {
+        symbolFileActions.push(processSymbolFile(fileUri));
+    });
+
+    // Process all symbol files, filtering out any that failed to load.
+    const allSymbolFiles: [vscode.Uri, LibraryJson | undefined][] = await Promise.all(symbolFileActions);
+    const validSymbolLibraries: [string, LibraryJson][] = [];
+
+    allSymbolFiles.forEach((value: [vscode.Uri, LibraryJson | undefined]) => {
+        if (value[1] !== undefined) {
+            const fileName: string = path.basename(value[0].fsPath);
+            validSymbolLibraries.push([fileName, value[1] as LibraryJson]);
+        }
+    });
+
+    // Register the symbols and track the module file names locally so the
+    // file system watcher handlers can do the right thing.
+    await symbolApi
+        .setLibrarySymbols(validSymbolLibraries)
+        .then(() =>
+            validSymbolLibraries.forEach((value: [string, LibraryJson]) => registeredSymbolModules.push(value[0])),
+        );
+
+    // TODO: setup file watcher
+
+    // const pattern = new vscode.RelativePattern(workspaceFolder, "Tests/**/*.query.pq");
+    // const watcher = vscode.workspace.createFileSystemWatcher(pattern);
 }
 
 function disposeSymbolWatchers(): void {
@@ -151,21 +154,46 @@ function disposeSymbolWatchers(): void {
     symbolDirectoryWatchers.clear();
 }
 
-async function processSymbolFile(directory: vscode.Uri, file: string): Promise<[string, LibraryJson | undefined]> {
-    const fileUri: vscode.Uri = vscode.Uri.joinPath(directory, file);
+async function processSymbolDirectory(directory: string): Promise<vscode.Uri[]> {
+    const path: vscode.Uri = vscode.Uri.file(directory);
+    const stat: vscode.FileStat = await vscode.workspace.fs.stat(path);
 
-    const contents: Uint8Array = await vscode.workspace.fs.readFile(fileUri);
-    const text: string = new TextDecoder("utf-8").decode(contents);
-
-    try {
-        const library: LibraryJson = JSON.parse(text);
-
-        return [file, library];
-    } catch (e) {
-        // TODO: display the error?
+    // TODO: report that the path is invalid?
+    if (stat.type !== vscode.FileType.Directory) {
+        return [];
     }
 
-    return [file, undefined];
+    const files: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(path);
+
+    // We only want .json files.
+    return files
+        .map((value: [string, vscode.FileType]): vscode.Uri | undefined => {
+            const fileName: string = value[0];
+
+            if (value[1] === vscode.FileType.File && fileName.toLocaleLowerCase().endsWith(".json")) {
+                return vscode.Uri.joinPath(path, fileName);
+            }
+
+            return undefined;
+        })
+        .filter((value: vscode.Uri | undefined) => value !== undefined) as vscode.Uri[];
+}
+
+async function processSymbolFile(fileUri: vscode.Uri): Promise<[vscode.Uri, LibraryJson | undefined]> {
+    try {
+        const contents: Uint8Array = await vscode.workspace.fs.readFile(fileUri);
+        const text: string = new TextDecoder("utf-8").decode(contents);
+        const library: LibraryJson = JSON.parse(text);
+
+        return [fileUri, library];
+    } catch (e) {
+        // TODO: standardize error handling
+        void (await vscode.window.showErrorMessage(
+            `Error processing ${fileUri.toString()} as symbol library. Error: ${JSON.stringify(e)}`,
+        ));
+    }
+
+    return [fileUri, undefined];
 }
 
 const symbolApi: PowerQueryApi = {
@@ -176,9 +204,9 @@ const symbolApi: PowerQueryApi = {
             library,
         });
     },
-    setLibrarySymbols: async (symbols: Map<string, LibraryJson | null>): Promise<void> => {
+    setLibrarySymbols: async (librarySymbols: [string, LibraryJson | null][]): Promise<void> => {
         await client.sendRequest("powerquery/setLibrarySymbols", {
-            symbols,
+            librarySymbols,
         });
     },
 };

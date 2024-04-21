@@ -26,7 +26,7 @@ interface ModuleLibraryUpdatedParams {
 }
 
 interface SetLibrarySymbolsParams {
-    symbols: Map<string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null>;
+    librarySymbols: [string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null][];
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -290,11 +290,11 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
     void Promise.all(allTextDocuments.map(debouncedValidateDocument));
 });
 
-connection.onRequest("powerquery/setLibrarySymbols", async (params: SetLibrarySymbolsParams): Promise<void[]> => {
+connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): Promise<void[]> => {
     const allTextDocuments: TextDocument[] = [];
 
-    params.symbols.forEach((value: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null, key: string) => {
-        connection.console.warn(`Received ${key} with count: ${value?.length}`);
+    params.librarySymbols.forEach((value: [string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null]) => {
+        connection.console.warn(`Received ${value[0]} with count: ${value[1]?.length}`);
     });
 
     // const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
