@@ -9,13 +9,17 @@ import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
 import { createLibraryTypeResolver, LibraryDefinitionsGetter } from "./libraryTypeResolver";
 import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 
-export function getOrCreateStandardLibrary(locale?: string): Library.ILibrary {
+export function getOrCreateStandardLibrary(
+    locale?: string,
+    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
+): Library.ILibrary {
     return getOrCreateLibrary(
         standardLibraryByLocale,
         standardLibraryDefinitionsByLocale,
         standardLibrarySymbolByLocale,
         locale ?? PQP.DefaultLocale,
         StandardLibrarySymbolsEnUs,
+        otherLibraryDefinitionsGetters,
     );
 }
 

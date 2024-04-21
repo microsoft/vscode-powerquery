@@ -11,6 +11,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import * as ErrorUtils from "./errorUtils";
 import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
+import { ExternalSymbolLibraries, IncomingExternalSymbolLibrary } from "./library/externalSymbolLibraries";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings/settingsUtils";
 import { ModuleLibraries } from "./library";
 import { SettingsUtils } from "./settings";
@@ -26,7 +27,7 @@ interface ModuleLibraryUpdatedParams {
 }
 
 interface SetLibrarySymbolsParams {
-    librarySymbols: [string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null][];
+    librarySymbols: [string, IncomingExternalSymbolLibrary][];
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -34,6 +35,7 @@ interface SetLibrarySymbolsParams {
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 const moduleLibraries: ModuleLibraries = new ModuleLibraries();
+const externalSymbolLibraries: ExternalSymbolLibraries = new ExternalSymbolLibraries();
 
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
@@ -290,20 +292,12 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
     void Promise.all(allTextDocuments.map(debouncedValidateDocument));
 });
 
+// TODO: Do we need to pass through a cancellation token?
 connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): Promise<void[]> => {
-    const allTextDocuments: TextDocument[] = [];
+    externalSymbolLibraries.setRange(params.librarySymbols);
 
-    params.librarySymbols.forEach((value: [string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> | null]) => {
-        connection.console.warn(`Received ${value[0]} with count: ${value[1]?.length}`);
-    });
-
-    // const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
-    //     params.workspaceUriPath,
-    //     params.library,
-    // );
-
-    // need to validate those currently opened documents
-    return Promise.all(allTextDocuments.map(debouncedValidateDocument));
+    // validate open documents
+    return Promise.all(documents.all().map(debouncedValidateDocument));
 });
 
 connection.onSignatureHelp(
@@ -396,6 +390,7 @@ connection.listen();
 function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceManager): PQLS.Analysis {
     const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
+        externalSymbolLibraries,
         document,
     );
 
@@ -448,6 +443,7 @@ async function validateDocument(document: TextDocument): Promise<void> {
 
     const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
+        externalSymbolLibraries,
         document,
         true,
     );

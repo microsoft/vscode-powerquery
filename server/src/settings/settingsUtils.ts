@@ -9,6 +9,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { DefaultServerSettings, ServerSettings } from "./settings";
 import { LibraryUtils, ModuleLibraries } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
+import { ExternalSymbolLibraries } from "../library/externalSymbolLibraries";
 import { LibraryDefinitionsGetter } from "../library/libraryTypeResolver";
 import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
@@ -98,10 +99,13 @@ export function getServerSettings(): ServerSettings {
 
 export function getLocalizedModuleLibraryFromTextDocument(
     moduleLibraries: ModuleLibraries,
+    externalLibraries: ExternalSymbolLibraries,
     document: TextDocument,
     updateCache: boolean = false,
 ): PQLS.Library.ILibrary {
     const externalLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [];
+
+    externalLibraryDefinitionsGetters.push(...externalLibraries.getLibaryDefinitionGetters());
 
     // add the document into module library container, and we need to trace for its validation
     const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode =
@@ -129,12 +133,13 @@ export function getLocalizedModuleLibraryFromTextDocument(
 export function getLocalizedLibrary(
     otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
 ): PQLS.Library.ILibrary {
+    // TODO: Do we still need separate calls here, or can we just grab the right base library?
     switch (serverSettings.mode) {
         case "SDK":
             return LibraryUtils.getOrCreateSdkLibrary(serverSettings.locale, otherLibraryDefinitionsGetters);
 
         case "Power Query":
-            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale, otherLibraryDefinitionsGetters);
 
         default:
             throw PQP.Assert.isNever(serverSettings.mode);

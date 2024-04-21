@@ -12,23 +12,15 @@ export interface ModuleLibraryTrieNodeCache {
     localizedLibrary?: PQLS.Library.ILibrary;
 }
 
-export class ModuleLibraryTreeNode {
-    static defaultRoot: ModuleLibraryTreeNode = new ModuleLibraryTreeNode();
-
+export class ModuleLibrary {
     private _librarySymbols?: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
     private _libraryDefinitions: ReadonlyMap<string, PQLS.Library.TLibraryDefinition> = new Map();
-    public textDocument?: TextDocument;
-    public readonly cache: ModuleLibraryTrieNodeCache = {};
 
-    get isRoot(): boolean {
-        return !this.parent;
-    }
-
-    get libraryJson(): ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined {
+    public get libraryJson(): ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined {
         return this._librarySymbols;
     }
 
-    set libraryJson(val: ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined) {
+    public set libraryJson(val: ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined) {
         this._librarySymbols = val;
         this._libraryDefinitions = new Map();
 
@@ -60,6 +52,7 @@ export class ModuleLibraryTreeNode {
                     .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
                     .join(", ");
 
+                // TODO: better way to report errors
                 console.warn(
                     `$libraryJson.setter failed to create library definitions for the following symbolNames: ${csvSymbolNames}`,
                 );
@@ -67,15 +60,33 @@ export class ModuleLibraryTreeNode {
         }
     }
 
-    get libraryDefinitions(): PQLS.Library.LibraryDefinitions {
+    public get libraryDefinitions(): PQLS.Library.LibraryDefinitions {
         return this._libraryDefinitions;
     }
 
     public libraryDefinitionsGetter: LibraryDefinitionsGetter = () => this.libraryDefinitions;
 
+    public reset(): void {
+        this._libraryDefinitions = new Map();
+        this._librarySymbols = [];
+    }
+}
+
+export class ModuleLibraryTreeNode extends ModuleLibrary {
+    static defaultRoot: ModuleLibraryTreeNode = new ModuleLibraryTreeNode();
+
+    public textDocument?: TextDocument;
+    public readonly cache: ModuleLibraryTrieNodeCache = {};
+
+    get isRoot(): boolean {
+        return !this.parent;
+    }
+
     public readonly children: Map<string, ModuleLibraryTreeNode> = new Map();
 
-    constructor(private readonly parent?: ModuleLibraryTreeNode, private readonly currentPath: string = "") {}
+    constructor(private readonly parent?: ModuleLibraryTreeNode, private readonly currentPath: string = "") {
+        super();
+    }
 
     insert(
         paths: string[],
@@ -111,8 +122,7 @@ export class ModuleLibraryTreeNode {
             this.parent.children.delete(this.currentPath);
         }
 
-        this._libraryDefinitions = new Map();
-        this._librarySymbols = [];
+        this.reset();
     }
 
     collectTextDocumentBeneath(visitorContext: { textDocuments: TextDocument[] }): void {
