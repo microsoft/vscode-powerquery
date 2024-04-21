@@ -7,17 +7,17 @@ import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
 import * as Subscriptions from "./subscriptions";
-import { CommandConstants } from "./constants";
+import { CommandConstants, ConfigurationConstants } from "./constants";
 import { LibrarySymbolClient } from "./librarySymbolClient";
+import { LibrarySymbolManager } from "./librarySymbolManager";
 import { PowerQueryApi } from "./vscode-powerquery.api";
-import { processSymbolDirectories } from "./symbolUtils";
 
 const commands: vscode.Disposable[] = [];
 const symbolDirectoryWatchers: Map<string, vscode.Disposable> = new Map<string, vscode.Disposable>();
 
 let client: LC.LanguageClient;
 let librarySymbolClient: LibrarySymbolClient;
-// let registeredSymbolModules: string[] = [];
+let librarySymbolManager: LibrarySymbolManager;
 
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
@@ -69,14 +69,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 
     // Create the language client and start the client.
     client = new LC.LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
-    librarySymbolClient = new LibrarySymbolClient(client);
 
     // Start the client. This will also launch the server.
-    await client.start().then(async () => {
-        // Read initial configuration and configure listener.
-        // This should be done after the server is running.
-        await processSymbolDirectories(librarySymbolClient);
-    });
+    await client.start();
 
     // TODO: Move this to the LSP based API.
     context.subscriptions.push(
@@ -86,6 +81,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
             Subscriptions.SemanticTokensLegend,
         ),
     );
+
+    librarySymbolClient = new LibrarySymbolClient(client);
+    librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);
+
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstants.BasePath);
+
+    const additionalSymbolsDirectories: string[] | undefined = config.get(
+        ConfigurationConstants.AdditionalSymbolsDirectories,
+    );
+
+    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories);
 
     return Object.freeze(librarySymbolClient);
 }
