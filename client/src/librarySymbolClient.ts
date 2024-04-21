@@ -7,7 +7,10 @@ import * as vscode from "vscode";
 import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
 
 // Minimal implementation to faciliate unit testing
-export type MinimalPowerQueryLanguageServiceClient = Pick<LC.LanguageClient, "sendRequest" | "isRunning">;
+export type MinimalPowerQueryLanguageServiceClient = Pick<
+    LC.BaseLanguageClient,
+    "sendRequest" | "isRunning" | "info" | "error"
+>;
 
 // We might need to rename/refactor this in the future if the exported API has functions unrelated to symbols.
 export class LibrarySymbolClient implements PowerQueryApi {
@@ -15,11 +18,15 @@ export class LibrarySymbolClient implements PowerQueryApi {
 
     // TODO: Deprecate
     public onModuleLibraryUpdated(workspaceUriPath: string, library: LibraryJson): void {
-        if (this.lsClient?.isRunning()) {
+        if (this.lsClient.isRunning()) {
+            this.lsClient.info("Calling powerquery/moduleLibraryUpdated");
+
             void this.lsClient.sendRequest("powerquery/moduleLibraryUpdated", {
                 workspaceUriPath,
                 library,
             });
+        } else {
+            this.lsClient.error("Received moduleLibraryUpdated call but client is not running.", undefined, false);
         }
     }
 
@@ -27,7 +34,9 @@ export class LibrarySymbolClient implements PowerQueryApi {
         librarySymbols: [string, LibraryJson | null][],
         token?: vscode.CancellationToken,
     ): Promise<void> {
-        if (this.lsClient?.isRunning()) {
+        if (this.lsClient.isRunning()) {
+            this.lsClient.info("Calling powerquery/moduleLibraryUpdated");
+
             await this.lsClient.sendRequest(
                 "powerquery/setLibrarySymbols",
                 {
@@ -35,6 +44,8 @@ export class LibrarySymbolClient implements PowerQueryApi {
                 },
                 token,
             );
+        } else {
+            this.lsClient.error("Received setLibrarySymbols call but client is not running.", undefined, false);
         }
     }
 }
