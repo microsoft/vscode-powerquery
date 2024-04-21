@@ -127,15 +127,15 @@ export class LibrarySymbolManager {
         );
     }
 
-    private async clearOneSymbolModule(module: string): Promise<void> {
-        await this.clearSymbolModules([...module]).then(() => {
-            const index: number | undefined = this.registeredSymbolModules.indexOf(module);
+    // private async clearOneSymbolModule(module: string): Promise<void> {
+    //     await this.clearSymbolModules([...module]).then(() => {
+    //         const index: number | undefined = this.registeredSymbolModules.indexOf(module);
 
-            if (index) {
-                this.registeredSymbolModules.splice(index, 1);
-            }
-        });
-    }
+    //         if (index) {
+    //             this.registeredSymbolModules.splice(index, 1);
+    //         }
+    //     });
+    // }
 
     private clearSymbolModules(modules: string[]): Promise<void> {
         const modulesToClear: [string, null][] = modules.map((module: string) => [module, null]);

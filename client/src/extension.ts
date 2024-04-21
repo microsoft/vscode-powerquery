@@ -56,14 +56,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     const clientOptions: LC.LanguageClientOptions = {
         // Register the server for plain text documents
         documentSelector: [
-            {
-                scheme: "file",
-                language: "powerquery",
-            },
-            {
-                scheme: "untitled",
-                language: "powerquery",
-            },
+            { scheme: "file", language: "powerquery" },
+            { scheme: "untitled", language: "powerquery" },
         ],
     };
 
@@ -85,13 +79,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     librarySymbolClient = new LibrarySymbolClient(client);
     librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);
 
-    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstants.BasePath);
+    await configureSymbolDirectories();
 
-    const additionalSymbolsDirectories: string[] | undefined = config.get(
-        ConfigurationConstants.AdditionalSymbolsDirectories,
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(async (event: vscode.ConfigurationChangeEvent) => {
+            const symbolDirs: string = ConfigurationConstants.BasePath.concat(
+                ".",
+                ConfigurationConstants.AdditionalSymbolsDirectories,
+            );
+
+            if (event.affectsConfiguration(symbolDirs)) {
+                await configureSymbolDirectories();
+            }
+        }),
     );
-
-    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories);
 
     return Object.freeze(librarySymbolClient);
 }
@@ -105,6 +106,18 @@ export function deactivate(): Thenable<void> | undefined {
     disposeSymbolWatchers();
 
     return client.stop();
+}
+
+async function configureSymbolDirectories(): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstants.BasePath);
+
+    const additionalSymbolsDirectories: string[] | undefined = config.get(
+        ConfigurationConstants.AdditionalSymbolsDirectories,
+    );
+
+    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories);
+
+    // TODO: Configure file system watchers
 }
 
 function disposeSymbolWatchers(): void {
