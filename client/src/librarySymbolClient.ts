@@ -35,7 +35,7 @@ export class LibrarySymbolClient implements PowerQueryApi {
         token?: vscode.CancellationToken,
     ): Promise<void> {
         if (this.lsClient.isRunning()) {
-            this.lsClient.info("Calling powerquery/moduleLibraryUpdated");
+            this.lsClient.info("Calling powerquery/setLibrarySymbols");
 
             await this.lsClient.sendRequest(
                 "powerquery/setLibrarySymbols",
