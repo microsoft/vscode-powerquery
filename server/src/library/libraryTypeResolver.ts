@@ -4,61 +4,71 @@
 // Contains smart type resolvers for library functions,
 // such as Table.AddColumn(...) returning a DefinedTable.
 
-import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
+import { ExternalType, Library } from "@microsoft/powerquery-language-services";
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
-import { ExternalType } from "@microsoft/powerquery-language-services";
-
-export type LibraryDefinitionsGetter = () => PQLS.Library.LibraryDefinitions;
 
 // Takes the definitions for a library and returns a type resolver.
-export function createLibraryTypeResolver(
-    libraryDefinitions: PQLS.Library.LibraryDefinitions,
-    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
+export function createExternalTypeResolver(
+    staticLibraryDefinitions: Library.ILibrary,
+    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
 ): ExternalType.TExternalTypeResolverFn {
-    return (request: ExternalType.TExternalTypeRequest): Type.TPowerQueryType | undefined => {
-        let maybeLibraryType: Type.TPowerQueryType | undefined = libraryDefinitions.get(
-            request.identifierLiteral,
-        )?.asPowerQueryType;
+    return (request: ExternalType.TExternalTypeRequest): PQP.Language.Type.TPowerQueryType | undefined => {
+        const staticLibraryType: PQP.Language.Type.TPowerQueryType | undefined =
+            staticLibraryDefinitions.externalTypeResolver(request);
 
-        if (!maybeLibraryType) {
-            otherLibraryDefinitionsGetters.some((oneLibraryDefinitionGetter: LibraryDefinitionsGetter) => {
-                const oneLibraryDefinitions: PQLS.Library.LibraryDefinitions = oneLibraryDefinitionGetter();
-                maybeLibraryType = oneLibraryDefinitions.get(request.identifierLiteral)?.asPowerQueryType;
+        // We might have defined a smart type resolver for a built-in library function.
+        if (staticLibraryType) {
+            switch (request.kind) {
+                case ExternalType.ExternalTypeRequestKind.Invocation: {
+                    const key: string = TypeUtils.nameOf(
+                        staticLibraryType,
+                        PQP.Trace.NoOpTraceManagerInstance,
+                        undefined,
+                    );
 
-                return Boolean(maybeLibraryType);
-            });
-        }
+                    const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
 
-        if (maybeLibraryType === undefined) {
-            return undefined;
-        }
-        // It's asking for a value, which we already have.
-        else if (request.kind === ExternalType.ExternalTypeRequestKind.Value) {
-            return maybeLibraryType;
-        } else {
-            const key: string = TypeUtils.nameOf(maybeLibraryType, PQP.Trace.NoOpTraceManagerInstance, undefined);
-            const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
+                    if (maybeSmartTypeResolverFn === undefined) {
+                        return undefined;
+                    }
 
-            if (maybeSmartTypeResolverFn === undefined) {
-                return undefined;
+                    const typeChecked: TypeUtils.CheckedInvocation = TypeUtils.typeCheckInvocation(
+                        request.args,
+                        // If it's an invocation type then it's assumed we
+                        // already confirmed the request is about a DefinedFunction.
+                        TypeUtils.assertAsDefinedFunction(staticLibraryType),
+                        PQP.Trace.NoOpTraceManagerInstance,
+                        undefined,
+                    );
+
+                    if (!isValidInvocation(typeChecked)) {
+                        return undefined;
+                    }
+
+                    return maybeSmartTypeResolverFn(request.args);
+                }
+
+                case ExternalType.ExternalTypeRequestKind.Value:
+                    return staticLibraryType;
+
+                default:
+                    return undefined;
             }
-
-            const typeChecked: TypeUtils.CheckedInvocation = TypeUtils.typeCheckInvocation(
-                request.args,
-                // If it's an invocation type then it's assumed we
-                // already confirmed the request is about a DefinedFunction.
-                TypeUtils.assertAsDefinedFunction(maybeLibraryType),
-                PQP.Trace.NoOpTraceManagerInstance,
-                undefined,
-            );
-
-            if (!isValidInvocation(typeChecked)) {
-                return undefined;
-            }
-
-            return maybeSmartTypeResolverFn(request.args);
         }
+
+        // Else look in the dynamic library definitions for a type.
+        for (const getter of dynamicLibraryDefinitions) {
+            const dynamicLibraryType: PQP.Language.Type.TPowerQueryType | undefined = getter().get(
+                request.identifierLiteral,
+            )?.asPowerQueryType;
+
+            if (dynamicLibraryType) {
+                return dynamicLibraryType;
+            }
+        }
+
+        return undefined;
     };
 }
 

@@ -2,101 +2,126 @@
 // Licensed under the MIT license.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import { Library, LibrarySymbol, LibrarySymbolUtils } from "@microsoft/powerquery-language-services";
+import {
+    Library,
+    LibraryDefinitionUtils,
+    LibrarySymbol,
+    LibrarySymbolUtils,
+} from "@microsoft/powerquery-language-services";
+import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 
 import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
-import { createLibraryTypeResolver, LibraryDefinitionsGetter } from "./libraryTypeResolver";
-import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
+import { createExternalTypeResolver } from "./libraryTypeResolver";
 
 export function getOrCreateStandardLibrary(locale?: string): Library.ILibrary {
     return getOrCreateLibrary(
         standardLibraryByLocale,
-        standardLibraryDefinitionsByLocale,
+        standardStaticLibraryDefinitionsByLocale,
         standardLibrarySymbolByLocale,
         locale ?? PQP.DefaultLocale,
         StandardLibrarySymbolsEnUs,
+        /* dynamicLibraryDefinitions */ [],
     );
 }
 
 export function getOrCreateSdkLibrary(
+    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
     locale?: string,
-    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
 ): Library.ILibrary {
     return getOrCreateLibrary(
         sdkLibraryByLocale,
-        sdkLibraryDefinitionsByLocale,
+        sdkStaticLibraryDefinitionsByLocale,
         sdkLibrarySymbols,
         locale ?? PQP.DefaultLocale,
         SdkLibrarySymbolsEnUs,
-        otherLibraryDefinitionsGetters,
+        dynamicLibraryDefinitions,
     );
 }
 
 function getOrCreateLibrary(
     libraryByLocale: Map<string, Library.ILibrary>,
-    definitionsByLocale: Map<string, Library.LibraryDefinitions>,
+    staticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>>,
     librarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
     locale: string,
     defaultLibrarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
-    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
+    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
 ): Library.ILibrary {
     if (!libraryByLocale.has(locale)) {
-        const libraryDefinitions: Library.LibraryDefinitions = getOrCreateLibraryDefinitions(
-            definitionsByLocale,
-            librarySymbolsByLocale,
-            locale,
-            defaultLibrarySymbols,
-        );
+        const staticLibraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition> =
+            getOrCreateStaticLibraryDefinitions(
+                staticLibraryDefinitionsByLocale,
+                librarySymbolsByLocale,
+                locale,
+                defaultLibrarySymbols,
+            );
 
-        libraryByLocale.set(locale, {
-            externalTypeResolver: createLibraryTypeResolver(libraryDefinitions),
-            libraryDefinitions,
-        });
-    }
-
-    const libraryOfNoExternals: Library.ILibrary = PQP.Assert.asDefined(libraryByLocale.get(locale));
-
-    if (otherLibraryDefinitionsGetters.length) {
-        return {
-            externalTypeResolver: createLibraryTypeResolver(
-                libraryOfNoExternals.libraryDefinitions,
-                otherLibraryDefinitionsGetters,
-            ),
-            libraryDefinitions: libraryOfNoExternals.libraryDefinitions,
+        const staticLibrary: Library.ILibrary = {
+            externalTypeResolver: LibraryDefinitionUtils.externalTypeResolver({
+                staticLibraryDefinitions,
+                dynamicLibraryDefinitions: () => new Map(),
+            }),
+            libraryDefinitions: {
+                staticLibraryDefinitions,
+                dynamicLibraryDefinitions: () => new Map(),
+            },
         };
-    } else {
-        return libraryOfNoExternals;
+
+        libraryByLocale.set(locale, staticLibrary);
     }
+
+    const staticLibrary: Library.ILibrary = PQP.Assert.asDefined(libraryByLocale.get(locale));
+
+    if (!dynamicLibraryDefinitions?.length) {
+        return staticLibrary;
+    }
+
+    return {
+        externalTypeResolver: createExternalTypeResolver(staticLibrary, dynamicLibraryDefinitions),
+        libraryDefinitions: {
+            staticLibraryDefinitions: staticLibrary.libraryDefinitions.staticLibraryDefinitions,
+            // Lazily flattens an array of getter functions,
+            //  input: (() => T)[]
+            //  output: () => T
+            dynamicLibraryDefinitions: () =>
+                dynamicLibraryDefinitions.reduce(
+                    (
+                        previousValue: Map<string, Library.TLibraryDefinition>,
+                        currentValue: () => ReadonlyMap<string, Library.TLibraryDefinition>,
+                    ) => new Map([...previousValue, ...currentValue()]),
+                    new Map(),
+                ),
+        },
+    };
 }
 
-function getOrCreateLibraryDefinitions(
-    definitionsByLocale: Map<string, Library.LibraryDefinitions>,
-    librarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
+function getOrCreateStaticLibraryDefinitions(
+    staticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>>,
+    staticLibrarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
     locale: string,
     defaultLibrarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
-): Library.LibraryDefinitions {
-    if (!definitionsByLocale.has(locale)) {
+): ReadonlyMap<string, Library.TLibraryDefinition> {
+    if (!staticLibraryDefinitionsByLocale.has(locale)) {
         const librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol> =
-            librarySymbolsByLocale.get(locale) ?? defaultLibrarySymbols;
+            staticLibrarySymbolsByLocale.get(locale) ?? defaultLibrarySymbols;
 
         const libraryDefinitionsResult: PartialResult<
-            Library.LibraryDefinitions,
+            ReadonlyMap<string, Library.TLibraryDefinition>,
             LibrarySymbolUtils.IncompleteLibraryDefinitions,
             ReadonlyArray<LibrarySymbol.LibrarySymbol>
         > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
-        let libraryDefinitions: Library.LibraryDefinitions;
+        let staticLibraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition>;
         let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
 
         if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
-            libraryDefinitions = libraryDefinitionsResult.value;
+            staticLibraryDefinitions = libraryDefinitionsResult.value;
             failedSymbols = [];
         } else if (PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
-            libraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
+            staticLibraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
             failedSymbols = libraryDefinitionsResult.partial.invalidSymbols;
         } else {
-            libraryDefinitions = new Map();
+            staticLibraryDefinitions = new Map();
             failedSymbols = libraryDefinitionsResult.error;
         }
 
@@ -110,21 +135,25 @@ function getOrCreateLibraryDefinitions(
             );
         }
 
-        definitionsByLocale.set(locale, libraryDefinitions);
+        staticLibraryDefinitionsByLocale.set(locale, staticLibraryDefinitions);
     }
 
-    return PQP.MapUtils.assertGet(definitionsByLocale, locale);
+    return PQP.MapUtils.assertGet(staticLibraryDefinitionsByLocale, locale);
 }
 
 const sdkLibraryByLocale: Map<string, Library.ILibrary> = new Map();
-const sdkLibraryDefinitionsByLocale: Map<string, Library.LibraryDefinitions> = new Map();
+const sdkStaticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>> = new Map();
 
 const sdkLibrarySymbols: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
     [PQP.Locale.en_US, SdkLibrarySymbolsEnUs],
 ]);
 
 const standardLibraryByLocale: Map<string, Library.ILibrary> = new Map();
-const standardLibraryDefinitionsByLocale: Map<string, Library.LibraryDefinitions> = new Map();
+
+const standardStaticLibraryDefinitionsByLocale: Map<
+    string,
+    ReadonlyMap<string, Library.TLibraryDefinition>
+> = new Map();
 
 const standardLibrarySymbolByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
     [PQP.Locale.en_US, StandardLibrarySymbolsEnUs],

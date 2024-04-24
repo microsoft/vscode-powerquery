@@ -68,7 +68,7 @@ async function assertHoverContentEquals(text: string, expected: string): Promise
 
 const assertIsFunction: (
     definition: PQLS.Library.TLibraryDefinition,
-) => asserts definition is PQLS.Library.LibraryFunction = PQLS.LibraryUtils.assertIsFunction;
+) => asserts definition is PQLS.Library.LibraryFunction = PQLS.LibraryDefinitionUtils.assertIsFunction;
 
 function assertAsMarkupContent(value: Hover["contents"]): MarkupContent {
     assertIsMarkupContent(value);
@@ -108,7 +108,7 @@ describe(`StandardLibrary`, () => {
             const definitionKey: string = "BinaryOccurrence.Required";
 
             const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                library.libraryDefinitions.get(definitionKey);
+                library.libraryDefinitions.staticLibraryDefinitions.get(definitionKey);
 
             if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
@@ -124,7 +124,7 @@ describe(`StandardLibrary`, () => {
             const exportKey: string = "List.Distinct";
 
             const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                library.libraryDefinitions.get(exportKey);
+                library.libraryDefinitions.staticLibraryDefinitions.get(exportKey);
 
             if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
@@ -141,7 +141,7 @@ describe(`StandardLibrary`, () => {
             const exportKey: string = "#date";
 
             const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                library.libraryDefinitions.get(exportKey);
+                library.libraryDefinitions.staticLibraryDefinitions.get(exportKey);
 
             if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
@@ -213,7 +213,7 @@ describe(`moduleLibraryUpdated`, () => {
         it("ModuleLibraries", () => {
             const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
             const moduleLibraries: ModuleLibraries = new ModuleLibraries();
-            moduleLibraries.addOneModuleLibrary("sdk", libraryJson);
+            moduleLibraries.addModuleLibrary("sdk", libraryJson);
             expect(moduleLibraries.getLibraryCount()).to.equal(1, "expected 1 export");
         });
     });
