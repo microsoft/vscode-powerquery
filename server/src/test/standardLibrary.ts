@@ -157,7 +157,7 @@ describe(`StandardLibrary`, () => {
         });
     });
 
-    describe(`StandardLibrary `, () => {
+    describe(`StandardLibrary`, () => {
         describe(`Table.AddColumn`, () => {
             it(`getHover`, async () => {
                 const expression: string = `let foo = Table.AddColumn(1 as table, "bar", each 1) in fo|o`;

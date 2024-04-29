@@ -12,7 +12,7 @@ import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser"
 
 import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
-import { createExternalTypeResolver } from "./libraryTypeResolver";
+import { createExternalTypeResolver, wrapSmartTypeResolver } from "./libraryTypeResolver";
 
 export function getOrCreateStandardLibrary(locale?: string): Library.ILibrary {
     return getOrCreateLibrary(
@@ -57,13 +57,15 @@ function getOrCreateLibrary(
             );
 
         const staticLibrary: Library.ILibrary = {
-            externalTypeResolver: LibraryDefinitionUtils.externalTypeResolver({
-                staticLibraryDefinitions,
-                dynamicLibraryDefinitions: () => new Map(),
-            }),
+            externalTypeResolver: wrapSmartTypeResolver(
+                LibraryDefinitionUtils.externalTypeResolver({
+                    staticLibraryDefinitions,
+                    dynamicLibraryDefinitions: () => emptyReadonlyMap,
+                }),
+            ),
             libraryDefinitions: {
                 staticLibraryDefinitions,
-                dynamicLibraryDefinitions: () => new Map(),
+                dynamicLibraryDefinitions: () => emptyReadonlyMap,
             },
         };
 
@@ -131,7 +133,7 @@ function getOrCreateStaticLibraryDefinitions(
                 .join(", ");
 
             console.warn(
-                `$libraryJson.setter failed to create library definitions for the following symbolNames: ${csvSymbolNames}`,
+                `$libraryJson.setter failed to create library definitions for the following symbolNames: [${csvSymbolNames}]`,
             );
         }
 
@@ -140,6 +142,8 @@ function getOrCreateStaticLibraryDefinitions(
 
     return PQP.MapUtils.assertGet(staticLibraryDefinitionsByLocale, locale);
 }
+
+const emptyReadonlyMap: ReadonlyMap<string, Library.TLibraryDefinition> = new Map();
 
 const sdkLibraryByLocale: Map<string, Library.ILibrary> = new Map();
 const sdkStaticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>> = new Map();

@@ -18,43 +18,8 @@ export function createExternalTypeResolver(
             staticLibraryDefinitions.externalTypeResolver(request);
 
         // We might have defined a smart type resolver for a built-in library function.
-        if (staticLibraryType) {
-            switch (request.kind) {
-                case ExternalType.ExternalTypeRequestKind.Invocation: {
-                    const key: string = TypeUtils.nameOf(
-                        staticLibraryType,
-                        PQP.Trace.NoOpTraceManagerInstance,
-                        undefined,
-                    );
-
-                    const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
-
-                    if (maybeSmartTypeResolverFn === undefined) {
-                        return undefined;
-                    }
-
-                    const typeChecked: TypeUtils.CheckedInvocation = TypeUtils.typeCheckInvocation(
-                        request.args,
-                        // If it's an invocation type then it's assumed we
-                        // already confirmed the request is about a DefinedFunction.
-                        TypeUtils.assertAsDefinedFunction(staticLibraryType),
-                        PQP.Trace.NoOpTraceManagerInstance,
-                        undefined,
-                    );
-
-                    if (!isValidInvocation(typeChecked)) {
-                        return undefined;
-                    }
-
-                    return maybeSmartTypeResolverFn(request.args);
-                }
-
-                case ExternalType.ExternalTypeRequestKind.Value:
-                    return staticLibraryType;
-
-                default:
-                    return undefined;
-            }
+        if (!staticLibraryType) {
+            return undefined;
         }
 
         // Else look in the dynamic library definitions for a type.
@@ -69,6 +34,39 @@ export function createExternalTypeResolver(
         }
 
         return undefined;
+    };
+}
+
+// Wraps an external type resolver with smart type resolvers for invocation requests.
+export function wrapSmartTypeResolver(
+    externalTypeResolver: ExternalType.TExternalTypeResolverFn,
+): ExternalType.TExternalTypeResolverFn {
+    return (request: ExternalType.TExternalTypeRequest): PQP.Language.Type.TPowerQueryType | undefined => {
+        const type: PQP.Language.Type.TPowerQueryType | undefined = externalTypeResolver(request);
+
+        if (!type || request.kind !== ExternalType.ExternalTypeRequestKind.Invocation) {
+            return type;
+        }
+
+        const key: string = TypeUtils.nameOf(type, PQP.Trace.NoOpTraceManagerInstance, undefined);
+        const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
+
+        if (maybeSmartTypeResolverFn) {
+            const typeChecked: TypeUtils.CheckedInvocation = TypeUtils.typeCheckInvocation(
+                request.args,
+                // If it's an invocation type then it's assumed we
+                // already confirmed the request is about a DefinedFunction.
+                TypeUtils.assertAsDefinedFunction(type),
+                PQP.Trace.NoOpTraceManagerInstance,
+                undefined,
+            );
+
+            if (isValidInvocation(typeChecked)) {
+                return maybeSmartTypeResolverFn(request.args);
+            }
+        }
+
+        return type;
     };
 }
 
