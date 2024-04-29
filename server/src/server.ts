@@ -113,7 +113,7 @@ documents.onDidChangeContent(
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // remove the document from module library container and we no longer need to trace it
-    moduleLibraries.removeOneTextDocument(event.document);
+    moduleLibraries.removeTextDocument(event.document);
 
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
@@ -272,10 +272,7 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
 
 // TODO: make async
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
-    const allTextDocuments: TextDocument[] = moduleLibraries.addOneModuleLibrary(
-        params.workspaceUriPath,
-        params.library,
-    );
+    const allTextDocuments: TextDocument[] = moduleLibraries.addModuleLibrary(params.workspaceUriPath, params.library);
 
     // need to validate those currently opened documents
     void Promise.all(allTextDocuments.map(debouncedValidateDocument));
