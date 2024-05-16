@@ -18,7 +18,11 @@ export class ModuleLibraryTreeNode {
     public textDocument?: TextDocument;
     public readonly cache: ModuleLibraryTrieNodeCache = {};
 
-    public get libraryJson(): ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined {
+    get isRoot(): boolean {
+        return !this.parent;
+    }
+
+    get libraryJson(): ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined {
         return this._librarySymbols;
     }
 
@@ -54,7 +58,6 @@ export class ModuleLibraryTreeNode {
                     .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
                     .join(", ");
 
-                // TODO: better way to report errors
                 console.warn(
                     `$libraryJson.setter failed to create library definitions for the following symbolNames: ${csvSymbolNames}`,
                 );
@@ -68,9 +71,7 @@ export class ModuleLibraryTreeNode {
 
     public readonly children: Map<string, ModuleLibraryTreeNode> = new Map();
 
-    constructor(private readonly parent?: ModuleLibraryTreeNode, private readonly currentPath: string = "") {
-        super();
-    }
+    constructor(private readonly parent?: ModuleLibraryTreeNode, private readonly currentPath: string = "") {}
 
     insert(
         paths: ReadonlyArray<string>,

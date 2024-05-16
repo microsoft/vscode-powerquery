@@ -97,13 +97,10 @@ export function getServerSettings(): ServerSettings {
 
 export function getLocalizedModuleLibraryFromTextDocument(
     moduleLibraries: ModuleLibraries,
-    externalLibraries: ExternalSymbolLibraries,
     document: TextDocument,
     updateCache: boolean = false,
 ): PQLS.Library.ILibrary {
     const moduleLibraryDefinitions: (() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>)[] = [];
-
-    externalLibraryDefinitionsGetters.push(...externalLibraries.getLibaryDefinitionGetters());
 
     // add the document into module library container, and we need to trace for its validation
     const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode = moduleLibraries.addTextDocument(document);
@@ -129,13 +126,12 @@ export function getLocalizedModuleLibraryFromTextDocument(
 export function getLocalizedLibrary(
     dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
-    // TODO: Do we still need separate calls here, or can we just grab the right base library?
     switch (serverSettings.mode) {
         case "SDK":
             return LibraryUtils.getOrCreateSdkLibrary(dynamicLibraryDefinitions, serverSettings.locale);
 
         case "Power Query":
-            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale, otherLibraryDefinitionsGetters);
+            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
 
         default:
             throw PQP.Assert.isNever(serverSettings.mode);

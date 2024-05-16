@@ -11,10 +11,9 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import * as ErrorUtils from "./errorUtils";
 import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { ExternalSymbolLibraries, IncomingExternalSymbolLibrary } from "./library/externalSymbolLibraries";
-import { getLocalizedModuleLibraryFromTextDocument } from "./settings/settingsUtils";
+import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 import { ModuleLibraries } from "./library";
-import { SettingsUtils } from "./settings";
+import { SettingsUtils } from "./settings.ts";
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -26,16 +25,11 @@ interface ModuleLibraryUpdatedParams {
     readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 }
 
-interface SetLibrarySymbolsParams {
-    librarySymbols: [string, IncomingExternalSymbolLibrary][];
-}
-
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 const moduleLibraries: ModuleLibraries = new ModuleLibraries();
-const externalSymbolLibraries: ExternalSymbolLibraries = new ExternalSymbolLibraries();
 
 const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
     FuncUtils.partitionFn(
@@ -208,12 +202,6 @@ connection.onInitialize((params: LS.InitializeParams) => {
             triggerCharacters: ["(", ","],
         },
         textDocumentSync: LS.TextDocumentSyncKind.Incremental,
-        workspace: {
-            // TODO: Disabling until we've fully tested support for multiple workspace folders
-            workspaceFolders: {
-                supported: false,
-            },
-        },
     };
 
     SettingsUtils.setHasConfigurationCapability(Boolean(params.capabilities.workspace?.configuration));
@@ -282,19 +270,12 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 });
 
+// TODO: make async
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
     const allTextDocuments: TextDocument[] = moduleLibraries.addModuleLibrary(params.workspaceUriPath, params.library);
 
     // need to validate those currently opened documents
     void Promise.all(allTextDocuments.map(debouncedValidateDocument));
-});
-
-// TODO: Do we need to pass through a cancellation token?
-connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): Promise<void[]> => {
-    externalSymbolLibraries.setRange(params.librarySymbols);
-
-    // validate open documents
-    return Promise.all(documents.all().map(debouncedValidateDocument));
 });
 
 connection.onSignatureHelp(
@@ -387,7 +368,6 @@ connection.listen();
 function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceManager): PQLS.Analysis {
     const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
-        externalSymbolLibraries,
         document,
     );
 
@@ -440,7 +420,6 @@ async function validateDocument(document: TextDocument): Promise<void> {
 
     const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
-        externalSymbolLibraries,
         document,
         true,
     );

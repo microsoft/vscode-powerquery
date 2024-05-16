@@ -14,10 +14,7 @@ import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
 import { createExternalTypeResolver, wrapSmartTypeResolver } from "./libraryTypeResolver";
 
-export function getOrCreateStandardLibrary(
-    locale?: string,
-    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
-): Library.ILibrary {
+export function getOrCreateStandardLibrary(locale?: string): Library.ILibrary {
     return getOrCreateLibrary(
         standardLibraryByLocale,
         standardStaticLibraryDefinitionsByLocale,
