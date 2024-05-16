@@ -6,46 +6,48 @@ import { Library, LibrarySymbol, LibrarySymbolUtils } from "@microsoft/powerquer
 import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
-import { LibraryDefinitionsGetter } from "./libraryTypeResolver";
-
 export interface ModuleLibraryTrieNodeCache {
     localizedLibrary?: PQLS.Library.ILibrary;
 }
 
-export class ModuleLibrary {
-    private _librarySymbols?: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
-    private _libraryDefinitions: ReadonlyMap<string, PQLS.Library.TLibraryDefinition> = new Map();
+export class ModuleLibraryTreeNode {
+    static defaultRoot: ModuleLibraryTreeNode = new ModuleLibraryTreeNode();
+
+    private _librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined;
+    private _staticLibraryDefinitions: ReadonlyMap<string, PQLS.Library.TLibraryDefinition> = new Map();
+    public textDocument?: TextDocument;
+    public readonly cache: ModuleLibraryTrieNodeCache = {};
 
     public get libraryJson(): ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined {
         return this._librarySymbols;
     }
 
-    public set libraryJson(val: ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined) {
-        this._librarySymbols = val;
-        this._libraryDefinitions = new Map();
+    set libraryJson(librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol> | undefined) {
+        this._librarySymbols = librarySymbols;
+        this._staticLibraryDefinitions = new Map();
 
-        if (val && Array.isArray(val)) {
+        if (librarySymbols) {
             const libraryDefinitionsResult: PartialResult<
-                Library.LibraryDefinitions,
+                ReadonlyMap<string, Library.TLibraryDefinition>,
                 LibrarySymbolUtils.IncompleteLibraryDefinitions,
                 ReadonlyArray<LibrarySymbol.LibrarySymbol>
-            > = LibrarySymbolUtils.createLibraryDefinitions(val);
+            > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
-            let libraryDefinitions: Library.LibraryDefinitions;
+            let staticLibraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition>;
             let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
 
             if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
-                libraryDefinitions = libraryDefinitionsResult.value;
+                staticLibraryDefinitions = libraryDefinitionsResult.value;
                 failedSymbols = [];
             } else if (PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
-                libraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
+                staticLibraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
                 failedSymbols = libraryDefinitionsResult.partial.invalidSymbols;
             } else {
-                libraryDefinitions = new Map();
+                staticLibraryDefinitions = new Map();
                 failedSymbols = libraryDefinitionsResult.error;
             }
 
-            this._libraryDefinitions = libraryDefinitions;
+            this._staticLibraryDefinitions = staticLibraryDefinitions;
 
             if (failedSymbols.length) {
                 const csvSymbolNames: string = failedSymbols
@@ -60,26 +62,8 @@ export class ModuleLibrary {
         }
     }
 
-    public get libraryDefinitions(): PQLS.Library.LibraryDefinitions {
-        return this._libraryDefinitions;
-    }
-
-    public libraryDefinitionsGetter: LibraryDefinitionsGetter = () => this.libraryDefinitions;
-
-    public reset(): void {
-        this._libraryDefinitions = new Map();
-        this._librarySymbols = [];
-    }
-}
-
-export class ModuleLibraryTreeNode extends ModuleLibrary {
-    static defaultRoot: ModuleLibraryTreeNode = new ModuleLibraryTreeNode();
-
-    public textDocument?: TextDocument;
-    public readonly cache: ModuleLibraryTrieNodeCache = {};
-
-    get isRoot(): boolean {
-        return !this.parent;
+    get libraryDefinitions(): () => ReadonlyMap<string, Library.TLibraryDefinition> {
+        return () => this._staticLibraryDefinitions;
     }
 
     public readonly children: Map<string, ModuleLibraryTreeNode> = new Map();
@@ -89,7 +73,7 @@ export class ModuleLibraryTreeNode extends ModuleLibrary {
     }
 
     insert(
-        paths: string[],
+        paths: ReadonlyArray<string>,
         visitorContext?: { closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode },
     ): ModuleLibraryTreeNode {
         if (paths.length === 0) {
@@ -101,10 +85,10 @@ export class ModuleLibraryTreeNode extends ModuleLibrary {
 
         let child: ModuleLibraryTreeNode;
 
-        const maybeOneChild: ModuleLibraryTreeNode | undefined = this.children.get(currentPath);
+        const maybeChild: ModuleLibraryTreeNode | undefined = this.children.get(currentPath);
 
-        if (maybeOneChild) {
-            child = maybeOneChild;
+        if (maybeChild) {
+            child = maybeChild;
 
             if (visitorContext && child.libraryJson) {
                 visitorContext.closestModuleLibraryTreeNodeOfDefinitions = child;
@@ -122,15 +106,16 @@ export class ModuleLibraryTreeNode extends ModuleLibrary {
             this.parent.children.delete(this.currentPath);
         }
 
-        this.reset();
+        this._staticLibraryDefinitions = new Map();
+        this._librarySymbols = [];
     }
 
     collectTextDocumentBeneath(visitorContext: { textDocuments: TextDocument[] }): void {
-        for (const theNode of this.children.values()) {
-            if (theNode.textDocument) {
-                visitorContext.textDocuments.push(theNode.textDocument);
+        for (const node of this.children.values()) {
+            if (node.textDocument) {
+                visitorContext.textDocuments.push(node.textDocument);
             } else {
-                theNode.collectTextDocumentBeneath(visitorContext);
+                node.collectTextDocumentBeneath(visitorContext);
             }
         }
     }
@@ -140,46 +125,46 @@ export class ModuleLibraryTreeNode extends ModuleLibrary {
  * A mutable container of module libraries by uri path
  */
 export class ModuleLibraries {
-    private readonly triedRoot: ModuleLibraryTreeNode = ModuleLibraryTreeNode.defaultRoot;
-    private readonly openedTextDocumentTreeNodeMap: Map<string, ModuleLibraryTreeNode> = new Map();
+    private readonly root: ModuleLibraryTreeNode = ModuleLibraryTreeNode.defaultRoot;
+    private readonly moduleLibraryTreeNodeByTextDocumentUri: Map<string, ModuleLibraryTreeNode> = new Map();
 
-    static splitPath(uriPath: string): string[] {
+    static splitPath(uriPath: string): ReadonlyArray<string> {
         return uriPath.split("/").filter(Boolean);
     }
 
-    addOneModuleLibrary(uriPath: string, libraryJson: ReadonlyArray<LibrarySymbol.LibrarySymbol>): TextDocument[] {
-        const spitedPath: string[] = ModuleLibraries.splitPath(uriPath);
+    addModuleLibrary(uriPath: string, libraryJson: ReadonlyArray<LibrarySymbol.LibrarySymbol>): TextDocument[] {
+        const splittedPath: ReadonlyArray<string> = ModuleLibraries.splitPath(uriPath);
         const visitorContext: { textDocuments: [] } = { textDocuments: [] };
-        const theNode: ModuleLibraryTreeNode = this.triedRoot.insert(spitedPath);
-        theNode.libraryJson = libraryJson;
-        theNode.collectTextDocumentBeneath(visitorContext);
+        const node: ModuleLibraryTreeNode = this.root.insert(splittedPath);
+        node.libraryJson = libraryJson;
+        node.collectTextDocumentBeneath(visitorContext);
 
         return visitorContext.textDocuments;
     }
 
-    addOneTextDocument(textDocument: TextDocument): ModuleLibraryTreeNode {
-        const spitedPath: string[] = ModuleLibraries.splitPath(textDocument.uri);
+    addTextDocument(textDocument: TextDocument): ModuleLibraryTreeNode {
+        const splittedPath: ReadonlyArray<string> = ModuleLibraries.splitPath(textDocument.uri);
 
         const visitorContext: { closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode } = {
-            closestModuleLibraryTreeNodeOfDefinitions: this.triedRoot,
+            closestModuleLibraryTreeNodeOfDefinitions: this.root,
         };
 
-        const theNode: ModuleLibraryTreeNode = this.triedRoot.insert(spitedPath, visitorContext);
+        const theNode: ModuleLibraryTreeNode = this.root.insert(splittedPath, visitorContext);
         theNode.textDocument = textDocument;
-        this.openedTextDocumentTreeNodeMap.set(textDocument.uri, theNode);
+        this.moduleLibraryTreeNodeByTextDocumentUri.set(textDocument.uri, theNode);
 
         return visitorContext.closestModuleLibraryTreeNodeOfDefinitions;
     }
 
-    removeOneTextDocument(textDocument: TextDocument): void {
-        const theDocUri: string = textDocument.uri;
+    removeTextDocument(textDocument: TextDocument): void {
+        const uri: string = textDocument.uri;
 
-        const maybeModuleLibraryTreeNode: ModuleLibraryTreeNode | undefined =
-            this.openedTextDocumentTreeNodeMap.get(theDocUri);
+        const moduleLibraryTreeNode: ModuleLibraryTreeNode | undefined =
+            this.moduleLibraryTreeNodeByTextDocumentUri.get(uri);
 
-        if (maybeModuleLibraryTreeNode) {
-            this.openedTextDocumentTreeNodeMap.delete(theDocUri);
-            maybeModuleLibraryTreeNode.remove();
+        if (moduleLibraryTreeNode) {
+            this.moduleLibraryTreeNodeByTextDocumentUri.delete(uri);
+            moduleLibraryTreeNode.remove();
         }
     }
 
@@ -187,7 +172,7 @@ export class ModuleLibraries {
     getLibraryCount(): number {
         let count: number = 0;
 
-        this.triedRoot.children.forEach((node: ModuleLibraryTreeNode) => {
+        this.root.children.forEach((node: ModuleLibraryTreeNode) => {
             count += node.libraryJson?.length ?? 0;
         });
 

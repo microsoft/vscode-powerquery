@@ -9,8 +9,6 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { DefaultServerSettings, ServerSettings } from "./settings";
 import { LibraryUtils, ModuleLibraries } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
-import { ExternalSymbolLibraries } from "../library/externalSymbolLibraries";
-import { LibraryDefinitionsGetter } from "../library/libraryTypeResolver";
 import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
 const LanguageId: string = "powerquery";
@@ -103,40 +101,38 @@ export function getLocalizedModuleLibraryFromTextDocument(
     document: TextDocument,
     updateCache: boolean = false,
 ): PQLS.Library.ILibrary {
-    const externalLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [];
+    const moduleLibraryDefinitions: (() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>)[] = [];
 
     externalLibraryDefinitionsGetters.push(...externalLibraries.getLibaryDefinitionGetters());
 
     // add the document into module library container, and we need to trace for its validation
-    const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode =
-        moduleLibraries.addOneTextDocument(document);
+    const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode = moduleLibraries.addTextDocument(document);
 
     // I do not believe there would be one m proj at the root of the file system
     if (!closestModuleLibraryTreeNodeOfDefinitions.isRoot) {
-        externalLibraryDefinitionsGetters.push(closestModuleLibraryTreeNodeOfDefinitions.libraryDefinitionsGetter);
+        moduleLibraryDefinitions.push(closestModuleLibraryTreeNodeOfDefinitions.libraryDefinitions);
     }
 
     if (updateCache) {
         // for validation, we have to forcefully update localizedLibrary to ensure it keeps up to the latest
-        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary = getLocalizedLibrary(
-            externalLibraryDefinitionsGetters,
-        );
+        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary =
+            getLocalizedLibrary(moduleLibraryDefinitions);
     } else {
         closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary =
             closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary ??
-            getLocalizedLibrary(externalLibraryDefinitionsGetters);
+            getLocalizedLibrary(moduleLibraryDefinitions);
     }
 
     return closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary;
 }
 
 export function getLocalizedLibrary(
-    otherLibraryDefinitionsGetters: LibraryDefinitionsGetter[] = [],
+    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
     // TODO: Do we still need separate calls here, or can we just grab the right base library?
     switch (serverSettings.mode) {
         case "SDK":
-            return LibraryUtils.getOrCreateSdkLibrary(serverSettings.locale, otherLibraryDefinitionsGetters);
+            return LibraryUtils.getOrCreateSdkLibrary(dynamicLibraryDefinitions, serverSettings.locale);
 
         case "Power Query":
             return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale, otherLibraryDefinitionsGetters);
