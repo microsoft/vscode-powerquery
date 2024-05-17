@@ -1,24 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as assert from "assert";
 import * as path from "path";
 import * as vscode from "vscode";
 
-export let doc: vscode.TextDocument;
-export let editor: vscode.TextEditor;
 export let documentEol: string;
 export let platformEol: string;
 
 export const extensionId: string = "powerquery.vscode-powerquery";
 
-export async function activate(docUri: vscode.Uri): Promise<void> {
+export async function activate(docUri: vscode.Uri): Promise<vscode.TextEditor> {
     await activateExtension();
 
     try {
-        doc = await vscode.workspace.openTextDocument(docUri);
-        editor = await vscode.window.showTextDocument(doc);
+        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(docUri);
+
+        return await vscode.window.showTextDocument(doc);
     } catch (e) {
         console.error(e);
+        assert.fail(`Failed to open ${docUri}`);
     }
 }
 
@@ -41,11 +42,14 @@ export const getDocPath: (p: string) => string = (p: string): string =>
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 
-// eslint-disable-next-line require-await
-export async function setTestContent(content: string): Promise<boolean> {
+export async function setTestContent(
+    doc: vscode.TextDocument,
+    editor: vscode.TextEditor,
+    content: string,
+): Promise<boolean> {
     const all: vscode.Range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
 
-    return editor.edit((eb: vscode.TextEditorEdit) => eb.replace(all, content));
+    return await editor.edit((eb: vscode.TextEditorEdit) => eb.replace(all, content));
 }
 
 export enum Commands {
