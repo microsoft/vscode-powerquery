@@ -6,9 +6,8 @@ import * as vscode from "vscode";
 import * as CompletionUtils from "./completionUtils";
 import * as TestUtils from "./testUtils";
 
-suite("Section document", () => {
+suite("Section completion tests", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
-    void vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Keywords", async () => {
         await CompletionUtils.testCompletion(
