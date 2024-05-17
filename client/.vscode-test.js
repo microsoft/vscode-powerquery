@@ -9,9 +9,12 @@ module.exports = defineConfig([
     label: "UI Tests",
     files: "lib/test/**/*.test.js",
     workspaceFolder: "src/test/testFixture",
+    extensionDevelopmentPath: "..",
+    
     mocha: {
       ui: "tdd",
-      timeout: 20000
+      timeout: 20000,
+      slow: 10000
     }
   }
 ]);

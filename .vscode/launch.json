@@ -32,7 +32,7 @@
                 "${workspaceRoot}/client/src/test/testFixture"
             ],
             "outFiles": ["${workspaceRoot}/client/lib/test/**/*.js"],
-            "preLaunchTask": "Build UI Tests"
+            "preLaunchTask": "Run Watchers"
         },
         {
             "type": "node",
@@ -41,7 +41,6 @@
             "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
             "cwd": "${workspaceFolder}/server",
             "args": ["--inspect", "--colors", "--timeout", "999999"],
-            "preLaunchTask": "Watch Server",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ],

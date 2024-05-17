@@ -29,13 +29,8 @@
             "label": "Build UI Tests"
         },
         {
-            "type": "npm",
-            "script": "watch",
-            "path": "server/",
-            "group": "build",
-            "isBackground": true,
-            "problemMatcher": ["$tsc-watch"],
-            "label": "Watch Server"
+            "label": "Run Watchers",
+            "dependsOn": ["Webpack Server", "Webpack Client", "Build UI Tests"]
         }
     ]
 }
