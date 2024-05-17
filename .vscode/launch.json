@@ -39,7 +39,8 @@
             "request": "launch",
             "name": "Run server unit tests",
             "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
-            "args": ["--inspect", "--colors", "--timeout", "999999", "${workspaceFolder}/server/lib/test/**/*.js"],
+            "cwd": "${workspaceFolder}/server",
+            "args": ["--inspect", "--colors", "--timeout", "999999"],
             "preLaunchTask": "Watch Server",
             "internalConsoleOptions": "openOnSessionStart"
         }
