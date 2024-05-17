@@ -126,6 +126,7 @@ export function getLocalizedModuleLibraryFromTextDocument(
 export function getLocalizedLibrary(
     dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
+    // TODO: Dynamic libraries should be used for both modes. The only difference would be the default library symbols.
     switch (serverSettings.mode) {
         case "SDK":
             return LibraryUtils.getOrCreateSdkLibrary(dynamicLibraryDefinitions, serverSettings.locale);

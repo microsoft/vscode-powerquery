@@ -25,6 +25,14 @@ interface ModuleLibraryUpdatedParams {
     readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 }
 
+// TODO: move this into a separate file.
+// type ExternalSymbolLibrary = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
+// type IncomingExternalSymbolLibrary = ExternalSymbolLibrary | undefined | null;
+
+// interface SetLibrarySymbolsParams {
+//     librarySymbols: [string, IncomingExternalSymbolLibrary][];
+// }
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
@@ -202,6 +210,12 @@ connection.onInitialize((params: LS.InitializeParams) => {
             triggerCharacters: ["(", ","],
         },
         textDocumentSync: LS.TextDocumentSyncKind.Incremental,
+        workspace: {
+            // TODO: Disabling until we've fully tested support for multiple workspace folders
+            workspaceFolders: {
+                supported: false,
+            },
+        },
     };
 
     SettingsUtils.setHasConfigurationCapability(Boolean(params.capabilities.workspace?.configuration));
@@ -270,13 +284,20 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 });
 
-// TODO: make async
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
     const allTextDocuments: TextDocument[] = moduleLibraries.addModuleLibrary(params.workspaceUriPath, params.library);
 
     // need to validate those currently opened documents
     void Promise.all(allTextDocuments.map(debouncedValidateDocument));
 });
+
+// // TODO: Do we need to pass through a cancellation token?
+// connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): Promise<void[]> => {
+//     externalSymbolLibraries.setRange(params.librarySymbols);
+
+//     // validate open documents
+//     return Promise.all(documents.all().map(debouncedValidateDocument));
+// });
 
 connection.onSignatureHelp(
     async (
