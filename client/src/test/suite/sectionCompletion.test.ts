@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import * as CompletionUtils from "./completionUtils";
 import * as TestUtils from "./testUtils";
 
-suite("Section completion items", () => {
+suite("Section completion tests", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
 
     test("Keywords", async () => {

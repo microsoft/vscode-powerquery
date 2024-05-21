@@ -6,9 +6,8 @@ import * as vscode from "vscode";
 
 import * as TestUtils from "./testUtils";
 
-suite("Should get diagnostics", async () => {
+suite("Should get diagnostics", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("diagnostics.pq");
-    await vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("Simple diagnostics test", async () => {
         await testDiagnostics(docUri, [
@@ -22,9 +21,8 @@ suite("Should get diagnostics", async () => {
     });
 });
 
-suite("No errors", async () => {
+suite("No errors", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.NoErrors.pq");
-    await vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
     test("No errors", async () => {
         await testDiagnostics(docUri, []);
@@ -39,11 +37,7 @@ suite("Experimental diagnostics", () => {
     });
 
     // TODO: Tests that change the local configuration settings.
-    // Tried updating settings like this:
-    // await settings.update("powerquery.diagnostics.experimental", true, vscode.ConfigurationTarget.Workspace);
-    // But it ends up creating a workspace file that impacts other tests and caused flakiness.
-    // Helper function to dump current configuration is:
-    // console.log(`config: ${JSON.stringify(settings.inspect("powerquery"))}`);
+    // Investigate support for scoped settings / Document Settings.
 });
 
 function toRange(sLine: number, sChar: number, eLine: number, eChar: number): vscode.Range {

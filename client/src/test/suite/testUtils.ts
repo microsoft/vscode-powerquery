@@ -1,40 +1,41 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as assert from "assert";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
-export let doc: vscode.TextDocument;
-export let editor: vscode.TextEditor;
-export let documentEol: string;
-export let platformEol: string;
+import { PowerQueryApi } from "../../vscode-powerquery.api";
 
 export const extensionId: string = "powerquery.vscode-powerquery";
 
-export async function activate(docUri: vscode.Uri): Promise<void> {
+export async function activate(docUri: vscode.Uri): Promise<vscode.TextEditor> {
     await activateExtension();
 
     try {
-        doc = await vscode.workspace.openTextDocument(docUri);
-        editor = await vscode.window.showTextDocument(doc);
+        const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(docUri);
+
+        return await vscode.window.showTextDocument(doc);
     } catch (e) {
         console.error(e);
+        assert.fail(`Failed to open ${docUri}`);
     }
 }
 
-// eslint-disable-next-line require-await
-export async function activateExtension(): Promise<void> {
+export async function activateExtension(): Promise<PowerQueryApi> {
     // The extensionId is `publisher.name` from package.json
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
+    const ext: vscode.Extension<PowerQueryApi> | undefined = vscode.extensions.getExtension(extensionId);
 
     if (!ext) {
         throw new Error("Failed to load extension.");
     }
 
-    return ext.activate();
+    if (ext.isActive) {
+        return ext.exports;
+    }
+
+    return await ext.activate();
 }
 
 const testFixurePath: string = "../../../src/test/testFixture";
@@ -47,11 +48,14 @@ export const getDocPath: (p: string) => string = (p: string): string => path.res
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 
-// eslint-disable-next-line require-await
-export async function setTestContent(content: string): Promise<boolean> {
+export async function setTestContent(
+    doc: vscode.TextDocument,
+    editor: vscode.TextEditor,
+    content: string,
+): Promise<boolean> {
     const all: vscode.Range = new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
 
-    return editor.edit((eb: vscode.TextEditorEdit) => eb.replace(all, content));
+    return await editor.edit((eb: vscode.TextEditorEdit) => eb.replace(all, content));
 }
 
 export enum Commands {

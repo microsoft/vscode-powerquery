@@ -290,7 +290,9 @@
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "5.24.0",
         "@typescript-eslint/parser": "5.24.0",
-        "@vscode/vsce": "2.24.0",
+        "@vscode/test-cli": "0.0.9",
+        "@vscode/test-electron": "2.3.10",
+        "@vscode/vsce": "2.26.1",
         "eslint": "8.15.0",
         "eslint-config-prettier": "8.5.0",
         "eslint-plugin-prettier": "4.0.0",
