@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import type { LanguageClient } from "vscode-languageclient/node";
+
 // TODO: Consolidate declarations between this file and librarySymbol.d.ts.
 
 // The JSON output of a localized standard library.
@@ -44,5 +46,6 @@ export interface LibraryFieldJson {
 }
 
 export interface PowerQueryApi {
+    readonly languageClient: LanguageClient;
     readonly onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson) => void;
 }

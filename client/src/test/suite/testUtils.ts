@@ -5,8 +5,7 @@ import * as assert from "assert";
 import * as path from "path";
 import * as vscode from "vscode";
 
-export let documentEol: string;
-export let platformEol: string;
+import { PowerQueryApi } from "../../vscode-powerquery.api";
 
 export const extensionId: string = "powerquery.vscode-powerquery";
 
@@ -23,18 +22,19 @@ export async function activate(docUri: vscode.Uri): Promise<vscode.TextEditor> {
     }
 }
 
-// eslint-disable-next-line require-await
-export async function activateExtension(): Promise<void> {
+export async function activateExtension(): Promise<PowerQueryApi> {
     // The extensionId is `publisher.name` from package.json
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(extensionId);
+    const ext: vscode.Extension<PowerQueryApi> | undefined = vscode.extensions.getExtension(extensionId);
 
     if (!ext) {
         throw new Error("Failed to load extension.");
     }
 
-    return ext.activate();
+    if (ext.isActive) {
+        return ext.exports;
+    }
+
+    return await ext.activate();
 }
 
 export const getDocPath: (p: string) => string = (p: string): string =>
