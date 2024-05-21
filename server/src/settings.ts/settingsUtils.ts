@@ -57,11 +57,13 @@ export function createInspectionSettings(
 export function createValidationSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken: PQP.ICancellationToken | undefined,
 ): PQLS.ValidationSettings {
     return PQLS.ValidationSettingsUtils.createValidationSettings(
         createInspectionSettings(library, traceManager),
         LanguageId,
         {
+            cancellationToken,
             checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
             checkInvokeExpressions: serverSettings.checkInvokeExpressions,
         },

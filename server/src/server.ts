@@ -340,38 +340,29 @@ connection.onDocumentFormatting(
     },
 );
 
-// TODO: Cancellation?
+// TODO: Do we need to track the resultId value?
 connection.languages.diagnostics.on(
-    async (params: LS.DocumentDiagnosticParams): Promise<LS.DocumentDiagnosticReport> => {
-        // TODO: What is the right logic?
-        const resultId: string = params.previousResultId ?? "";
-
-        // TODO: Should this be debounced?
-        // TODO: What to do on invalid document uri?
+    async (
+        params: LS.DocumentDiagnosticParams,
+        cancellationToken: LS.CancellationToken,
+    ): Promise<LS.DocumentDiagnosticReport> => {
         const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
         if (document === undefined) {
             return {
-                kind: LS.DocumentDiagnosticReportKind.Unchanged,
-                resultId,
+                kind: LS.DocumentDiagnosticReportKind.Full,
+                items: [],
             };
         }
 
-        const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document);
+        const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document, cancellationToken);
 
         return {
             kind: LS.DocumentDiagnosticReportKind.Full,
-            resultId,
             items: diagnostics,
         };
     },
 );
-
-// The onChange event doesn't include a cancellation token, so we have to manage them ourselves,
-// done by keeping a Map<uri, existing cancellation token for uri>.
-// Whenever a new validation attempt begins we check if an existing token for the uri exists and cancels it.
-// Then we store ValidationSettings.cancellationToken for the uri if one exists.
-const onValidateCancellationTokens: Map<string, PQP.ICancellationToken> = new Map();
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -430,8 +421,10 @@ async function documentSymbols(
     }
 }
 
-// TODO: Fix cancellation token passthrough
-async function getDocumentDiagnostics(document: TextDocument): Promise<LS.Diagnostic[]> {
+async function getDocumentDiagnostics(
+    document: TextDocument,
+    cancellationToken: LS.CancellationToken,
+): Promise<LS.Diagnostic[]> {
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
         document.uri,
         "getDocumentDiagnostics",
@@ -451,21 +444,8 @@ async function getDocumentDiagnostics(document: TextDocument): Promise<LS.Diagno
     const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
         localizedLibrary,
         traceManager,
+        SettingsUtils.createCancellationToken(cancellationToken),
     );
-
-    const uri: string = document.uri.toString();
-    const existingCancellationToken: PQP.ICancellationToken | undefined = onValidateCancellationTokens.get(uri);
-
-    if (existingCancellationToken !== undefined) {
-        existingCancellationToken.cancel("A new validateDocument call was made.");
-        onValidateCancellationTokens.delete(uri);
-    }
-
-    const newCancellationToken: PQP.ICancellationToken | undefined = validationSettings.cancellationToken;
-
-    if (newCancellationToken !== undefined) {
-        onValidateCancellationTokens.set(uri, newCancellationToken);
-    }
 
     const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
         document,
