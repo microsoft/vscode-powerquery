@@ -31,3 +31,8 @@ jobs:
                   name: vsix-artifact
                   path: |
                       *.vsix
+            - name: Publish Test Results
+              uses: EnricoMi/publish-unit-test-result-action@v2.16.1
+              with:
+                  files: |
+                      ./**/test-results.xml
