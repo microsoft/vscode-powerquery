@@ -6,19 +6,15 @@ import * as vscode from "vscode";
 
 import * as TestUtils from "./testUtils";
 
+import { PowerQueryApi } from "../../vscode-powerquery.api";
+
 suite("Extension Tests", () => {
     test("extension loads", () => {
         assert.ok(vscode.extensions.getExtension(TestUtils.extensionId));
     });
 
     test("should be able to activate", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ext: vscode.Extension<any> | undefined = vscode.extensions.getExtension(TestUtils.extensionId);
-
-        if (!ext) {
-            assert.fail("failed to get extension");
-        }
-
-        await ext.activate();
+        const api: PowerQueryApi = await TestUtils.activateExtension();
+        assert.ok(api);
     });
 });

@@ -9,7 +9,6 @@ import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
-import * as FuncUtils from "./funcUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 import { ModuleLibraries } from "./library";
@@ -30,12 +29,6 @@ interface ModuleLibraryUpdatedParams {
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 const moduleLibraries: ModuleLibraries = new ModuleLibraries();
-
-const debouncedValidateDocument: (this: unknown, textDocument: PQLS.TextDocument) => Promise<void> =
-    FuncUtils.partitionFn(
-        () => FuncUtils.debounce(validateDocument, 250),
-        (textDocument: TextDocument) => `validateDocument:${textDocument.uri.toString()}`,
-    );
 
 connection.onCompletion(
     async (
@@ -104,12 +97,8 @@ connection.onDefinition(async (params: DefinitionParams, cancellationToken: LS.C
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
-    documents.all().forEach(debouncedValidateDocument);
+    connection.languages.diagnostics.refresh();
 });
-
-documents.onDidChangeContent(
-    async (event: LS.TextDocumentChangeEvent<TextDocument>) => await debouncedValidateDocument(event.document),
-);
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // remove the document from module library container and we no longer need to trace it
@@ -192,6 +181,10 @@ connection.onInitialize((params: LS.InitializeParams) => {
             resolveProvider: false,
         },
         definitionProvider: true,
+        diagnosticProvider: {
+            interFileDependencies: false,
+            workspaceDiagnostics: false,
+        },
         documentFormattingProvider: true,
         documentSymbolProvider: {
             workDoneProgress: false,
@@ -217,8 +210,6 @@ connection.onInitialized(async () => {
     }
 
     await SettingsUtils.initializeServerSettings(connection);
-
-    documents.all().forEach(debouncedValidateDocument);
 });
 
 connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.CancellationToken) => {
@@ -270,12 +261,9 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 });
 
-// TODO: make async
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
-    const allTextDocuments: TextDocument[] = moduleLibraries.addModuleLibrary(params.workspaceUriPath, params.library);
-
-    // need to validate those currently opened documents
-    void Promise.all(allTextDocuments.map(debouncedValidateDocument));
+    moduleLibraries.addModuleLibrary(params.workspaceUriPath, params.library);
+    connection.languages.diagnostics.refresh();
 });
 
 connection.onSignatureHelp(
@@ -352,11 +340,29 @@ connection.onDocumentFormatting(
     },
 );
 
-// The onChange event doesn't include a cancellation token, so we have to manage them ourselves,
-// done by keeping a Map<uri, existing cancellation token for uri>.
-// Whenever a new validation attempt begins we check if an existing token for the uri exists and cancels it.
-// Then we store ValidationSettings.cancellationToken for the uri if one exists.
-const onValidateCancellationTokens: Map<string, PQP.ICancellationToken> = new Map();
+// TODO: Do we need to track the resultId value?
+connection.languages.diagnostics.on(
+    async (
+        params: LS.DocumentDiagnosticParams,
+        cancellationToken: LS.CancellationToken,
+    ): Promise<LS.DocumentDiagnosticReport> => {
+        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+        if (document === undefined) {
+            return {
+                kind: LS.DocumentDiagnosticReportKind.Full,
+                items: [],
+            };
+        }
+
+        const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document, cancellationToken);
+
+        return {
+            kind: LS.DocumentDiagnosticReportKind.Full,
+            items: diagnostics,
+        };
+    },
+);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -415,8 +421,14 @@ async function documentSymbols(
     }
 }
 
-async function validateDocument(document: TextDocument): Promise<void> {
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "validateDocument");
+async function getDocumentDiagnostics(
+    document: TextDocument,
+    cancellationToken: LS.CancellationToken,
+): Promise<LS.Diagnostic[]> {
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+        document.uri,
+        "getDocumentDiagnostics",
+    );
 
     const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
@@ -432,21 +444,8 @@ async function validateDocument(document: TextDocument): Promise<void> {
     const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
         localizedLibrary,
         traceManager,
+        SettingsUtils.createCancellationToken(cancellationToken),
     );
-
-    const uri: string = document.uri.toString();
-    const existingCancellationToken: PQP.ICancellationToken | undefined = onValidateCancellationTokens.get(uri);
-
-    if (existingCancellationToken !== undefined) {
-        existingCancellationToken.cancel("A new validateDocument call was made.");
-        onValidateCancellationTokens.delete(uri);
-    }
-
-    const newCancellationToken: PQP.ICancellationToken | undefined = validationSettings.cancellationToken;
-
-    if (newCancellationToken !== undefined) {
-        onValidateCancellationTokens.set(uri, newCancellationToken);
-    }
 
     const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
         document,
@@ -455,12 +454,10 @@ async function validateDocument(document: TextDocument): Promise<void> {
     );
 
     if (PQP.ResultUtils.isOk(result) && result.value) {
-        await connection.sendDiagnostics({
-            uri: document.uri,
-            version: document.version,
-            diagnostics: result.value.diagnostics,
-        });
+        return result.value.diagnostics;
     } else {
-        ErrorUtils.handleError(connection, result, "validateDocument", traceManager);
+        ErrorUtils.handleError(connection, result, "getDocumentDiagnostics", traceManager);
+
+        return [];
     }
 }

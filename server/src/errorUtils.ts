@@ -30,8 +30,6 @@ export function handleError(
         connection.console.warn(formatError(value.innerError));
     } else if (value instanceof Error) {
         const error: Error = value;
-        // const userMessage: string = error.message ?? `An unknown error occured during ${action}.`;
-        // connection.window.showErrorMessage(userMessage);
         vscodeMessage = `Unexpected Error during ${action}.`;
         connection.console.error(vscodeMessage);
         connection.console.error(formatError(error));
