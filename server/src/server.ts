@@ -283,9 +283,7 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
 // // TODO: Do we need to pass through a cancellation token?
 // connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): Promise<void[]> => {
 //     externalSymbolLibraries.setRange(params.librarySymbols);
-
-//     // validate open documents
-//     return Promise.all(documents.all().map(debouncedValidateDocument));
+//     connection.languages.diagnostics.refresh();
 // });
 
 connection.onSignatureHelp(
