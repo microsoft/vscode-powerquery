@@ -32,7 +32,7 @@ jobs:
                   path: |
                       *.vsix
             - name: Publish Test Results
-              uses: EnricoMi/publish-unit-test-result-action@v2.16.1
+              uses: EnricoMi/publish-unit-test-result-action/windows@v2.16.1
               with:
                   files: |
-                      ./**/test-results.xml
+                      .\**\test-results.xml
