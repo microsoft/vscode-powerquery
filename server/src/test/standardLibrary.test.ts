@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// import "mocha";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { AnalysisSettings, Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
