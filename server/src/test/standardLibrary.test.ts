@@ -8,9 +8,12 @@ import { Assert, ResultUtils } from "@microsoft/powerquery-parser";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 import { expect } from "chai";
 
-import { LibraryUtils, ModuleLibraries } from "../library";
+import { LibrarySymbolUtils, LibraryUtils, ModuleLibraries } from "../library";
 
-const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
+const library: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
+    [LibrarySymbolUtils.getSymbolsForLocaleAndMode(PQP.Locale.en_US, "Power Query")],
+    [],
+);
 
 class NoOpCancellationToken implements PQP.ICancellationToken {
     isCancelled: () => boolean = () => false;
@@ -88,8 +91,6 @@ function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
         character: textWithPipe.indexOf("|"),
         line: 0,
     };
-
-    const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
         inspectionSettings: PQLS.InspectionUtils.inspectionSettings(PQP.DefaultSettings, { library }),

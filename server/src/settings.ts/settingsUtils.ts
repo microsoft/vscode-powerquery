@@ -7,7 +7,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
-import { LibraryUtils, ModuleLibraries } from "../library";
+import { LibrarySymbolUtils, LibraryUtils, ModuleLibraries } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
 import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
@@ -100,7 +100,7 @@ export function getServerSettings(): ServerSettings {
 export function getLocalizedModuleLibraryFromTextDocument(
     moduleLibraries: ModuleLibraries,
     document: TextDocument,
-    updateCache: boolean = false,
+    updateCache: boolean,
 ): PQLS.Library.ILibrary {
     const moduleLibraryDefinitions: (() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>)[] = [];
 
@@ -126,18 +126,21 @@ export function getLocalizedModuleLibraryFromTextDocument(
 }
 
 export function getLocalizedLibrary(
-    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
+    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
-    switch (serverSettings.mode) {
-        case "SDK":
-            return LibraryUtils.getOrCreateSdkLibrary(dynamicLibraryDefinitions, serverSettings.locale);
+    const cacheKey: string = LibraryUtils.createCacheKey(serverSettings.locale, serverSettings.mode);
 
-        case "Power Query":
-            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+    const result: PQLS.Library.ILibrary | undefined = LibraryUtils.getLibrary(cacheKey);
 
-        default:
-            throw PQP.Assert.isNever(serverSettings.mode);
+    if (result) {
+        return result;
     }
+
+    return LibraryUtils.createLibraryAndSetCache(
+        cacheKey,
+        [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
+        dynamicLibraryDefinitionCollection,
+    );
 }
 
 export function getHasConfigurationCapability(): boolean {

@@ -10,7 +10,6 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 import { ModuleLibraries } from "./library";
 import { SettingsUtils } from "./settings.ts";
 
@@ -372,9 +371,10 @@ documents.listen(connection);
 connection.listen();
 
 function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceManager): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
         document,
+        /* updateCache */ false,
     );
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
@@ -430,10 +430,10 @@ async function getDocumentDiagnostics(
         "getDocumentDiagnostics",
     );
 
-    const localizedLibrary: PQLS.Library.ILibrary = getLocalizedModuleLibraryFromTextDocument(
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
         moduleLibraries,
         document,
-        true,
+        /* updateCache */ true,
     );
 
     const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
