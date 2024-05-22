@@ -12,153 +12,111 @@ import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser"
 
 import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
-import { createExternalTypeResolver, wrapSmartTypeResolver } from "./libraryTypeResolver";
+import { wrapSmartTypeResolver } from "./libraryTypeResolver";
 
-export function getOrCreateStandardLibrary(locale?: string): Library.ILibrary {
-    return getOrCreateLibrary(
-        standardLibraryByLocale,
-        standardStaticLibraryDefinitionsByLocale,
-        standardLibrarySymbolByLocale,
-        locale ?? PQP.DefaultLocale,
-        StandardLibrarySymbolsEnUs,
-        /* dynamicLibraryDefinitions */ [],
-    );
-}
+export const StandardLibrarySymbolByLocale: ReadonlyMap<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
+    [PQP.Locale.en_US, StandardLibrarySymbolsEnUs],
+]);
 
-export function getOrCreateSdkLibrary(
-    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
-    locale?: string,
-): Library.ILibrary {
-    return getOrCreateLibrary(
-        sdkLibraryByLocale,
-        sdkStaticLibraryDefinitionsByLocale,
-        sdkLibrarySymbols,
-        locale ?? PQP.DefaultLocale,
-        SdkLibrarySymbolsEnUs,
-        dynamicLibraryDefinitions,
-    );
-}
-
-function getOrCreateLibrary(
-    libraryByLocale: Map<string, Library.ILibrary>,
-    staticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>>,
-    librarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
-    locale: string,
-    defaultLibrarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
-    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
-): Library.ILibrary {
-    if (!libraryByLocale.has(locale)) {
-        const staticLibraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition> =
-            getOrCreateStaticLibraryDefinitions(
-                staticLibraryDefinitionsByLocale,
-                librarySymbolsByLocale,
-                locale,
-                defaultLibrarySymbols,
-            );
-
-        const staticLibrary: Library.ILibrary = {
-            externalTypeResolver: wrapSmartTypeResolver(
-                LibraryDefinitionUtils.externalTypeResolver({
-                    staticLibraryDefinitions,
-                    dynamicLibraryDefinitions: () => emptyReadonlyMap,
-                }),
-            ),
-            libraryDefinitions: {
-                staticLibraryDefinitions,
-                dynamicLibraryDefinitions: () => emptyReadonlyMap,
-            },
-        };
-
-        libraryByLocale.set(locale, staticLibrary);
-    }
-
-    const staticLibrary: Library.ILibrary = PQP.Assert.asDefined(libraryByLocale.get(locale));
-
-    if (!dynamicLibraryDefinitions?.length) {
-        return staticLibrary;
-    }
-
-    return {
-        externalTypeResolver: createExternalTypeResolver(staticLibrary, dynamicLibraryDefinitions),
-        libraryDefinitions: {
-            staticLibraryDefinitions: staticLibrary.libraryDefinitions.staticLibraryDefinitions,
-            // Lazily flattens an array of getter functions,
-            //  input: (() => T)[]
-            //  output: () => T
-            dynamicLibraryDefinitions: () =>
-                dynamicLibraryDefinitions.reduce(
-                    (
-                        previousValue: Map<string, Library.TLibraryDefinition>,
-                        currentValue: () => ReadonlyMap<string, Library.TLibraryDefinition>,
-                    ) => new Map([...previousValue, ...currentValue()]),
-                    new Map(),
-                ),
-        },
-    };
-}
-
-function getOrCreateStaticLibraryDefinitions(
-    staticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>>,
-    staticLibrarySymbolsByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
-    locale: string,
-    defaultLibrarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
-): ReadonlyMap<string, Library.TLibraryDefinition> {
-    if (!staticLibraryDefinitionsByLocale.has(locale)) {
-        const librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol> =
-            staticLibrarySymbolsByLocale.get(locale) ?? defaultLibrarySymbols;
-
-        const libraryDefinitionsResult: PartialResult<
-            ReadonlyMap<string, Library.TLibraryDefinition>,
-            LibrarySymbolUtils.IncompleteLibraryDefinitions,
-            ReadonlyArray<LibrarySymbol.LibrarySymbol>
-        > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
-
-        let staticLibraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition>;
-        let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
-
-        if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
-            staticLibraryDefinitions = libraryDefinitionsResult.value;
-            failedSymbols = [];
-        } else if (PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
-            staticLibraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
-            failedSymbols = libraryDefinitionsResult.partial.invalidSymbols;
-        } else {
-            staticLibraryDefinitions = new Map();
-            failedSymbols = libraryDefinitionsResult.error;
-        }
-
-        if (failedSymbols.length) {
-            const csvSymbolNames: string = failedSymbols
-                .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
-                .join(", ");
-
-            console.warn(
-                `$libraryJson.setter failed to create library definitions for the following symbolNames: [${csvSymbolNames}]`,
-            );
-        }
-
-        staticLibraryDefinitionsByLocale.set(locale, staticLibraryDefinitions);
-    }
-
-    return PQP.MapUtils.assertGet(staticLibraryDefinitionsByLocale, locale);
-}
-
-const emptyReadonlyMap: ReadonlyMap<string, Library.TLibraryDefinition> = new Map();
-
-const sdkLibraryByLocale: Map<string, Library.ILibrary> = new Map();
-const sdkStaticLibraryDefinitionsByLocale: Map<string, ReadonlyMap<string, Library.TLibraryDefinition>> = new Map();
-
-const sdkLibrarySymbols: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
+export const SdkLibrarySymbols: ReadonlyMap<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
     [PQP.Locale.en_US, SdkLibrarySymbolsEnUs],
 ]);
 
-const standardLibraryByLocale: Map<string, Library.ILibrary> = new Map();
+export function clearCache(): void {
+    libraryByCacheKey.clear();
+}
 
-const standardStaticLibraryDefinitionsByLocale: Map<
-    string,
-    ReadonlyMap<string, Library.TLibraryDefinition>
-> = new Map();
+export function createCacheKey(locale: string, mode: string): string {
+    return `${locale};${mode}`;
+}
 
-const standardLibrarySymbolByLocale: Map<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
-    [PQP.Locale.en_US, StandardLibrarySymbolsEnUs],
-]);
+export function createLibrary(
+    cacheKey: string,
+    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
+    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
+): Library.ILibrary {
+    const staticLibraryDefinitions: Map<string, Library.TLibraryDefinition> = new Map();
+
+    for (const collection of staticLibraryDefinitionCollection) {
+        for (const [key, value] of libraryDefinitionsFromLibrarySymbols(collection).entries()) {
+            staticLibraryDefinitions.set(key, value);
+        }
+    }
+
+    const dynamicLibraryDefinitions: () => ReadonlyMap<string, Library.TLibraryDefinition> = () => {
+        const result: Map<string, Library.TLibraryDefinition> = new Map();
+
+        for (const collection of dynamicLibraryDefinitionCollection) {
+            for (const [key, value] of collection()) {
+                result.set(key, value);
+            }
+        }
+
+        return result;
+    };
+
+    const library: Library.ILibrary = {
+        externalTypeResolver: wrapSmartTypeResolver(
+            LibraryDefinitionUtils.externalTypeResolver({
+                staticLibraryDefinitions,
+                dynamicLibraryDefinitions,
+            }),
+        ),
+        libraryDefinitions: {
+            staticLibraryDefinitions,
+            dynamicLibraryDefinitions,
+        },
+    };
+
+    libraryByCacheKey.set(cacheKey, library);
+
+    return library;
+}
+
+export function getLibrary(cacheKey: string): Library.ILibrary | undefined {
+    return libraryByCacheKey.get(cacheKey);
+}
+
+export function setCacheAndReturn(cacheKey: string, library: Library.ILibrary): Library.ILibrary {
+    libraryByCacheKey.set(cacheKey, library);
+
+    return library;
+}
+
+const libraryByCacheKey: Map<string, Library.ILibrary> = new Map();
+
+function libraryDefinitionsFromLibrarySymbols(
+    librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
+): ReadonlyMap<string, Library.TLibraryDefinition> {
+    const libraryDefinitionsResult: PartialResult<
+        ReadonlyMap<string, Library.TLibraryDefinition>,
+        LibrarySymbolUtils.IncompleteLibraryDefinitions,
+        ReadonlyArray<LibrarySymbol.LibrarySymbol>
+    > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
+
+    let libraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition>;
+    let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
+
+    if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
+        libraryDefinitions = libraryDefinitionsResult.value;
+        failedSymbols = [];
+    } else if (PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
+        libraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
+        failedSymbols = libraryDefinitionsResult.partial.invalidSymbols;
+    } else {
+        libraryDefinitions = new Map();
+        failedSymbols = libraryDefinitionsResult.error;
+    }
+
+    if (failedSymbols.length) {
+        const csvSymbolNames: string = failedSymbols
+            .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
+            .join(", ");
+
+        console.warn(
+            `LibraryUtils.libraryDefinitionsFromLibrarySymbols failed to create library definitions for the following symbolNames: [${csvSymbolNames}]`,
+        );
+    }
+
+    return libraryDefinitions;
+}

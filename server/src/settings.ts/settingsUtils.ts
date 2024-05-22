@@ -7,7 +7,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
-import { LibraryUtils, ModuleLibraries } from "../library";
+import { LibraryUtils, ModuleLibraries, SymbolsUtils } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
 import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
@@ -128,16 +128,22 @@ export function getLocalizedModuleLibraryFromTextDocument(
 export function getLocalizedLibrary(
     dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
-    switch (serverSettings.mode) {
-        case "SDK":
-            return LibraryUtils.getOrCreateSdkLibrary(dynamicLibraryDefinitions, serverSettings.locale);
+    const cacheKey: string = LibraryUtils.createCacheKey(serverSettings.locale, serverSettings.mode);
 
-        case "Power Query":
-            return LibraryUtils.getOrCreateStandardLibrary(serverSettings.locale);
+    const result: PQLS.Library.ILibrary | undefined = LibraryUtils.getLibrary(cacheKey);
 
-        default:
-            throw PQP.Assert.isNever(serverSettings.mode);
+    if (result) {
+        return result;
     }
+
+    return LibraryUtils.setCacheAndReturn(
+        cacheKey,
+        LibraryUtils.createLibrary(
+            cacheKey,
+            [SymbolsUtils.getSymbols(serverSettings.locale, serverSettings.mode)],
+            dynamicLibraryDefinitions,
+        ),
+    );
 }
 
 export function getHasConfigurationCapability(): boolean {
