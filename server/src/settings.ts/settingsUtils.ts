@@ -110,24 +110,6 @@ export function getLibrary(uri: string): PQLS.Library.ILibrary {
     );
 }
 
-export function getLocalizedLibrary(
-    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
-): PQLS.Library.ILibrary {
-    const cacheKey: string = LibraryUtils.createCacheKey(serverSettings.locale, serverSettings.mode);
-
-    const result: PQLS.Library.ILibrary | undefined = LibraryUtils.getLibrary(cacheKey);
-
-    if (result) {
-        return result;
-    }
-
-    return LibraryUtils.createLibraryAndSetCache(
-        cacheKey,
-        [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
-        dynamicLibraryDefinitionCollection,
-    );
-}
-
 export function getHasConfigurationCapability(): boolean {
     return hasConfigurationCapability;
 }
