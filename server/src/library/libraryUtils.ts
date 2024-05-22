@@ -31,7 +31,6 @@ export function createCacheKey(locale: string, mode: string): string {
 }
 
 export function createLibrary(
-    cacheKey: string,
     staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
     dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
 ): Library.ILibrary {
@@ -68,6 +67,19 @@ export function createLibrary(
         },
     };
 
+    return library;
+}
+
+export function createLibraryAndSetCache(
+    cacheKey: string,
+    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
+    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
+): Library.ILibrary {
+    const library: Library.ILibrary = createLibrary(
+        staticLibraryDefinitionCollection,
+        dynamicLibraryDefinitionCollection,
+    );
+
     libraryByCacheKey.set(cacheKey, library);
 
     return library;
@@ -75,12 +87,6 @@ export function createLibrary(
 
 export function getLibrary(cacheKey: string): Library.ILibrary | undefined {
     return libraryByCacheKey.get(cacheKey);
-}
-
-export function setCacheAndReturn(cacheKey: string, library: Library.ILibrary): Library.ILibrary {
-    libraryByCacheKey.set(cacheKey, library);
-
-    return library;
 }
 
 const libraryByCacheKey: Map<string, Library.ILibrary> = new Map();

@@ -126,7 +126,7 @@ export function getLocalizedModuleLibraryFromTextDocument(
 }
 
 export function getLocalizedLibrary(
-    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
+    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
     const cacheKey: string = LibraryUtils.createCacheKey(serverSettings.locale, serverSettings.mode);
 
@@ -136,13 +136,10 @@ export function getLocalizedLibrary(
         return result;
     }
 
-    return LibraryUtils.setCacheAndReturn(
+    return LibraryUtils.createLibraryAndSetCache(
         cacheKey,
-        LibraryUtils.createLibrary(
-            cacheKey,
-            [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
-            dynamicLibraryDefinitions,
-        ),
+        [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
+        dynamicLibraryDefinitionCollection,
     );
 }
 
