@@ -371,7 +371,11 @@ documents.listen(connection);
 connection.listen();
 
 function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceManager): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedLibrary(moduleLibraries, document);
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
+        moduleLibraries,
+        document,
+        /* updateCache */ false,
+    );
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
 }
@@ -426,7 +430,11 @@ async function getDocumentDiagnostics(
         "getDocumentDiagnostics",
     );
 
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedLibrary(moduleLibraries, document, true);
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
+        moduleLibraries,
+        document,
+        /* updateCache */ true,
+    );
 
     const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
         localizedLibrary,

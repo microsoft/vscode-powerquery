@@ -7,7 +7,10 @@ import { LibrarySymbol } from "@microsoft/powerquery-language-services";
 import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
 
-export function getSymbols(locale: string, mode: "Power Query" | "SDK"): ReadonlyArray<LibrarySymbol.LibrarySymbol> {
+export function getSymbolsForLocaleAndMode(
+    locale: string,
+    mode: "Power Query" | "SDK",
+): ReadonlyArray<LibrarySymbol.LibrarySymbol> {
     switch (mode) {
         case "Power Query":
             return StandardLibrarySymbolByLocale.get(locale) ?? StandardLibrarySymbolsEnUs;

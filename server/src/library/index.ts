@@ -3,4 +3,4 @@
 
 export { ModuleLibraryTrieNodeCache, ModuleLibraries } from "./moduleLibraries";
 export * as LibraryUtils from "./libraryUtils";
-export * as SymbolsUtils from "./symbolsUtils";
+export * as LibrarySymbolUtils from "./librarySymbolUtils";

@@ -5,37 +5,8 @@
 // such as Table.AddColumn(...) returning a DefinedTable.
 
 import * as PQP from "@microsoft/powerquery-parser";
-import { ExternalType, Library } from "@microsoft/powerquery-language-services";
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
-
-// Takes the definitions for a library and returns a type resolver.
-export function createExternalTypeResolver(
-    staticLibraryDefinitions: Library.ILibrary,
-    dynamicLibraryDefinitions: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
-): ExternalType.TExternalTypeResolverFn {
-    return (request: ExternalType.TExternalTypeRequest): PQP.Language.Type.TPowerQueryType | undefined => {
-        const staticLibraryType: PQP.Language.Type.TPowerQueryType | undefined =
-            staticLibraryDefinitions.externalTypeResolver(request);
-
-        // We might have defined a smart type resolver for a built-in library function.
-        if (!staticLibraryType) {
-            return undefined;
-        }
-
-        // Else look in the dynamic library definitions for a type.
-        for (const getter of dynamicLibraryDefinitions) {
-            const dynamicLibraryType: PQP.Language.Type.TPowerQueryType | undefined = getter().get(
-                request.identifierLiteral,
-            )?.asPowerQueryType;
-
-            if (dynamicLibraryType) {
-                return dynamicLibraryType;
-            }
-        }
-
-        return undefined;
-    };
-}
+import { ExternalType } from "@microsoft/powerquery-language-services";
 
 // Wraps an external type resolver with smart type resolvers for invocation requests.
 export function wrapSmartTypeResolver(

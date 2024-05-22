@@ -7,7 +7,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
-import { LibraryUtils, ModuleLibraries, SymbolsUtils } from "../library";
+import { LibrarySymbolUtils, LibraryUtils, ModuleLibraries } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
 import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
@@ -100,7 +100,7 @@ export function getServerSettings(): ServerSettings {
 export function getLocalizedModuleLibraryFromTextDocument(
     moduleLibraries: ModuleLibraries,
     document: TextDocument,
-    updateCache: boolean = false,
+    updateCache: boolean,
 ): PQLS.Library.ILibrary {
     const moduleLibraryDefinitions: (() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>)[] = [];
 
@@ -140,7 +140,7 @@ export function getLocalizedLibrary(
         cacheKey,
         LibraryUtils.createLibrary(
             cacheKey,
-            [SymbolsUtils.getSymbols(serverSettings.locale, serverSettings.mode)],
+            [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
             dynamicLibraryDefinitions,
         ),
     );
