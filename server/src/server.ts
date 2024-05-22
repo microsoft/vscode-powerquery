@@ -12,6 +12,7 @@ import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { getLocalizedModuleLibraryFromTextDocument } from "./settings.ts/settingsUtils";
 import { ModuleLibraries } from "./library";
+import { runSafeAsync } from "./handlerUtils";
 import { SettingsUtils } from "./settings.ts";
 
 interface SemanticTokenParams {
@@ -342,26 +343,29 @@ connection.onDocumentFormatting(
 
 // TODO: Do we need to track the resultId value?
 connection.languages.diagnostics.on(
-    async (
-        params: LS.DocumentDiagnosticParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.DocumentDiagnosticReport> => {
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+    async (params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
+        runSafeAsync(
+            async () => {
+                const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-        if (document === undefined) {
-            return {
-                kind: LS.DocumentDiagnosticReportKind.Full,
-                items: [],
-            };
-        }
+                if (document === undefined) {
+                    return {
+                        kind: LS.DocumentDiagnosticReportKind.Full,
+                        items: [],
+                    };
+                }
 
-        const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document, cancellationToken);
+                const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document, cancellationToken);
 
-        return {
-            kind: LS.DocumentDiagnosticReportKind.Full,
-            items: diagnostics,
-        };
-    },
+                return {
+                    kind: LS.DocumentDiagnosticReportKind.Full,
+                    items: diagnostics,
+                };
+            },
+            { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
+            `Error while computing diagnostics for ${params.textDocument.uri}`,
+            cancellationToken,
+        ),
 );
 
 // Make the text document manager listen on the connection
