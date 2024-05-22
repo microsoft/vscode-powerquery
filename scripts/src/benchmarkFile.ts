@@ -6,7 +6,7 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { InspectionSettings } from "@microsoft/powerquery-language-services";
 
-import { LibraryUtils } from "../../server/src/library";
+import { LibrarySymbolUtils, LibraryUtils } from "../../server/src/library";
 
 const args: ReadonlyArray<string> = process.argv;
 
@@ -48,7 +48,12 @@ let contents: string = "";
 
 const fileContents: string = fs.readFileSync(args[2], "utf8").replace(/^\uFEFF/, "");
 const position: PQLS.Position = parsePosition(args[3]);
-const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
+
+const library: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
+    LibraryUtils.createCacheKey(PQP.Locale.en_US, "Power Query"),
+    [LibrarySymbolUtils.getSymbolsForLocaleAndMode(PQP.Locale.en_US, "Power Query")],
+    [],
+);
 
 const inspectionSettings: InspectionSettings = PQLS.InspectionUtils.inspectionSettings(
     {
