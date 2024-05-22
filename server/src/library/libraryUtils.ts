@@ -1,24 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import {
-    Library,
-    LibraryDefinitionUtils,
-    LibrarySymbol,
-    LibrarySymbolUtils,
-} from "@microsoft/powerquery-language-services";
-import { PartialResult, PartialResultUtils } from "@microsoft/powerquery-parser";
 
 import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
+import { LibrarySymbolUtils } from ".";
 import { wrapSmartTypeResolver } from "./libraryTypeResolver";
 
-export const StandardLibrarySymbolByLocale: ReadonlyMap<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
-    [PQP.Locale.en_US, StandardLibrarySymbolsEnUs],
-]);
+export const StandardLibrarySymbolByLocale: ReadonlyMap<
+    string,
+    ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>
+> = new Map([[PQP.Locale.en_US, StandardLibrarySymbolsEnUs]]);
 
-export const SdkLibrarySymbols: ReadonlyMap<string, ReadonlyArray<LibrarySymbol.LibrarySymbol>> = new Map([
+export const SdkLibrarySymbols: ReadonlyMap<string, ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>> = new Map([
     [PQP.Locale.en_US, SdkLibrarySymbolsEnUs],
 ]);
 
@@ -31,19 +27,19 @@ export function createCacheKey(locale: string, mode: string): string {
 }
 
 export function createLibrary(
-    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
-    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
-): Library.ILibrary {
-    const staticLibraryDefinitions: Map<string, Library.TLibraryDefinition> = new Map();
+    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>>,
+    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
+): PQLS.Library.ILibrary {
+    const staticLibraryDefinitions: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
 
     for (const collection of staticLibraryDefinitionCollection) {
-        for (const [key, value] of libraryDefinitionsFromLibrarySymbols(collection).entries()) {
+        for (const [key, value] of LibrarySymbolUtils.toLibraryDefinitions(collection).entries()) {
             staticLibraryDefinitions.set(key, value);
         }
     }
 
-    const dynamicLibraryDefinitions: () => ReadonlyMap<string, Library.TLibraryDefinition> = () => {
-        const result: Map<string, Library.TLibraryDefinition> = new Map();
+    const dynamicLibraryDefinitions: () => ReadonlyMap<string, PQLS.Library.TLibraryDefinition> = () => {
+        const result: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
 
         for (const collection of dynamicLibraryDefinitionCollection) {
             for (const [key, value] of collection()) {
@@ -54,9 +50,9 @@ export function createLibrary(
         return result;
     };
 
-    const library: Library.ILibrary = {
+    const library: PQLS.Library.ILibrary = {
         externalTypeResolver: wrapSmartTypeResolver(
-            LibraryDefinitionUtils.externalTypeResolver({
+            PQLS.LibraryDefinitionUtils.externalTypeResolver({
                 staticLibraryDefinitions,
                 dynamicLibraryDefinitions,
             }),
@@ -72,10 +68,10 @@ export function createLibrary(
 
 export function createLibraryAndSetCache(
     cacheKey: string,
-    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<LibrarySymbol.LibrarySymbol>>,
-    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, Library.TLibraryDefinition>>,
-): Library.ILibrary {
-    const library: Library.ILibrary = createLibrary(
+    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>>,
+    dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
+): PQLS.Library.ILibrary {
+    const library: PQLS.Library.ILibrary = createLibrary(
         staticLibraryDefinitionCollection,
         dynamicLibraryDefinitionCollection,
     );
@@ -85,44 +81,8 @@ export function createLibraryAndSetCache(
     return library;
 }
 
-export function getLibrary(cacheKey: string): Library.ILibrary | undefined {
+export function getLibrary(cacheKey: string): PQLS.Library.ILibrary | undefined {
     return libraryByCacheKey.get(cacheKey);
 }
 
-const libraryByCacheKey: Map<string, Library.ILibrary> = new Map();
-
-function libraryDefinitionsFromLibrarySymbols(
-    librarySymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>,
-): ReadonlyMap<string, Library.TLibraryDefinition> {
-    const libraryDefinitionsResult: PartialResult<
-        ReadonlyMap<string, Library.TLibraryDefinition>,
-        LibrarySymbolUtils.IncompleteLibraryDefinitions,
-        ReadonlyArray<LibrarySymbol.LibrarySymbol>
-    > = LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
-
-    let libraryDefinitions: ReadonlyMap<string, Library.TLibraryDefinition>;
-    let failedSymbols: ReadonlyArray<LibrarySymbol.LibrarySymbol>;
-
-    if (PartialResultUtils.isOk(libraryDefinitionsResult)) {
-        libraryDefinitions = libraryDefinitionsResult.value;
-        failedSymbols = [];
-    } else if (PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
-        libraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
-        failedSymbols = libraryDefinitionsResult.partial.invalidSymbols;
-    } else {
-        libraryDefinitions = new Map();
-        failedSymbols = libraryDefinitionsResult.error;
-    }
-
-    if (failedSymbols.length) {
-        const csvSymbolNames: string = failedSymbols
-            .map((librarySymbol: LibrarySymbol.LibrarySymbol) => librarySymbol.name)
-            .join(", ");
-
-        console.warn(
-            `LibraryUtils.libraryDefinitionsFromLibrarySymbols failed to create library definitions for the following symbolNames: [${csvSymbolNames}]`,
-        );
-    }
-
-    return libraryDefinitions;
-}
+const libraryByCacheKey: Map<string, PQLS.Library.ILibrary> = new Map();

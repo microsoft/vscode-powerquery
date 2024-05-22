@@ -4,12 +4,10 @@
 import * as LS from "vscode-languageserver/node";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
-import { LibrarySymbolUtils, LibraryUtils, ModuleLibraries } from "../library";
+import { LibrarySymbolUtils, LibraryUtils, ModuleLibraryUtils } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
-import { ModuleLibraryTreeNode } from "../library/moduleLibraries";
 
 const LanguageId: string = "powerquery";
 
@@ -97,32 +95,19 @@ export function getServerSettings(): ServerSettings {
     return serverSettings;
 }
 
-export function getLocalizedModuleLibraryFromTextDocument(
-    moduleLibraries: ModuleLibraries,
-    document: TextDocument,
-    updateCache: boolean,
-): PQLS.Library.ILibrary {
-    const moduleLibraryDefinitions: (() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>)[] = [];
+export function getLibrary(): PQLS.Library.ILibrary {
+    const cacheKey: string = LibraryUtils.createCacheKey(serverSettings.locale, serverSettings.mode);
+    const result: PQLS.Library.ILibrary | undefined = LibraryUtils.getLibrary(cacheKey);
 
-    // add the document into module library container, and we need to trace for its validation
-    const closestModuleLibraryTreeNodeOfDefinitions: ModuleLibraryTreeNode = moduleLibraries.addTextDocument(document);
-
-    // I do not believe there would be one m proj at the root of the file system
-    if (!closestModuleLibraryTreeNodeOfDefinitions.isRoot) {
-        moduleLibraryDefinitions.push(closestModuleLibraryTreeNodeOfDefinitions.libraryDefinitions);
+    if (result) {
+        return result;
     }
 
-    if (updateCache) {
-        // for validation, we have to forcefully update localizedLibrary to ensure it keeps up to the latest
-        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary =
-            getLocalizedLibrary(moduleLibraryDefinitions);
-    } else {
-        closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary =
-            closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary ??
-            getLocalizedLibrary(moduleLibraryDefinitions);
-    }
-
-    return closestModuleLibraryTreeNodeOfDefinitions.cache.localizedLibrary;
+    return LibraryUtils.createLibraryAndSetCache(
+        cacheKey,
+        [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
+        ModuleLibraryUtils.getAsDynamicLibraryDefinitions(),
+    );
 }
 
 export function getLocalizedLibrary(
