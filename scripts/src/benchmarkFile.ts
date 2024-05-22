@@ -49,8 +49,7 @@ let contents: string = "";
 const fileContents: string = fs.readFileSync(args[2], "utf8").replace(/^\uFEFF/, "");
 const position: PQLS.Position = parsePosition(args[3]);
 
-const library: PQLS.Library.ILibrary = LibraryUtils.createLibraryAndSetCache(
-    LibraryUtils.createCacheKey(PQP.Locale.en_US, "Power Query"),
+const library: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
     [LibrarySymbolUtils.getSymbolsForLocaleAndMode(PQP.Locale.en_US, "Power Query")],
     [],
 );

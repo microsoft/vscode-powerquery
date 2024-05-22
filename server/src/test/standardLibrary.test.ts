@@ -10,8 +10,7 @@ import { expect } from "chai";
 
 import { LibrarySymbolUtils, LibraryUtils, ModuleLibraries } from "../library";
 
-const library: PQLS.Library.ILibrary = LibraryUtils.createLibraryAndSetCache(
-    LibraryUtils.createCacheKey(PQP.Locale.en_US, "Power Query"),
+const library: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
     [LibrarySymbolUtils.getSymbolsForLocaleAndMode(PQP.Locale.en_US, "Power Query")],
     [],
 );
