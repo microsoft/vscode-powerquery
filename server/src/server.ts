@@ -10,7 +10,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { ModuleLibraryUtils } from "./library";
+import { LibraryUtils, ModuleLibraryUtils } from "./library";
 import { SettingsUtils } from "./settings.ts";
 
 interface SemanticTokenParams {
@@ -99,8 +99,6 @@ connection.onDidChangeConfiguration(async () => {
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
-    ModuleLibraryUtils.onModuleRemoved(event.document.uri);
-
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
         uri: event.document.uri,
@@ -260,6 +258,7 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
 
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
     ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
+    LibraryUtils.clearCache();
     connection.languages.diagnostics.refresh();
 });
 
@@ -369,7 +368,7 @@ documents.listen(connection);
 connection.listen();
 
 function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceManager): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary();
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
 }
@@ -424,7 +423,7 @@ async function getDocumentDiagnostics(
         "getDocumentDiagnostics",
     );
 
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary();
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
         localizedLibrary,

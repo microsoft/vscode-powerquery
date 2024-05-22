@@ -95,7 +95,7 @@ export function getServerSettings(): ServerSettings {
     return serverSettings;
 }
 
-export function getLibrary(): PQLS.Library.ILibrary {
+export function getLibrary(uri: string): PQLS.Library.ILibrary {
     const cacheKey: string = LibraryUtils.createCacheKey(serverSettings.locale, serverSettings.mode);
     const result: PQLS.Library.ILibrary | undefined = LibraryUtils.getLibrary(cacheKey);
 
@@ -106,7 +106,7 @@ export function getLibrary(): PQLS.Library.ILibrary {
     return LibraryUtils.createLibraryAndSetCache(
         cacheKey,
         [LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode)],
-        ModuleLibraryUtils.getAsDynamicLibraryDefinitions(),
+        [ModuleLibraryUtils.getAsDynamicLibraryDefinitions(uri)],
     );
 }
 

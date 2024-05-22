@@ -5,20 +5,22 @@ import * as PQLS from "@microsoft/powerquery-language-services";
 
 import { LibrarySymbolUtils } from ".";
 
-export function clear(): void {
+export function clearCache(): void {
     moduleLibraryByUri.clear();
 }
 
-export function getAsDynamicLibraryDefinitions(): ReadonlyArray<
-    () => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>
-> {
-    const result: (() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>)[] = [];
+export function getAsDynamicLibraryDefinitions(
+    uri: string,
+): () => ReadonlyMap<string, PQLS.Library.TLibraryDefinition> {
+    return () => {
+        for (const [connectorUri, libraryDefinitions] of moduleLibraryByUri.entries()) {
+            if (uri.startsWith(connectorUri)) {
+                return libraryDefinitions;
+            }
+        }
 
-    for (const libraryDefinitions of moduleLibraryByUri.values()) {
-        result.push(() => libraryDefinitions);
-    }
-
-    return result;
+        return new Map();
+    };
 }
 
 export function getModuleCount(): number {

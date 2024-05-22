@@ -211,14 +211,14 @@ describe(`moduleLibraryUpdated`, () => {
         });
 
         it("ModuleLibraries", () => {
-            ModuleLibraryUtils.clear();
+            ModuleLibraryUtils.clearCache();
             expect(ModuleLibraryUtils.getModuleCount()).to.equal(0);
 
             const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
             ModuleLibraryUtils.onModuleAdded("testing", libraryJson);
             expect(ModuleLibraryUtils.getModuleCount()).to.equal(1);
 
-            ModuleLibraryUtils.clear();
+            ModuleLibraryUtils.clearCache();
             expect(ModuleLibraryUtils.getModuleCount()).to.equal(0);
         });
     });
