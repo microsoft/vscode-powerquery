@@ -21,7 +21,7 @@ export function handleError(
     const trace: Trace = traceManager.entry("handleError", action, undefined);
     let vscodeMessage: string;
 
-    if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError) {
+    if (isCancellationError(value)) {
         vscodeMessage = `CancellationError during ${action}.`;
         connection.console.info(vscodeMessage);
     } else if (PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.InvariantError) {
@@ -39,6 +39,10 @@ export function handleError(
     }
 
     trace.exit({ vscodeMessage });
+}
+
+export function isCancellationError(value: unknown): boolean {
+    return PQP.CommonError.isCommonError(value) && value.innerError instanceof PQP.CommonError.CancellationError;
 }
 
 export function formatError(error: Error): string {
