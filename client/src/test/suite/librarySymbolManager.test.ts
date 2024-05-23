@@ -4,7 +4,6 @@
 import * as assert from "assert";
 import * as fs from "fs";
 import * as vscode from "vscode";
-import { afterEach } from "mocha";
 
 import * as TestUtils from "./testUtils";
 import { LibraryJson, PowerQueryApi } from "../../vscode-powerquery.api";
@@ -71,11 +70,6 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
 });
 
 suite("LibrarySymbolManager.refreshSymbolDirectories", () => {
-    afterEach(async () => {
-        mockClient.reset();
-        await librarySymbolManager.refreshSymbolDirectories();
-    });
-
     test("Refresh with valid file", async () => {
         const modules: readonly string[] = await librarySymbolManager.refreshSymbolDirectories([
             TestUtils.getTestFixturePath(),
