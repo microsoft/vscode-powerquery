@@ -12,10 +12,10 @@ export function createAdapterOrTimedCancellation(
     return cancellationToken ? createAdapter(cancellationToken, timeoutInMs) : createTimedCancellation(timeoutInMs);
 }
 
-export function createAdapter(cancellationToken: LS.CancellationToken, timeoutInMs: number): CancellationTokenAdapter {
+function createAdapter(cancellationToken: LS.CancellationToken, timeoutInMs: number): CancellationTokenAdapter {
     return new CancellationTokenAdapter(createTimedCancellation(timeoutInMs), cancellationToken);
 }
 
-export function createTimedCancellation(timeoutInMs: number): PQP.TimedCancellationToken {
+function createTimedCancellation(timeoutInMs: number): PQP.TimedCancellationToken {
     return new PQP.TimedCancellationToken(timeoutInMs);
 }
