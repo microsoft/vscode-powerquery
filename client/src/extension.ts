@@ -6,7 +6,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
-import * as Subscriptions from "./subscriptions";
+// import * as Subscriptions from "./subscriptions";
 import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
 import { CommandConstant } from "./commandConstant";
 
@@ -66,13 +66,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     // Start the client. This will also launch the server
     await client.start();
 
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSemanticTokensProvider(
-            { language: "powerquery" },
-            Subscriptions.createDocumentSemanticTokensProvider(client),
-            Subscriptions.SemanticTokensLegend,
-        ),
-    );
+    // context.subscriptions.push(
+    //     vscode.languages.registerDocumentSemanticTokensProvider(
+    //         { language: "powerquery" },
+    //         Subscriptions.createDocumentSemanticTokensProvider(client),
+    //         Subscriptions.SemanticTokensLegend,
+    //     ),
+    // );
 
     return Object.freeze({
         languageClient: client,

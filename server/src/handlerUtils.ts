@@ -10,7 +10,7 @@ interface RuntimeEnvironment {
     };
 }
 
-const environment: RuntimeEnvironment = {
+const DefaultRuntimeEnvironment: RuntimeEnvironment = {
     timer: {
         setImmediate(callback: (...args: unknown[]) => void, ...args: unknown[]): Disposable {
             const handle: NodeJS.Timeout = setTimeout(callback, 0, ...args);
@@ -32,7 +32,7 @@ export function runSafeAsync<T, E>(
     token: CancellationToken,
 ): Thenable<T | ResponseError<E>> {
     return new Promise<T | ResponseError<E>>((resolve: (value: T | ResponseError<E>) => void) => {
-        environment.timer.setImmediate(() => {
+        DefaultRuntimeEnvironment.timer.setImmediate(() => {
             if (token.isCancellationRequested) {
                 resolve(cancelValue());
 
@@ -49,11 +49,47 @@ export function runSafeAsync<T, E>(
                     }
                 },
                 (e: Error) => {
-                    // TODO: Should we be passing through tracemanager?
-                    console.error(formatError(errorMessage, e));
-                    resolve(errorVal);
+                    if (token.isCancellationRequested) {
+                        resolve(cancelValue());
+                    } else {
+                        // TODO: use trace manager
+                        console.error(formatError(errorMessage, e));
+
+                        resolve(errorVal);
+                    }
                 },
             );
+        });
+    });
+}
+
+export function runSafe<T, E>(
+    func: () => T,
+    errorVal: T,
+    errorMessage: string,
+    token: CancellationToken,
+): Thenable<T | ResponseError<E>> {
+    return new Promise<T | ResponseError<E>>((resolve: (value: T | ResponseError<E>) => void) => {
+        DefaultRuntimeEnvironment.timer.setImmediate(() => {
+            if (token.isCancellationRequested) {
+                resolve(cancelValue());
+            } else {
+                try {
+                    const result: T = func();
+
+                    if (token.isCancellationRequested) {
+                        resolve(cancelValue());
+
+                        return;
+                    } else {
+                        resolve(result);
+                    }
+                } catch (e) {
+                    // TODO: use trace manager
+                    console.error(formatError(errorMessage, e));
+                    resolve(errorVal);
+                }
+            }
         });
     });
 }

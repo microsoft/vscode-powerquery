@@ -23,6 +23,27 @@ interface ModuleLibraryUpdatedParams {
     readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 }
 
+const semanticTokenTypeMap: Map<LS.SemanticTokenTypes, number> = new Map<LS.SemanticTokenTypes, number>([
+    [LS.SemanticTokenTypes.function, 0],
+    [LS.SemanticTokenTypes.keyword, 1],
+    [LS.SemanticTokenTypes.number, 2],
+    [LS.SemanticTokenTypes.operator, 3],
+    [LS.SemanticTokenTypes.parameter, 4],
+    [LS.SemanticTokenTypes.string, 5],
+    [LS.SemanticTokenTypes.type, 6],
+    [LS.SemanticTokenTypes.variable, 7],
+]);
+
+const semanticTokenModifierMap: Map<LS.SemanticTokenModifiers, number> = new Map<LS.SemanticTokenModifiers, number>([
+    [LS.SemanticTokenModifiers.declaration, 1 << 0],
+    [LS.SemanticTokenModifiers.defaultLibrary, 1 << 1],
+]);
+
+const semanticTokensLegend: LS.SemanticTokensLegend = {
+    tokenTypes: [...semanticTokenTypeMap.keys()],
+    tokenModifiers: [...semanticTokenModifierMap.keys()],
+};
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
@@ -188,11 +209,15 @@ connection.onInitialize((params: LS.InitializeParams) => {
             workspaceDiagnostics: false,
         },
         documentFormattingProvider: true,
-        documentSymbolProvider: {
-            workDoneProgress: false,
-        },
+        documentSymbolProvider: true,
         hoverProvider: true,
         renameProvider: true,
+        semanticTokensProvider: {
+            documentSelector: [{ language: "powerquery" }],
+            legend: semanticTokensLegend,
+            full: true,
+            range: false,
+        },
         signatureHelpProvider: {
             triggerCharacters: ["(", ","],
         },
@@ -341,6 +366,91 @@ connection.onDocumentFormatting(
             return [];
         }
     },
+);
+
+function emptySemanticTokens(): LS.SemanticTokens {
+    return { data: [] };
+}
+
+connection.languages.semanticTokens.on(
+    // eslint-disable-next-line require-await
+    async (params: LS.SemanticTokensParams, cancellationToken: LS.CancellationToken) =>
+        runSafeAsync<LS.SemanticTokens, void>(
+            async () => {
+                const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+                if (document === undefined) {
+                    return emptySemanticTokens();
+                }
+
+                const pqpCancellationToken: PQP.ICancellationToken =
+                    SettingsUtils.createCancellationToken(cancellationToken);
+
+                const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                    document.uri,
+                    "semanticTokens",
+                );
+
+                const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+                const result: PQP.Result<PQLS.PartialSemanticToken[] | undefined, PQP.CommonError.CommonError> =
+                    await analysis.getPartialSemanticTokens(pqpCancellationToken);
+
+                let partialSemanticTokens: PQLS.PartialSemanticToken[];
+
+                if (PQP.ResultUtils.isOk(result)) {
+                    partialSemanticTokens = result.value ?? [];
+                } else {
+                    ErrorUtils.handleError(connection, result.error, "semanticTokens", traceManager);
+
+                    return emptySemanticTokens();
+                }
+
+                const tokenBuilder: LS.SemanticTokensBuilder = new LS.SemanticTokensBuilder();
+
+                for (const semanticToken of partialSemanticTokens) {
+                    const tokenTypeValue: number | undefined = semanticTokenTypeMap.get(semanticToken.tokenType);
+
+                    if (!tokenTypeValue) {
+                        connection.console.error(`Unknown token type: ${semanticToken.tokenType}`);
+
+                        continue;
+                    }
+
+                    let missingModifier: boolean = false;
+                    let tokenModifierValue: number = 0;
+
+                    semanticToken.tokenModifiers.forEach((tokenModifier: LS.SemanticTokenModifiers) => {
+                        const value: number | undefined = semanticTokenModifierMap.get(tokenModifier);
+
+                        if (!value) {
+                            connection.console.error(`Unknown token modifier: ${tokenModifier}`);
+                            missingModifier = true;
+                        } else {
+                            tokenModifierValue |= value;
+                        }
+                    });
+
+                    if (missingModifier) {
+                        continue;
+                    }
+
+                    tokenBuilder.push(
+                        semanticToken.range.start.line,
+                        semanticToken.range.start.character,
+                        // TODO: do we support multiline tokens?
+                        semanticToken.range.end.character - semanticToken.range.start.character,
+                        tokenTypeValue,
+                        tokenModifierValue,
+                    );
+                }
+
+                return tokenBuilder.build();
+            },
+            emptySemanticTokens(),
+            `Error while computing semantic tokens for ${params.textDocument.uri}`,
+            cancellationToken,
+        ),
 );
 
 connection.languages.diagnostics.on(
