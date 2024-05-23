@@ -411,7 +411,7 @@ connection.languages.semanticTokens.on(
                 for (const semanticToken of partialSemanticTokens) {
                     const tokenTypeValue: number | undefined = semanticTokenTypeMap.get(semanticToken.tokenType);
 
-                    if (!tokenTypeValue) {
+                    if (tokenTypeValue === undefined) {
                         connection.console.error(`Unknown token type: ${semanticToken.tokenType}`);
 
                         continue;
@@ -423,7 +423,7 @@ connection.languages.semanticTokens.on(
                     semanticToken.tokenModifiers.forEach((tokenModifier: LS.SemanticTokenModifiers) => {
                         const value: number | undefined = semanticTokenModifierMap.get(tokenModifier);
 
-                        if (!value) {
+                        if (value === undefined) {
                             connection.console.error(`Unknown token modifier: ${tokenModifier}`);
                             missingModifier = true;
                         } else {
