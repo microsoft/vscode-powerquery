@@ -10,8 +10,8 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { ModuleLibraries } from "./library";
-import { SettingsUtils } from "./settings.ts";
+import { LibraryUtils, ModuleLibraryUtils } from "./library";
+import { SettingsUtils } from "./settings";
 
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
@@ -27,7 +27,6 @@ interface ModuleLibraryUpdatedParams {
 // Also include all preview / proposed LSP features.
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
-const moduleLibraries: ModuleLibraries = new ModuleLibraries();
 
 connection.onCompletion(
     async (
@@ -100,9 +99,6 @@ connection.onDidChangeConfiguration(async () => {
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
-    // remove the document from module library container and we no longer need to trace it
-    moduleLibraries.removeTextDocument(event.document);
-
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
         uri: event.document.uri,
@@ -261,7 +257,8 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
 });
 
 connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
-    moduleLibraries.addModuleLibrary(params.workspaceUriPath, params.library);
+    ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
+    LibraryUtils.clearCache();
     connection.languages.diagnostics.refresh();
 });
 
@@ -371,11 +368,7 @@ documents.listen(connection);
 connection.listen();
 
 function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceManager): PQLS.Analysis {
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
-        moduleLibraries,
-        document,
-        /* updateCache */ false,
-    );
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
 }
@@ -430,11 +423,7 @@ async function getDocumentDiagnostics(
         "getDocumentDiagnostics",
     );
 
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLocalizedModuleLibraryFromTextDocument(
-        moduleLibraries,
-        document,
-        /* updateCache */ true,
-    );
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
         localizedLibrary,
