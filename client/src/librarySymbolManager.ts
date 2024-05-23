@@ -5,8 +5,9 @@ import * as LC from "vscode-languageclient/node";
 import * as path from "path";
 import * as vscode from "vscode";
 
+import * as LibrarySymbolUtils from "./librarySymbolUtils";
+
 import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
-import { Convert } from "./libraryExportJSON";
 
 const ErrorMessagePrefix: string = "Error processing symbol directory path. Please update your configuration.";
 
@@ -133,7 +134,7 @@ export class LibrarySymbolManager {
         try {
             const contents: Uint8Array = await this.fs.readFile(fileUri);
             const text: string = new TextDecoder(SymbolFileEncoding).decode(contents);
-            const library: LibraryJson = Convert.toLibraryExportJSON(text);
+            const library: LibraryJson = LibrarySymbolUtils.parseLibraryJson(text);
 
             this.clientTrace?.debug(`Loaded symbol file '${fileUri.toString()}'. Symbol count: ${library.length}`);
 
