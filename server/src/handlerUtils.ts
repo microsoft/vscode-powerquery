@@ -69,7 +69,7 @@ function formatError(message: string, err: unknown): string {
         return `formatError: ${message}: ${error.message}\n${error.stack}`;
     } else if (typeof err === "string") {
         return `formatError: ${message}: ${err}`;
-    } else if (err) {
+    } else if (err && typeof err === "object" && "toString" in err) {
         return `formatError: ${message}: ${err.toString()}`;
     }
 
