@@ -1,18 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { CancellationToken, LSPErrorCodes, ResponseError } from "vscode-languageserver/node";
+import { CancellationToken, Disposable, LSPErrorCodes, ResponseError } from "vscode-languageserver/node";
 
 interface RuntimeEnvironment {
     readonly timer: {
         setImmediate(callback: (...args: unknown[]) => void, ...args: unknown[]): Disposable;
         setTimeout(callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]): Disposable;
     };
-}
-
-// TODO: This isn't right, but it complains about the Disposable return value.
-interface Disposable {
-    dispose(): void;
 }
 
 const environment: RuntimeEnvironment = {
@@ -54,7 +49,7 @@ export function runSafeAsync<T, E>(
                     }
                 },
                 (e: Error) => {
-                    // TODO: use trace manager
+                    // TODO: Should we be passing through tracemanager?
                     console.error(formatError(errorMessage, e));
                     resolve(errorVal);
                 },
@@ -67,9 +62,7 @@ function cancelValue<E>(): ResponseError<E> {
     return new ResponseError<E>(LSPErrorCodes.RequestCancelled, "Request cancelled");
 }
 
-// TODO: Use trace manager
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatError(message: string, err: any): string {
+function formatError(message: string, err: unknown): string {
     if (err instanceof Error) {
         const error: Error = err as Error;
 
