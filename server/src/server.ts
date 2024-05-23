@@ -5,7 +5,6 @@ import * as LS from "vscode-languageserver/node";
 import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
-import { DefinitionParams, RenameParams } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
@@ -65,7 +64,7 @@ connection.onCompletion(
     },
 );
 
-connection.onDefinition(async (params: DefinitionParams, cancellationToken: LS.CancellationToken) => {
+connection.onDefinition(async (params: LS.DefinitionParams, cancellationToken: LS.CancellationToken) => {
     const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
     if (document === undefined) {
@@ -220,7 +219,7 @@ connection.onInitialized(async () => {
     await SettingsUtils.initializeServerSettings(connection);
 });
 
-connection.onRenameRequest(async (params: RenameParams, cancellationToken: LS.CancellationToken) => {
+connection.onRenameRequest(async (params: LS.RenameParams, cancellationToken: LS.CancellationToken) => {
     const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
 
     if (document === undefined) {
