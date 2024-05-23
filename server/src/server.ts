@@ -138,42 +138,49 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
 
 connection.onDocumentSymbol(documentSymbols);
 
-connection.onHover(
-    async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken): Promise<LS.Hover> => {
-        const emptyHover: LS.Hover = {
-            range: undefined,
-            contents: [],
-        };
+const emptyHover: LS.Hover = {
+    range: undefined,
+    contents: [],
+};
 
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+// eslint-disable-next-line require-await
+connection.onHover(async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+    runSafeAsync(
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-        if (document === undefined) {
-            return emptyHover;
-        }
+            if (document === undefined) {
+                return emptyHover;
+            }
 
-        const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onHover",
-            params.position,
-        );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onHover",
+                params.position,
+            );
 
-        const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-        const result: PQP.Result<LS.Hover | undefined, PQP.CommonError.CommonError> = await analysis.getHover(
-            params.position,
-            pqpCancellationToken,
-        );
+            const result: PQP.Result<LS.Hover | undefined, PQP.CommonError.CommonError> = await analysis.getHover(
+                params.position,
+                pqpCancellationToken,
+            );
 
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? emptyHover;
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onHover", traceManager);
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? emptyHover;
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onHover", traceManager);
 
-            return emptyHover;
-        }
-    },
+                return emptyHover;
+            }
+        },
+        emptyHover,
+        `Error while computing hover for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
 connection.onInitialize((params: LS.InitializeParams) => {
@@ -341,8 +348,8 @@ connection.onDocumentFormatting(
     },
 );
 
-// TODO: Do we need to track the resultId value?
 connection.languages.diagnostics.on(
+    // eslint-disable-next-line require-await
     async (params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
         runSafeAsync(
             async () => {
