@@ -10,7 +10,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import { LibraryUtils, ModuleLibraryUtils } from "./library";
+import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
 import { SettingsUtils } from "./settings";
 
 interface SemanticTokenParams {
@@ -23,13 +23,9 @@ interface ModuleLibraryUpdatedParams {
     readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 }
 
-// TODO: move this into a separate file.
-// type ExternalSymbolLibrary = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
-// type IncomingExternalSymbolLibrary = ExternalSymbolLibrary | undefined | null;
-
-// interface SetLibrarySymbolsParams {
-//     librarySymbols: [string, IncomingExternalSymbolLibrary][];
-// }
+interface SetLibrarySymbolsParams {
+    librarySymbols: [string, ExternalLibraryUtils.IncomingExternalSymbolLibrary][];
+}
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -276,11 +272,11 @@ connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUp
     connection.languages.diagnostics.refresh();
 });
 
-// // TODO: Do we need to pass through a cancellation token?
-// connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): Promise<void[]> => {
-//     externalSymbolLibraries.setRange(params.librarySymbols);
-//     connection.languages.diagnostics.refresh();
-// });
+connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): void => {
+    ExternalLibraryUtils.setRange(params.librarySymbols);
+    LibraryUtils.clearCache();
+    connection.languages.diagnostics.refresh();
+});
 
 connection.onSignatureHelp(
     async (
