@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
 import * as Subscriptions from "./subscriptions";
-import { CommandConstants, ConfigurationConstants } from "./constants";
+import { CommandConstant, ConfigurationConstant } from "./constants";
 import { LibrarySymbolClient } from "./librarySymbolClient";
 import { LibrarySymbolManager } from "./librarySymbolManager";
 import { PowerQueryApi } from "./vscode-powerquery.api";
@@ -22,17 +22,17 @@ let librarySymbolManager: LibrarySymbolManager;
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
     // TODO: Dispose commands through context.subscriptions.
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstants.EscapeJsonText, CommandFn.escapeJsonText));
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstants.EscapeMText, CommandFn.escapeMText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
 
     commands.push(
-        vscode.commands.registerTextEditorCommand(CommandConstants.UnescapeJsonText, CommandFn.unescapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
     );
 
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstants.UnescapeMText, CommandFn.unescapeMText));
+    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
 
     commands.push(
-        vscode.commands.registerCommand(CommandConstants.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
+        vscode.commands.registerCommand(CommandConstant.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
     );
 
     // The server is implemented in node
@@ -83,9 +83,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async (event: vscode.ConfigurationChangeEvent) => {
-            const symbolDirs: string = ConfigurationConstants.BasePath.concat(
+            const symbolDirs: string = ConfigurationConstant.BasePath.concat(
                 ".",
-                ConfigurationConstants.AdditionalSymbolsDirectories,
+                ConfigurationConstant.AdditionalSymbolsDirectories,
             );
 
             if (event.affectsConfiguration(symbolDirs)) {
@@ -109,10 +109,10 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 async function configureSymbolDirectories(): Promise<void> {
-    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstants.BasePath);
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstant.BasePath);
 
     const additionalSymbolsDirectories: string[] | undefined = config.get(
-        ConfigurationConstants.AdditionalSymbolsDirectories,
+        ConfigurationConstant.AdditionalSymbolsDirectories,
     );
 
     // TODO: Should we fix/remove invalid and malformed directory path values?

@@ -3,7 +3,7 @@
 
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { CommandConstants } from "../../constants";
+import { CommandConstant } from "../../constants";
 import { expect } from "chai";
 
 import * as TestUtils from "./testUtils";
@@ -15,7 +15,7 @@ suite("Dataflow Extract Command", () => {
     });
 
     test("Command is registered", async () => {
-        const commands: string[] = [CommandConstants.ExtractDataflowDocument];
+        const commands: string[] = [CommandConstant.ExtractDataflowDocument];
 
         const pqCommands: string[] = (await vscode.commands.getCommands(/* filterInternal */ true)).filter(
             (cmd: string) => cmd.startsWith("powerquery."),
@@ -31,7 +31,7 @@ suite("Dataflow Extract Command", () => {
         await vscode.window.showTextDocument(doc);
 
         const newDocUri: vscode.Uri | undefined = await vscode.commands.executeCommand(
-            CommandConstants.ExtractDataflowDocument,
+            CommandConstant.ExtractDataflowDocument,
         );
 
         expect(newDocUri !== undefined, "command did not return new document URI");

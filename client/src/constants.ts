@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export const enum CommandConstants {
+export const enum CommandConstant {
     ExtractDataflowDocument = "powerquery.extractDataflowDocument",
     EscapeJsonText = "powerquery.jsonEscapeText",
     EscapeMText = "powerquery.mEscapeText",
@@ -9,7 +9,7 @@ export const enum CommandConstants {
     UnescapeMText = "powerquery.mUnescapeText",
 }
 
-export const enum ConfigurationConstants {
-    BasePath = "powerquery.client",
+export const enum ConfigurationConstant {
     AdditionalSymbolsDirectories = "additionalSymbolsDirectories",
+    BasePath = "powerquery.client",
 }
