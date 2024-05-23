@@ -8,9 +8,12 @@ import { Assert, ResultUtils } from "@microsoft/powerquery-parser";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
 import { expect } from "chai";
 
-import { LibraryUtils, ModuleLibraries } from "../library";
+import { LibrarySymbolUtils, LibraryUtils, ModuleLibraryUtils } from "../library";
 
-const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary(PQP.Locale.en_US);
+const library: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
+    [LibrarySymbolUtils.getSymbolsForLocaleAndMode(PQP.Locale.en_US, "Power Query")],
+    [],
+);
 
 class NoOpCancellationToken implements PQP.ICancellationToken {
     isCancelled: () => boolean = () => false;
@@ -88,8 +91,6 @@ function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
         character: textWithPipe.indexOf("|"),
         line: 0,
     };
-
-    const library: PQLS.Library.ILibrary = LibraryUtils.getOrCreateStandardLibrary();
 
     const analysisSettings: AnalysisSettings = {
         inspectionSettings: PQLS.InspectionUtils.inspectionSettings(PQP.DefaultSettings, { library }),
@@ -210,10 +211,15 @@ describe(`moduleLibraryUpdated`, () => {
         });
 
         it("ModuleLibraries", () => {
+            ModuleLibraryUtils.clearCache();
+            expect(ModuleLibraryUtils.getModuleCount()).to.equal(0);
+
             const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
-            const moduleLibraries: ModuleLibraries = new ModuleLibraries();
-            moduleLibraries.addModuleLibrary("sdk", libraryJson);
-            expect(moduleLibraries.getLibraryCount()).to.equal(1, "expected 1 export");
+            ModuleLibraryUtils.onModuleAdded("testing", libraryJson);
+            expect(ModuleLibraryUtils.getModuleCount()).to.equal(1);
+
+            ModuleLibraryUtils.clearCache();
+            expect(ModuleLibraryUtils.getModuleCount()).to.equal(0);
         });
     });
 });

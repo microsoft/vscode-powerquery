@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.57",
+    "version": "0.1.58",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -290,8 +290,6 @@
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "5.24.0",
         "@typescript-eslint/parser": "5.24.0",
-        "@vscode/test-cli": "0.0.9",
-        "@vscode/test-electron": "2.3.10",
         "@vscode/vsce": "2.26.1",
         "eslint": "8.15.0",
         "eslint-config-prettier": "8.5.0",

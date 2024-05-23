@@ -58,61 +58,79 @@ A more specialized version of this command will extract the M Document from an e
 
 ## How to build
 
-1. install dependencies:
+Install dependencies:
 
 ```cmd
 npm install
 ```
 
-2. build all packages:
+Build the project:
 
 ```cmd
 npm run build
 ```
 
-## How to run command line tests
-
-1. Generate extension webpack (required for UI tests):
-
-```cmd
-npm run webpack-prod
-```
-
-2. Run both client (UI) and server tests:
-
-```cmd
-npm run test
-```
-
-Tests can also be run through VS Code using the different debug profiles.
-
--   `Language UI Test`: client tests (equivalent of running `npm run test:client`)
--   `Run server unit tests`: server tests (equivalent of running `npm run test:server`)
-
-## Generate vscode extension
-
-Install the [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) CLI utility.
-
-```cmd
-npm install --global vsce
-```
-
 Generate vsix package:
 
 ```cmd
-vsce package
+npm run vsix
 ```
+
+The .vsix can be installed into VS Code from the commandline:
+
+```cmd
+code --install-extension vscode-powerquery-*.vsix
+```
+
+## Testing
+
+There are two test suites:
+
+1. Server unit tests - `mocha` based, no build dependency.
+2. Client UI test - `vscode/test-electron` based, requires webpacked test suite.
+
+### Running tests from the command line
+
+To run all tests:
+
+```cmd
+npm run webpack-prod
+npm run test
+```
+
+To run server unit tests only:
+
+```cmd
+npm run test:server
+```
+
+### Running tests from VS Code
+
+Run one of the following Debug/Launch profiles:
+
+1. Run server unit tests
+2. Language UI Test
+
+> If you receive errors related to missing problem matchers, please ensure you have the [TypeScript + Webpack Problem Matchers](https://marketplace.visualstudio.com/items?itemName=amodio.tsl-problem-matcher) vscode extension installed.
 
 ## Contributing
 
 This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+the rights to use your contribution. For details, visit <https://cla.opensource.microsoft.com>.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
+When you submit a pull request, a CLA bot will automatically determine whether you need to provide
+a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
 provided by the bot. You will only need to do this once across all repos using our CLA.
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
+trademarks or logos is subject to and must follow
+[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
+Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
+Any use of third-party trademarks or logos are subject to those third-party's policies.
