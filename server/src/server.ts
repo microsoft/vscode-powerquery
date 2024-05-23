@@ -8,9 +8,10 @@ import * as PQP from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
+import * as EventHandlerUtils from "./eventHandlerUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { LibraryUtils, ModuleLibraryUtils } from "./library";
-import { runSafeAsync } from "./handlerUtils";
+
 import { SettingsUtils } from "./settings";
 
 interface SemanticTokenParams {
@@ -139,7 +140,7 @@ const emptyHover: LS.Hover = {
 
 // eslint-disable-next-line require-await
 connection.onHover(async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
-    runSafeAsync(
+    EventHandlerUtils.runSafeAsync(
         async () => {
             const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
@@ -346,7 +347,7 @@ connection.onDocumentFormatting(
 connection.languages.diagnostics.on(
     // eslint-disable-next-line require-await
     async (params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
-        runSafeAsync(
+        EventHandlerUtils.runSafeAsync(
             async () => {
                 const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 

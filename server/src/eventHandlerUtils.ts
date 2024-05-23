@@ -5,8 +5,8 @@ import { CancellationToken, Disposable, LSPErrorCodes, ResponseError } from "vsc
 
 interface RuntimeEnvironment {
     readonly timer: {
-        setImmediate(callback: (...args: unknown[]) => void, ...args: unknown[]): Disposable;
-        setTimeout(callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]): Disposable;
+        readonly setImmediate: (callback: (...args: unknown[]) => void, ...args: unknown[]) => Disposable;
+        readonly setTimeout: (callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]) => Disposable;
     };
 }
 
