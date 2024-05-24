@@ -110,7 +110,7 @@ suite("LibrarySymbolManager.getSymbolFilesFromDirectory", () => {
 
         try {
             const dirUri: vscode.Uri = vscode.Uri.file(tmpDir);
-            const res: vscode.Uri[] = await librarySymbolManager.getSymbolFilesFromDirectory(dirUri);
+            const res: ReadonlyArray<vscode.Uri> = await librarySymbolManager.getSymbolFilesFromDirectory(dirUri);
             assert.equal(res.length, 0);
         } finally {
             try {
@@ -126,6 +126,6 @@ suite("LibrarySymbolManager.getSymbolFilesFromDirectory", () => {
 
 async function runDirectoryTest(path: string, count: number): Promise<void> {
     const dirUri: vscode.Uri = vscode.Uri.file(path);
-    const res: vscode.Uri[] = await librarySymbolManager.getSymbolFilesFromDirectory(dirUri);
-    assert.equal(res.length, count, "Expected file count did not match");
+    const result: ReadonlyArray<vscode.Uri> = await librarySymbolManager.getSymbolFilesFromDirectory(dirUri);
+    assert.equal(result.length, count, "Expected file count did not match");
 }

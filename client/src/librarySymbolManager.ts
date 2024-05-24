@@ -18,8 +18,8 @@ export class LibrarySymbolManager {
     private static readonly SymbolFileExtension: string = ".json";
     private static readonly SymbolFileEncoding: string = "utf-8";
 
-    private readonly registeredSymbolModules: string[] = [];
     private readonly fs: vscode.FileSystem;
+    private readonly registeredSymbolModules: string[] = [];
 
     constructor(
         private librarySymbolClient: PowerQueryApi,
@@ -29,19 +29,17 @@ export class LibrarySymbolManager {
         this.fs = fs ?? vscode.workspace.fs;
     }
 
-    public async refreshSymbolDirectories(directories: ReadonlyArray<string>): Promise<readonly string[]> {
+    public async refreshSymbolDirectories(directories: ReadonlyArray<string>): Promise<ReadonlyArray<string>> {
         await this.clearAllRegisteredSymbolModules();
 
         if (!directories || directories.length === 0) {
             return [];
         }
 
-        const dedupedDirectories: string[] = Array.from(new Set(directories));
-
         // Fetch the full list of files to process.
-        const fileDiscoveryActions: Promise<vscode.Uri[]>[] = [];
+        const fileDiscoveryActions: Promise<ReadonlyArray<vscode.Uri>>[] = [];
 
-        const directoryUris: vscode.Uri[] = dedupedDirectories.map((directory: string) => {
+        const normalizedDirectoryUris: ReadonlyArray<vscode.Uri> = directories.map((directory: string) => {
             const normalized: string = path.normalize(directory);
 
             if (directory !== normalized) {
@@ -51,7 +49,9 @@ export class LibrarySymbolManager {
             return vscode.Uri.file(normalized);
         });
 
-        for (const uri of directoryUris) {
+        const dedupedDirectoryUris: ReadonlyArray<vscode.Uri> = Array.from(new Set(normalizedDirectoryUris));
+
+        for (const uri of dedupedDirectoryUris) {
             fileDiscoveryActions.push(this.getSymbolFilesFromDirectory(uri));
         }
 
@@ -59,10 +59,18 @@ export class LibrarySymbolManager {
         // This would allow a connector developer to override a symbol library generated
         // with an older version of their connector.
         const symbolFileActions: Promise<[vscode.Uri, LibraryJson] | undefined>[] = [];
-        const files: vscode.Uri[] = (await Promise.all(fileDiscoveryActions)).flat();
+        const files: ReadonlyArray<vscode.Uri> = (await Promise.all(fileDiscoveryActions)).flat();
 
         for (const fileUri of files) {
             symbolFileActions.push(this.processSymbolFile(fileUri));
+        }
+
+        if (symbolFileActions.length === 0) {
+            this.clientTrace?.info(
+                `No symbol files (${LibrarySymbolManager.SymbolFileExtension}) found in symbol file directories.`,
+            );
+
+            return [];
         }
 
         // Process all symbol files, filtering out any that failed to load.
@@ -79,14 +87,16 @@ export class LibrarySymbolManager {
 
         this.clientTrace?.info(`Registering symbol files. Total file count: ${validSymbolLibraries.size}`);
 
-        await this.librarySymbolClient
-            .addLibrarySymbols(validSymbolLibraries)
-            .then(() => this.registeredSymbolModules.push(...validSymbolLibraries.keys()));
+        if (validSymbolLibraries.size > 0) {
+            await this.librarySymbolClient
+                .addLibrarySymbols(validSymbolLibraries)
+                .then(() => this.registeredSymbolModules.push(...validSymbolLibraries.keys()));
+        }
 
         return this.registeredSymbolModules;
     }
 
-    public async getSymbolFilesFromDirectory(directory: vscode.Uri): Promise<vscode.Uri[]> {
+    public async getSymbolFilesFromDirectory(directory: vscode.Uri): Promise<ReadonlyArray<vscode.Uri>> {
         let isDirectoryValid: boolean = false;
 
         try {
