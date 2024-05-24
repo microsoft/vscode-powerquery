@@ -36,12 +36,12 @@ export function genericRequestHandler<T, R>(func: (params: T) => R): GenericRequ
     const handler: GenericRequestHandler<R, unknown> = (params: T): R | ResponseError<unknown> => {
         try {
             return func(params);
-        } catch (error) {
-            if (error instanceof Error) {
-                return new ResponseError(ErrorCodes.InternalError, error.message, error);
-            }
-
-            return new ResponseError(ErrorCodes.InternalError, "An unknown error occurred.", error);
+        } catch (error: unknown) {
+            return new ResponseError(
+                ErrorCodes.InternalError,
+                error instanceof Error ? error.message : "An unknown error occurred",
+                error,
+            );
         }
     };
 

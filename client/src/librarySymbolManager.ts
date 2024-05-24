@@ -100,7 +100,7 @@ export class LibrarySymbolManager {
             } else {
                 isDirectoryValid = true;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             this.clientTrace?.error(
                 `${LibrarySymbolManager.ErrorMessagePrefix} Exception while processing '${directory.toString()}'.`,
                 error,
@@ -140,7 +140,7 @@ export class LibrarySymbolManager {
             this.clientTrace?.debug(`Loaded symbol file '${fileUri.toString()}'. Symbol count: ${library.length}`);
 
             return [fileUri, library];
-        } catch (error) {
+        } catch (error: unknown) {
             this.clientTrace?.error(
                 `${
                     LibrarySymbolManager.ErrorMessagePrefix

@@ -456,7 +456,7 @@ async function documentSymbols(
 
     try {
         return PQLS.getDocumentSymbols(triedParseState.value.contextState.nodeIdMapCollection, pqpCancellationToken);
-    } catch (error) {
+    } catch (error: unknown) {
         ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
 
         return undefined;
