@@ -33,6 +33,7 @@
             ],
             "sourceMaps": true,
             "outFiles": ["${workspaceRoot}/client/lib/**/*.js"],
+            "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "Run Watchers"
         },
         {
