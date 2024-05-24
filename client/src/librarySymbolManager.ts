@@ -9,15 +9,15 @@ import * as LibrarySymbolUtils from "./librarySymbolUtils";
 
 import { LibraryJson, PowerQueryApi } from "./powerQueryApi";
 
-const ErrorMessagePrefix: string = "Error processing symbol directory path. Please update your configuration.";
-
-const SymbolFileExtension: string = ".json";
-const SymbolFileEncoding: string = "utf-8";
-
 export type MinimalClientTrace = Pick<LC.BaseLanguageClient, "debug" | "info" | "warn" | "error">;
 export type MinimalFileSystem = Pick<vscode.FileSystem, "readDirectory" | "readFile" | "stat">;
 
 export class LibrarySymbolManager {
+    private static readonly ErrorMessagePrefix: string =
+        "Error processing symbol directory path. Please update your configuration.";
+    private static readonly SymbolFileExtension: string = ".json";
+    private static readonly SymbolFileEncoding: string = "utf-8";
+
     private readonly registeredSymbolModules: string[] = [];
     private readonly fs: vscode.FileSystem;
 
@@ -98,7 +98,7 @@ export class LibrarySymbolManager {
 
             if (stat.type !== vscode.FileType.Directory) {
                 this.clientTrace?.error(
-                    `${ErrorMessagePrefix} '${directory.toString()}' is not a directory.`,
+                    `${LibrarySymbolManager.ErrorMessagePrefix} '${directory.toString()}' is not a directory.`,
                     JSON.stringify(stat),
                 );
             } else {
@@ -106,7 +106,7 @@ export class LibrarySymbolManager {
             }
         } catch (error) {
             this.clientTrace?.error(
-                `${ErrorMessagePrefix} Exception while processing '${directory.toString()}'.`,
+                `${LibrarySymbolManager.ErrorMessagePrefix} Exception while processing '${directory.toString()}'.`,
                 error,
             );
         }
@@ -122,7 +122,10 @@ export class LibrarySymbolManager {
             .map((value: [string, vscode.FileType]): vscode.Uri | undefined => {
                 const fileName: string = value[0];
 
-                if (value[1] === vscode.FileType.File && fileName.toLocaleLowerCase().endsWith(SymbolFileExtension)) {
+                if (
+                    value[1] === vscode.FileType.File &&
+                    fileName.toLocaleLowerCase().endsWith(LibrarySymbolManager.SymbolFileExtension)
+                ) {
                     return vscode.Uri.joinPath(directory, fileName);
                 }
 
@@ -134,7 +137,7 @@ export class LibrarySymbolManager {
     public async processSymbolFile(fileUri: vscode.Uri): Promise<[vscode.Uri, LibraryJson | undefined]> {
         try {
             const contents: Uint8Array = await this.fs.readFile(fileUri);
-            const text: string = new TextDecoder(SymbolFileEncoding).decode(contents);
+            const text: string = new TextDecoder(LibrarySymbolManager.SymbolFileEncoding).decode(contents);
 
             const library: LibraryJson = LibrarySymbolUtils.parseLibraryJson(text);
 
@@ -143,7 +146,9 @@ export class LibrarySymbolManager {
             return [fileUri, library];
         } catch (error) {
             this.clientTrace?.error(
-                `${ErrorMessagePrefix} Error processing '${fileUri.toString()}' as symbol library.`,
+                `${
+                    LibrarySymbolManager.ErrorMessagePrefix
+                } Error processing '${fileUri.toString()}' as symbol library.`,
                 error,
             );
         }
@@ -152,7 +157,7 @@ export class LibrarySymbolManager {
     }
 
     private static getModuleNameFromFileUri(fileUri: vscode.Uri): string {
-        return path.basename(fileUri.fsPath, SymbolFileExtension);
+        return path.basename(fileUri.fsPath, LibrarySymbolManager.SymbolFileExtension);
     }
 
     private async clearAllRegisteredSymbolModules(): Promise<void> {
