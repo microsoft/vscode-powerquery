@@ -2,12 +2,12 @@
 // Licensed under the MIT license.
 
 import {
-    LibraryDocumentationJson,
-    LibraryExportJson,
-    LibraryFieldJson,
-    LibraryFunctionParameterJson,
     LibraryJson,
-} from "./vscode-powerquery.api";
+    LibrarySymbol,
+    LibrarySymbolDocumentation,
+    LibrarySymbolFunctionParameter,
+    LibrarySymbolRecordField,
+} from "./powerQueryApi";
 
 export function parseLibraryJson(json: string): LibraryJson {
     const parsed: unknown = JSON.parse(json);
@@ -16,159 +16,106 @@ export function parseLibraryJson(json: string): LibraryJson {
     return parsed;
 }
 
-// Type assertions for LibraryJson
-export function assertLibraryJson(input: unknown): asserts input is LibraryJson {
-    if (!Array.isArray(input)) {
-        throw new Error("Invalid LibraryJson");
-    }
-
-    input.forEach(assertLibraryExportJson);
+function assertLibraryJson(json: unknown): asserts json is LibraryJson {
+    assertIsArray(json);
+    json.forEach(assertLibrarySymbol);
 }
 
-// Type assertions for LibraryExportJson
-function assertLibraryExportJson(input: unknown): asserts input is LibraryExportJson {
-    if (typeof input !== "object" || input === null) {
-        throw new Error("Invalid LibraryExportJson");
+function assertLibrarySymbol(symbol: unknown): asserts symbol is LibrarySymbol {
+    assertIsObject(symbol);
+    assertHasProperty(symbol, "name", "string");
+    assertHasProperty(symbol, "documentation", "object", true);
+    assertHasProperty(symbol, "functionParameters", "object", true);
+    assertHasProperty(symbol, "completionItemKind", "number");
+    assertHasProperty(symbol, "isDataSource", "boolean");
+    assertHasProperty(symbol, "type", "string");
+
+    const librarySymbol: LibrarySymbol = symbol as LibrarySymbol;
+
+    if (librarySymbol.documentation !== null && librarySymbol.documentation !== undefined) {
+        assertLibrarySymbolDocumentation(librarySymbol.documentation);
     }
 
-    const obj: Record<string, unknown> = input as Record<string, unknown>;
+    if (librarySymbol.functionParameters !== null && librarySymbol.functionParameters !== undefined) {
+        assertIsArray(librarySymbol.functionParameters);
+        librarySymbol.functionParameters.forEach(assertLibrarySymbolFunctionParameter);
+    }
+}
 
-    if (typeof obj.name !== "string") {
-        throw new Error("Invalid name in LibraryExportJson");
+function assertLibrarySymbolDocumentation(doc: unknown): asserts doc is LibrarySymbolDocumentation {
+    assertIsObject(doc);
+    assertHasProperty(doc, "description", "string", true);
+    assertHasProperty(doc, "longDescription", "string", true);
+}
+
+function assertLibrarySymbolFunctionParameter(param: unknown): asserts param is LibrarySymbolFunctionParameter {
+    assertIsObject(param);
+    assertHasProperty(param, "name", "string");
+    assertHasProperty(param, "type", "string");
+    assertHasProperty(param, "isRequired", "boolean");
+    assertHasProperty(param, "isNullable", "boolean");
+    assertHasProperty(param, "caption", "string", true);
+    assertHasProperty(param, "description", "string", true);
+    assertHasProperty(param, "sampleValues", "object", true);
+    assertHasProperty(param, "allowedValues", "object", true);
+    assertHasProperty(param, "defaultValue", "object", true);
+    assertHasProperty(param, "fields", "object", true);
+    assertHasProperty(param, "enumNames", "object", true);
+    assertHasProperty(param, "enumCaptions", "object", true);
+
+    const functionParam: LibrarySymbolFunctionParameter = param as LibrarySymbolFunctionParameter;
+
+    if (functionParam.sampleValues !== null && functionParam.sampleValues !== undefined) {
+        assertIsArray(functionParam.sampleValues);
     }
 
-    if (obj.documentation !== null && obj.documentation !== undefined) {
-        assertLibraryDocumentationJson(obj.documentation);
+    if (functionParam.allowedValues !== null && functionParam.allowedValues !== undefined) {
+        assertIsArray(functionParam.allowedValues);
     }
 
-    if (obj.functionParameters !== null && obj.functionParameters !== undefined) {
-        if (!Array.isArray(obj.functionParameters)) {
-            throw new Error("Invalid functionParameters in LibraryExportJson");
+    if (functionParam.fields !== null && functionParam.fields !== undefined) {
+        assertIsArray(functionParam.fields);
+        functionParam.fields.forEach(assertLibrarySymbolRecordField);
+    }
+
+    if (functionParam.enumNames !== null && functionParam.enumNames !== undefined) {
+        assertIsArray(functionParam.enumNames);
+    }
+
+    if (functionParam.enumCaptions !== null && functionParam.enumCaptions !== undefined) {
+        assertIsArray(functionParam.enumCaptions);
+    }
+}
+
+function assertLibrarySymbolRecordField(field: unknown): asserts field is LibrarySymbolRecordField {
+    assertIsObject(field);
+    assertHasProperty(field, "name", "string");
+    assertHasProperty(field, "type", "string");
+    assertHasProperty(field, "isRequired", "boolean");
+    assertHasProperty(field, "caption", "string", true);
+    assertHasProperty(field, "description", "string", true);
+}
+
+// Helper functions
+function assertIsArray(value: unknown): asserts value is Array<unknown> {
+    if (!Array.isArray(value)) {
+        throw new TypeError("Expected an array");
+    }
+}
+
+function assertIsObject(value: unknown): asserts value is object {
+    if (typeof value !== "object" || value === null) {
+        throw new TypeError("Expected an object");
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function assertHasProperty(obj: any, propName: string, type: string, optional: boolean = false): void {
+    if (!(propName in obj)) {
+        if (!optional) {
+            throw new TypeError(`Missing property: ${propName}`);
         }
-
-        obj.functionParameters.forEach(assertLibraryFunctionParameterJson);
-    }
-
-    if (typeof obj.completionItemType !== "number") {
-        throw new Error("Invalid completionItemType in LibraryExportJson");
-    }
-
-    if (typeof obj.isDataSource !== "boolean") {
-        throw new Error("Invalid isDataSource in LibraryExportJson");
-    }
-
-    if (typeof obj.dataType !== "string") {
-        throw new Error("Invalid dataType in LibraryExportJson");
-    }
-}
-
-// Type assertions for LibraryDocumentationJson
-function assertLibraryDocumentationJson(input: unknown): asserts input is LibraryDocumentationJson {
-    if (typeof input !== "object" || input === null) {
-        throw new Error("Invalid LibraryDocumentationJson");
-    }
-
-    const obj: Record<string, unknown> = input as Record<string, unknown>;
-
-    if (obj.description !== null && typeof obj.description !== "string") {
-        throw new Error("Invalid description in LibraryDocumentationJson");
-    }
-
-    if (obj.longDescription !== null && typeof obj.longDescription !== "string") {
-        throw new Error("Invalid longDescription in LibraryDocumentationJson");
-    }
-
-    if (obj.category !== null && typeof obj.category !== "string") {
-        throw new Error("Invalid category in LibraryDocumentationJson");
-    }
-}
-
-// Type assertions for LibraryFunctionParameterJson
-function assertLibraryFunctionParameterJson(input: unknown): asserts input is LibraryFunctionParameterJson {
-    if (typeof input !== "object" || input === null) {
-        throw new Error("Invalid LibraryFunctionParameterJson");
-    }
-
-    const obj: Record<string, unknown> = input as Record<string, unknown>;
-
-    if (typeof obj.name !== "string") {
-        throw new Error("Invalid name in LibraryFunctionParameterJson");
-    }
-
-    if (typeof obj.parameterType !== "string") {
-        throw new Error("Invalid parameterType in LibraryFunctionParameterJson");
-    }
-
-    if (typeof obj.isRequired !== "boolean") {
-        throw new Error("Invalid isRequired in LibraryFunctionParameterJson");
-    }
-
-    if (typeof obj.isNullable !== "boolean") {
-        throw new Error("Invalid isNullable in LibraryFunctionParameterJson");
-    }
-
-    if (obj.caption !== null && typeof obj.caption !== "string") {
-        throw new Error("Invalid caption in LibraryFunctionParameterJson");
-    }
-
-    if (obj.description !== null && typeof obj.description !== "string") {
-        throw new Error("Invalid description in LibraryFunctionParameterJson");
-    }
-
-    if (obj.sampleValues !== null && !Array.isArray(obj.sampleValues)) {
-        throw new Error("Invalid sampleValues in LibraryFunctionParameterJson");
-    }
-
-    if (obj.allowedValues !== null && !Array.isArray(obj.allowedValues)) {
-        throw new Error("Invalid allowedValues in LibraryFunctionParameterJson");
-    }
-
-    if (obj.defaultValue !== null && typeof obj.defaultValue !== "string" && typeof obj.defaultValue !== "number") {
-        throw new Error("Invalid defaultValue in LibraryFunctionParameterJson");
-    }
-
-    if (obj.fields !== null) {
-        if (!Array.isArray(obj.fields)) {
-            throw new Error("Invalid fields in LibraryFunctionParameterJson");
-        }
-
-        obj.fields.forEach(assertLibraryFieldJson);
-    }
-
-    if (obj.enumNames !== null && !Array.isArray(obj.enumNames)) {
-        throw new Error("Invalid enumNames in LibraryFunctionParameterJson");
-    }
-
-    if (obj.enumCaptions !== null && !Array.isArray(obj.enumCaptions)) {
-        throw new Error("Invalid enumCaptions in LibraryFunctionParameterJson");
-    }
-}
-
-// Type assertions for LibraryFieldJson
-function assertLibraryFieldJson(input: unknown): asserts input is LibraryFieldJson {
-    if (typeof input !== "object" || input === null) {
-        throw new Error("Invalid LibraryFieldJson");
-    }
-
-    const obj: Record<string, unknown> = input as Record<string, unknown>;
-
-    if (typeof obj.fieldName !== "string") {
-        throw new Error("Invalid fieldName in LibraryFieldJson");
-    }
-
-    if (typeof obj.type !== "string") {
-        throw new Error("Invalid type in LibraryFieldJson");
-    }
-
-    if (typeof obj.isRequired !== "boolean") {
-        throw new Error("Invalid isRequired in LibraryFieldJson");
-    }
-
-    if (obj.fieldCaption !== null && typeof obj.fieldCaption !== "string") {
-        throw new Error("Invalid fieldCaption in LibraryFieldJson");
-    }
-
-    if (obj.fieldDescription !== null && typeof obj.fieldDescription !== "string") {
-        throw new Error("Invalid fieldDescription in LibraryFieldJson");
+    } else if (typeof obj[propName] !== type && obj[propName] !== null && obj[propName] !== undefined) {
+        throw new TypeError(`Expected property type ${type} for property ${propName}`);
     }
 }

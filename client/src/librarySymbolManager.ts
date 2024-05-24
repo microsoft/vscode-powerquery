@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 
 import * as LibrarySymbolUtils from "./librarySymbolUtils";
 
-import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
+import { LibraryJson, PowerQueryApi } from "./powerQueryApi";
 
 const ErrorMessagePrefix: string = "Error processing symbol directory path. Please update your configuration.";
 
@@ -67,6 +67,7 @@ export class LibrarySymbolManager {
 
         // Process all symbol files, filtering out any that failed to load.
         const allSymbolFiles: [vscode.Uri, LibraryJson | undefined][] = await Promise.all(symbolFileActions);
+
         const validSymbolLibraries: [string, LibraryJson][] = [];
 
         allSymbolFiles.forEach((value: [vscode.Uri, LibraryJson | undefined]) => {
@@ -134,6 +135,7 @@ export class LibrarySymbolManager {
         try {
             const contents: Uint8Array = await this.fs.readFile(fileUri);
             const text: string = new TextDecoder(SymbolFileEncoding).decode(contents);
+
             const library: LibraryJson = LibrarySymbolUtils.parseLibraryJson(text);
 
             this.clientTrace?.debug(`Loaded symbol file '${fileUri.toString()}'. Symbol count: ${library.length}`);
@@ -162,16 +164,6 @@ export class LibrarySymbolManager {
             () => (this.registeredSymbolModules.length = 0),
         );
     }
-
-    // private async clearOneSymbolModule(module: string): Promise<void> {
-    //     await this.clearSymbolModules([...module]).then(() => {
-    //         const index: number | undefined = this.registeredSymbolModules.indexOf(module);
-
-    //         if (index) {
-    //             this.registeredSymbolModules.splice(index, 1);
-    //         }
-    //     });
-    // }
 
     private clearSymbolModules(modules: string[]): Promise<void> {
         const modulesToClear: [string, null][] = modules.map((module: string) => [module, null]);

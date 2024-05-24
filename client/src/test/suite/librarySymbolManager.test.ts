@@ -6,7 +6,8 @@ import * as fs from "fs";
 import * as vscode from "vscode";
 
 import * as TestUtils from "./testUtils";
-import { LibraryJson, PowerQueryApi } from "../../vscode-powerquery.api";
+
+import { LibraryJson, PowerQueryApi } from "../../powerQueryApi";
 import { LibrarySymbolManager } from "../../librarySymbolManager";
 
 class MockLibararySymbolClient implements PowerQueryApi {
@@ -36,6 +37,7 @@ const librarySymbolManager: LibrarySymbolManager = new LibrarySymbolManager(mock
 suite("LibrarySymbolManager.processSymbolFile", () => {
     test("Valid", async () => {
         const fileUri: vscode.Uri = TestUtils.getDocUri("ExtensionTest.json");
+
         const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
 
         assert.equal(res[0], fileUri, "uri should match");
@@ -46,6 +48,7 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
 
     test("Not a symbol file", async () => {
         const fileUri: vscode.Uri = TestUtils.getDocUri("dataflow.json");
+
         const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
 
         assert.equal(res[0], fileUri, "uri should match");
@@ -54,6 +57,7 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
 
     test("Not json", async () => {
         const fileUri: vscode.Uri = TestUtils.getDocUri("index.js");
+
         const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
 
         assert.equal(res[0], fileUri, "uri should match");
@@ -62,6 +66,7 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
 
     test("Not a file", async () => {
         const fileUri: vscode.Uri = vscode.Uri.file(TestUtils.getTestFixturePath());
+
         const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
 
         assert.equal(res[0], fileUri, "uri should match");

@@ -4,7 +4,7 @@
 import * as LC from "vscode-languageclient/node";
 import * as vscode from "vscode";
 
-import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
+import { LibraryJson, PowerQueryApi } from "./powerQueryApi";
 
 // Minimal implementation to faciliate unit testing
 export type MinimalPowerQueryLanguageServiceClient = Pick<

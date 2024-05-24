@@ -10,7 +10,7 @@ import * as Subscriptions from "./subscriptions";
 import { CommandConstant, ConfigurationConstant } from "./constants";
 import { LibrarySymbolClient } from "./librarySymbolClient";
 import { LibrarySymbolManager } from "./librarySymbolManager";
-import { PowerQueryApi } from "./vscode-powerquery.api";
+import { PowerQueryApi } from "./powerQueryApi";
 
 const commands: vscode.Disposable[] = [];
 const symbolDirectoryWatchers: Map<string, vscode.Disposable> = new Map<string, vscode.Disposable>();

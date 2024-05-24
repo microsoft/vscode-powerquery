@@ -6,7 +6,7 @@ import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
-import { PowerQueryApi } from "../../vscode-powerquery.api";
+import { PowerQueryApi } from "../../powerQueryApi";
 
 export const extensionId: string = "powerquery.vscode-powerquery";
 
