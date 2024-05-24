@@ -7,16 +7,7 @@
             "path": "server/",
             "group": "build",
             "isBackground": true,
-            "problemMatcher": [
-                {
-                    "base": "$ts-webpack-watch",
-                    "fileLocation": ["relative", "${workspaceFolder}/server/"]
-                },
-                {
-                    "base": "$tslint-webpack-watch",
-                    "fileLocation": ["relative", "${workspaceFolder}/server/"]
-                }
-            ],
+            "problemMatcher": ["$ts-webpack-watch", "$tslint-webpack-watch"],
             "label": "Webpack Server"
         },
         {
@@ -25,16 +16,7 @@
             "path": "client/",
             "group": "build",
             "isBackground": true,
-            "problemMatcher": [
-                {
-                    "base": "$ts-webpack-watch",
-                    "fileLocation": ["relative", "${workspaceFolder}/client/"]
-                },
-                {
-                    "base": "$tslint-webpack-watch",
-                    "fileLocation": ["relative", "${workspaceFolder}/client/"]
-                }
-            ],
+            "problemMatcher": ["$ts-webpack-watch", "$tslint-webpack-watch"],
             "label": "Webpack Client"
         },
         {
@@ -43,12 +25,7 @@
             "path": "client/",
             "group": "build",
             "isBackground": true,
-            "problemMatcher": [
-                {
-                    "base": "$tsc-watch",
-                    "fileLocation": ["relative", "${workspaceFolder}/client/"]
-                }
-            ],
+            "problemMatcher": ["$ts-webpack-watch", "$tslint-webpack-watch"],
             "label": "Build UI Tests"
         },
         {

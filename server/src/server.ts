@@ -273,17 +273,39 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
     }
 });
 
-connection.onRequest("powerquery/moduleLibraryUpdated", (params: ModuleLibraryUpdatedParams): void => {
-    ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
-    LibraryUtils.clearCache();
-    connection.languages.diagnostics.refresh();
-});
+connection.onRequest(
+    "powerquery/moduleLibraryUpdated",
+    (params: ModuleLibraryUpdatedParams): LS.HandlerResult<void, unknown> => {
+        try {
+            ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
+            LibraryUtils.clearCache();
+            connection.languages.diagnostics.refresh();
+        } catch (error) {
+            if (error instanceof Error) {
+                return new LS.ResponseError(LS.ErrorCodes.InternalError, error.message, error);
+            }
 
-connection.onRequest("powerquery/setLibrarySymbols", (params: SetLibrarySymbolsParams): void => {
-    ExternalLibraryUtils.setRange(params.librarySymbols);
-    LibraryUtils.clearCache();
-    connection.languages.diagnostics.refresh();
-});
+            return new LS.ResponseError(LS.ErrorCodes.InternalError, "An unknown error occurred.", error);
+        }
+    },
+);
+
+connection.onRequest(
+    "powerquery/setLibrarySymbols",
+    (params: SetLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
+        try {
+            ExternalLibraryUtils.setRange(params.librarySymbols);
+            LibraryUtils.clearCache();
+            connection.languages.diagnostics.refresh();
+        } catch (error) {
+            if (error instanceof Error) {
+                return new LS.ResponseError(LS.ErrorCodes.InternalError, error.message, error);
+            }
+
+            return new LS.ResponseError(LS.ErrorCodes.InternalError, "An unknown error occurred.", error);
+        }
+    },
+);
 
 connection.onSignatureHelp(
     async (
