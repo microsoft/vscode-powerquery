@@ -36,10 +36,15 @@ export class LibrarySymbolClient implements PowerQueryApi {
         if (this.lsClient.isRunning()) {
             this.lsClient.info("Calling powerquery/setLibrarySymbols");
 
+            // The JSON-RPC libraries don't support sending maps, so we convert it to a tuple array.
+            const librarySymbolsTuples: ReadonlyArray<[string, LibraryJson | null]> = Array.from(
+                librarySymbols.entries(),
+            );
+
             await this.lsClient.sendRequest(
                 "powerquery/setLibrarySymbols",
                 {
-                    librarySymbols,
+                    librarySymbols: librarySymbolsTuples,
                 },
                 token,
             );

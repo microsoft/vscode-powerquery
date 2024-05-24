@@ -13,6 +13,8 @@ import * as TraceManagerUtils from "./traceManagerUtils";
 import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
 import { SettingsUtils } from "./settings";
 
+type LibraryJson = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
+
 interface SemanticTokenParams {
     readonly textDocumentUri: string;
     readonly cancellationToken: LS.CancellationToken;
@@ -20,11 +22,11 @@ interface SemanticTokenParams {
 
 interface ModuleLibraryUpdatedParams {
     readonly workspaceUriPath: string;
-    readonly library: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
+    readonly library: LibraryJson;
 }
 
 interface SetLibrarySymbolsParams {
-    librarySymbols: Map<string, ExternalLibraryUtils.IncomingExternalSymbolLibrary>;
+    librarySymbols: ReadonlyArray<[string, LibraryJson | null]>;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -294,7 +296,9 @@ connection.onRequest(
     "powerquery/setLibrarySymbols",
     (params: SetLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
         try {
-            ExternalLibraryUtils.setRange(params.librarySymbols);
+            // JSON-RPC doesn't support sending Maps, so we have to convert from tuple array.
+            const symbolMaps: ReadonlyMap<string, LibraryJson | null> = new Map(params.librarySymbols);
+            ExternalLibraryUtils.setRange(symbolMaps);
             LibraryUtils.clearCache();
             connection.languages.diagnostics.refresh();
         } catch (error) {
