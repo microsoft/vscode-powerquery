@@ -30,7 +30,7 @@ export class LibrarySymbolClient implements PowerQueryApi {
     }
 
     public async setLibrarySymbols(
-        librarySymbols: ReadonlyArray<[string, LibraryJson | null]>,
+        librarySymbols: ReadonlyMap<string, LibraryJson | null>,
         token?: vscode.CancellationToken,
     ): Promise<void> {
         if (this.lsClient.isRunning()) {

@@ -36,10 +36,12 @@ export class LibrarySymbolManager {
             return [];
         }
 
+        const dedupedDirectories: string[] = Array.from(new Set(directories));
+
         // Fetch the full list of files to process.
         const fileDiscovery: Promise<vscode.Uri[]>[] = [];
 
-        const directoryUris: vscode.Uri[] = directories.map((directory: string) => {
+        const directoryUris: vscode.Uri[] = dedupedDirectories.map((directory: string) => {
             const normalized: string = path.normalize(directory);
 
             if (directory !== normalized) {
@@ -48,8 +50,6 @@ export class LibrarySymbolManager {
 
             return vscode.Uri.file(normalized);
         });
-
-        // TODO: Remove duplicate directories?
 
         directoryUris.forEach((d: vscode.Uri) => {
             fileDiscovery.push(this.getSymbolFilesFromDirectory(d));
@@ -68,24 +68,20 @@ export class LibrarySymbolManager {
         // Process all symbol files, filtering out any that failed to load.
         const allSymbolFiles: [vscode.Uri, LibraryJson | undefined][] = await Promise.all(symbolFileActions);
 
-        const validSymbolLibraries: [string, LibraryJson][] = [];
+        const validSymbolLibraries: Map<string, LibraryJson> = new Map<string, LibraryJson>();
 
         allSymbolFiles.forEach((value: [vscode.Uri, LibraryJson | undefined]) => {
             if (value[1] !== undefined) {
                 const moduleName: string = LibrarySymbolManager.getModuleNameFromFileUri(value[0]);
-                validSymbolLibraries.push([moduleName, value[1] as LibraryJson]);
+                validSymbolLibraries.set(moduleName, value[1] as LibraryJson);
             }
         });
 
-        this.clientTrace?.info(`Registering symbol files. Total file count: ${validSymbolLibraries.length}`);
+        this.clientTrace?.info(`Registering symbol files. Total file count: ${validSymbolLibraries.size}`);
 
         await this.librarySymbolClient
             .setLibrarySymbols(validSymbolLibraries)
-            .then(() =>
-                validSymbolLibraries.forEach((value: [string, LibraryJson]) =>
-                    this.registeredSymbolModules.push(value[0]),
-                ),
-            );
+            .then(() => this.registeredSymbolModules.push(...validSymbolLibraries.keys()));
 
         return this.registeredSymbolModules;
     }
@@ -171,7 +167,7 @@ export class LibrarySymbolManager {
     }
 
     private clearSymbolModules(modules: string[]): Promise<void> {
-        const modulesToClear: [string, null][] = modules.map((module: string) => [module, null]);
+        const modulesToClear: Map<string, null> = new Map(modules.map((m: string) => [m, null]));
 
         return this.librarySymbolClient.setLibrarySymbols(modulesToClear);
     }

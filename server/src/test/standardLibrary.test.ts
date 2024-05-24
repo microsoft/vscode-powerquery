@@ -227,11 +227,16 @@ describe(`moduleLibraryUpdated`, () => {
 });
 
 describe(`setLibrarySymbols`, () => {
-    const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(additionalSymbolJsonStr);
     const libraryKey: string = "Testing";
 
+    const testLibrary: ReadonlyMap<string, PQLS.LibrarySymbol.LibrarySymbol[]> = new Map([
+        [libraryKey, JSON.parse(additionalSymbolJsonStr)],
+    ]);
+
+    const clearLibrary: ReadonlyMap<string, null> = new Map([[libraryKey, null]]);
+
     before(() => {
-        ExternalLibraryUtils.setRange([[libraryKey, libraryJson]]);
+        ExternalLibraryUtils.setRange(testLibrary);
     });
 
     it(`Library registered`, () => {
@@ -248,7 +253,7 @@ describe(`setLibrarySymbols`, () => {
     });
 
     after(() => {
-        ExternalLibraryUtils.setRange([[libraryKey, null]]);
+        ExternalLibraryUtils.setRange(clearLibrary);
         expect(ExternalLibraryUtils.getSymbols().length).to.equal(0, "expected 0 libraries");
     });
 });

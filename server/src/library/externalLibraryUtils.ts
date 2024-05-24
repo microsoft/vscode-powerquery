@@ -10,12 +10,12 @@ export function getSymbols(): ReadonlyArray<ExternalSymbolLibrary> {
     return Array.from(externalLibraryByName.values());
 }
 
-export function setRange(symbols: ReadonlyArray<[string, IncomingExternalSymbolLibrary]>): void {
-    symbols.forEach((value: [string, IncomingExternalSymbolLibrary]) => {
-        if (value[1] === undefined || value[1] === null) {
-            externalLibraryByName.delete(value[0]);
+export function setRange(symbols: ReadonlyMap<string, IncomingExternalSymbolLibrary>): void {
+    symbols.forEach((value: IncomingExternalSymbolLibrary, key: string) => {
+        if (value === undefined || value === null) {
+            externalLibraryByName.delete(key);
         } else {
-            externalLibraryByName.set(value[0], value[1]);
+            externalLibraryByName.set(key, value);
         }
     });
 }

@@ -11,14 +11,14 @@ import { LibraryJson, PowerQueryApi } from "../../powerQueryApi";
 import { LibrarySymbolManager } from "../../librarySymbolManager";
 
 class MockLibararySymbolClient implements PowerQueryApi {
-    public lastLibrarySymbols: ReadonlyArray<[string, LibraryJson | null]> | undefined;
+    public lastLibrarySymbols: ReadonlyMap<string, LibraryJson | null> | undefined;
 
     onModuleLibraryUpdated(_workspaceUriPath: string, _library: LibraryJson): void {
         throw new Error("Function not implemented.");
     }
 
     setLibrarySymbols(
-        librarySymbols: ReadonlyArray<[string, LibraryJson | null]>,
+        librarySymbols: ReadonlyMap<string, LibraryJson | null>,
         _token?: vscode.CancellationToken,
     ): Promise<void> {
         this.lastLibrarySymbols = librarySymbols;
@@ -84,9 +84,9 @@ suite("LibrarySymbolManager.refreshSymbolDirectories", () => {
         assert.equal(modules[0], "ExtensionTest");
 
         assert.ok(mockClient.lastLibrarySymbols, "call should have been made");
-        assert.equal(mockClient.lastLibrarySymbols.length, 1, "Expected one element in the symbols call");
+        assert.equal(mockClient.lastLibrarySymbols.size, 1, "Expected one element in the symbols call");
 
-        const entry: [string, LibraryJson | null] = mockClient.lastLibrarySymbols[0];
+        const entry: [string, LibraryJson | null] = mockClient.lastLibrarySymbols.entries().next().value;
         assert.equal(entry[0], "ExtensionTest", "Unexpected module name");
         assert.ok(entry[1], "Expected libraries");
         assert.equal(entry[1].length, 1, "Expected one library in the result");
@@ -96,9 +96,9 @@ suite("LibrarySymbolManager.refreshSymbolDirectories", () => {
         assert.equal(resetModules.length, 0, "Expected empty string array");
 
         assert.ok(mockClient.lastLibrarySymbols, "call should have been made to clear results");
-        assert.equal(mockClient.lastLibrarySymbols.length, 1, "Expected one element in cleared results");
+        assert.equal(mockClient.lastLibrarySymbols.size, 1, "Expected one element in cleared results");
 
-        const clearedEntry: [string, LibraryJson | null] = mockClient.lastLibrarySymbols[0];
+        const clearedEntry: [string, LibraryJson | null] = mockClient.lastLibrarySymbols.entries().next().value;
         assert.equal(clearedEntry[0], "ExtensionTest", "Unexpected module name in cleared results");
         assert.equal(clearedEntry[1], null, "Expected library value to be null");
     });
