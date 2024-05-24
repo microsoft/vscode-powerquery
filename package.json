@@ -60,6 +60,7 @@
     },
     "icon": "imgs/PQIcon_256.png",
     "main": "./client/dist/extension",
+    "types": "./client/dist/extension.d.ts",
     "engines": {
         "node": ">=18.17.0",
         "vscode": "^1.87.0"
