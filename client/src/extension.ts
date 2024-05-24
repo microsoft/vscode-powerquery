@@ -12,8 +12,6 @@ import { LibrarySymbolClient } from "./librarySymbolClient";
 import { LibrarySymbolManager } from "./librarySymbolManager";
 import { PowerQueryApi } from "./powerQueryApi";
 
-const symbolDirectoryWatchers: Map<string, vscode.Disposable> = new Map<string, vscode.Disposable>();
-
 let client: LC.LanguageClient;
 let librarySymbolClient: LibrarySymbolClient;
 let librarySymbolManager: LibrarySymbolManager;
@@ -21,23 +19,11 @@ let librarySymbolManager: LibrarySymbolManager;
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
     context.subscriptions.push(
-        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText),
-    );
-
-    context.subscriptions.push(
         vscode.commands.registerCommand(CommandConstant.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
+        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText),
     );
 
     // The server is implemented in node
@@ -103,15 +89,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    disposeSymbolDirectoryWatchers();
-
-    return client.stop();
+    return client?.stop();
 }
 
 async function configureSymbolDirectories(): Promise<void> {
-    // Clear existing watchers.
-    disposeSymbolDirectoryWatchers();
-
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstant.BasePath);
 
     const additionalSymbolsDirectories: string[] | undefined = config.get(
@@ -125,12 +106,4 @@ async function configureSymbolDirectories(): Promise<void> {
     await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories ?? []);
 
     // TODO: Configure file system watchers to detect library file changes.
-}
-
-function disposeSymbolDirectoryWatchers(): void {
-    for (const [, value] of symbolDirectoryWatchers) {
-        value.dispose();
-    }
-
-    symbolDirectoryWatchers.clear();
 }
