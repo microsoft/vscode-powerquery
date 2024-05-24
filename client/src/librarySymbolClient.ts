@@ -16,7 +16,6 @@ export type MinimalPowerQueryLanguageServiceClient = Pick<
 export class LibrarySymbolClient implements PowerQueryApi {
     constructor(private lsClient: MinimalPowerQueryLanguageServiceClient) {}
 
-    // TODO: Deprecate
     public onModuleLibraryUpdated(workspaceUriPath: string, library: LibraryJson): void {
         if (this.lsClient.isRunning()) {
             this.lsClient.info("Calling powerquery/moduleLibraryUpdated");
