@@ -11,13 +11,13 @@ export function getSymbols(): ReadonlyArray<ExternalSymbolLibrary> {
 }
 
 export function setRange(symbols: ReadonlyMap<string, IncomingExternalSymbolLibrary>): void {
-    symbols.forEach((value: IncomingExternalSymbolLibrary, key: string) => {
+    for (const [key, value] of symbols) {
         if (value === undefined || value === null) {
             externalLibraryByName.delete(key);
         } else {
             externalLibraryByName.set(key, value);
         }
-    });
+    }
 }
 
 const externalLibraryByName: Map<string, ExternalSymbolLibrary> = new Map();

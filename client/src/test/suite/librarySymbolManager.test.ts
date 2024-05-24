@@ -38,7 +38,9 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
     test("Valid", async () => {
         const fileUri: vscode.Uri = TestUtils.getDocUri("ExtensionTest.json");
 
-        const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
+        const res: [vscode.Uri, LibraryJson] | undefined = await librarySymbolManager.processSymbolFile(fileUri);
+
+        assert(res !== undefined, "Expected result");
 
         assert.equal(res[0], fileUri, "uri should match");
         assert.ok(res[1], "library should be defined");
@@ -49,28 +51,22 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
     test("Not a symbol file", async () => {
         const fileUri: vscode.Uri = TestUtils.getDocUri("dataflow.json");
 
-        const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
-
-        assert.equal(res[0], fileUri, "uri should match");
-        assert.equal(res[1] === undefined, true, "library expected to be undefined");
+        const res: [vscode.Uri, LibraryJson] | undefined = await librarySymbolManager.processSymbolFile(fileUri);
+        assert(res === undefined, "Expected library to be undefined");
     });
 
     test("Not json", async () => {
         const fileUri: vscode.Uri = TestUtils.getDocUri("index.js");
 
-        const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
-
-        assert.equal(res[0], fileUri, "uri should match");
-        assert.equal(res[1] === undefined, true, "library expected to be undefined");
+        const res: [vscode.Uri, LibraryJson] | undefined = await librarySymbolManager.processSymbolFile(fileUri);
+        assert(res === undefined, "Expected library to be undefined");
     });
 
     test("Not a file", async () => {
         const fileUri: vscode.Uri = vscode.Uri.file(TestUtils.getTestFixturePath());
 
-        const res: [vscode.Uri, LibraryJson | undefined] = await librarySymbolManager.processSymbolFile(fileUri);
-
-        assert.equal(res[0], fileUri, "uri should match");
-        assert.equal(res[1] === undefined, true, "library expected to be undefined");
+        const res: [vscode.Uri, LibraryJson] | undefined = await librarySymbolManager.processSymbolFile(fileUri);
+        assert(res === undefined, "Expected library to be undefined");
     });
 });
 

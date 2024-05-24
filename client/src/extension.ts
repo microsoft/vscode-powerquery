@@ -99,16 +99,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 
 export function deactivate(): Thenable<void> | undefined {
     if (commands.length > 0) {
-        commands.forEach((disposable: vscode.Disposable) => disposable.dispose());
+        for (const cmd of commands) {
+            cmd.dispose();
+        }
+
         commands.length = 0;
     }
 
-    disposeSymbolWatchers();
+    disposeSymbolDirectoryWatchers();
 
     return client.stop();
 }
 
 async function configureSymbolDirectories(): Promise<void> {
+    // Clear existing watchers.
+    disposeSymbolDirectoryWatchers();
+
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstant.BasePath);
 
     const additionalSymbolsDirectories: string[] | undefined = config.get(
@@ -121,10 +127,13 @@ async function configureSymbolDirectories(): Promise<void> {
 
     await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories);
 
-    // TODO: Configure file system watchers
+    // TODO: Configure file system watchers to detect library file changes.
 }
 
-function disposeSymbolWatchers(): void {
-    symbolDirectoryWatchers.forEach((item: vscode.Disposable, _: string) => item.dispose());
+function disposeSymbolDirectoryWatchers(): void {
+    for (const [, value] of symbolDirectoryWatchers) {
+        value.dispose();
+    }
+
     symbolDirectoryWatchers.clear();
 }

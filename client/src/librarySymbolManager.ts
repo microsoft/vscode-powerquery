@@ -29,7 +29,7 @@ export class LibrarySymbolManager {
         this.fs = fs ?? vscode.workspace.fs;
     }
 
-    public async refreshSymbolDirectories(directories?: string[]): Promise<readonly string[]> {
+    public async refreshSymbolDirectories(directories?: ReadonlyArray<string>): Promise<readonly string[]> {
         await this.clearAllRegisteredSymbolModules();
 
         if (!directories || directories.length === 0) {
@@ -39,7 +39,7 @@ export class LibrarySymbolManager {
         const dedupedDirectories: string[] = Array.from(new Set(directories));
 
         // Fetch the full list of files to process.
-        const fileDiscovery: Promise<vscode.Uri[]>[] = [];
+        const fileDiscoveryActions: Promise<vscode.Uri[]>[] = [];
 
         const directoryUris: vscode.Uri[] = dedupedDirectories.map((directory: string) => {
             const normalized: string = path.normalize(directory);
@@ -51,31 +51,31 @@ export class LibrarySymbolManager {
             return vscode.Uri.file(normalized);
         });
 
-        directoryUris.forEach((d: vscode.Uri) => {
-            fileDiscovery.push(this.getSymbolFilesFromDirectory(d));
-        });
+        for (const uri of directoryUris) {
+            fileDiscoveryActions.push(this.getSymbolFilesFromDirectory(uri));
+        }
 
         // TODO: check for duplicate module file names and only take the last one.
         // This would allow a connector developer to override a symbol library generated
         // with an older version of their connector.
-        const symbolFileActions: Promise<[vscode.Uri, LibraryJson | undefined]>[] = [];
-        const files: vscode.Uri[] = (await Promise.all(fileDiscovery)).flat();
+        const symbolFileActions: Promise<[vscode.Uri, LibraryJson] | undefined>[] = [];
+        const files: vscode.Uri[] = (await Promise.all(fileDiscoveryActions)).flat();
 
-        files.forEach((fileUri: vscode.Uri) => {
+        for (const fileUri of files) {
             symbolFileActions.push(this.processSymbolFile(fileUri));
-        });
+        }
 
         // Process all symbol files, filtering out any that failed to load.
-        const allSymbolFiles: [vscode.Uri, LibraryJson | undefined][] = await Promise.all(symbolFileActions);
+        const allSymbolFiles: ReadonlyArray<[vscode.Uri, LibraryJson]> = (await Promise.all(symbolFileActions)).filter(
+            (value: [vscode.Uri, LibraryJson] | undefined) => value !== undefined,
+        ) as ReadonlyArray<[vscode.Uri, LibraryJson]>;
 
         const validSymbolLibraries: Map<string, LibraryJson> = new Map<string, LibraryJson>();
 
-        allSymbolFiles.forEach((value: [vscode.Uri, LibraryJson | undefined]) => {
-            if (value[1] !== undefined) {
-                const moduleName: string = LibrarySymbolManager.getModuleNameFromFileUri(value[0]);
-                validSymbolLibraries.set(moduleName, value[1] as LibraryJson);
-            }
-        });
+        for (const [uri, library] of allSymbolFiles) {
+            const moduleName: string = LibrarySymbolManager.getModuleNameFromFileUri(uri);
+            validSymbolLibraries.set(moduleName, library);
+        }
 
         this.clientTrace?.info(`Registering symbol files. Total file count: ${validSymbolLibraries.size}`);
 
@@ -130,7 +130,7 @@ export class LibrarySymbolManager {
             .filter((value: vscode.Uri | undefined) => value !== undefined) as vscode.Uri[];
     }
 
-    public async processSymbolFile(fileUri: vscode.Uri): Promise<[vscode.Uri, LibraryJson | undefined]> {
+    public async processSymbolFile(fileUri: vscode.Uri): Promise<[vscode.Uri, LibraryJson] | undefined> {
         try {
             const contents: Uint8Array = await this.fs.readFile(fileUri);
             const text: string = new TextDecoder(LibrarySymbolManager.SymbolFileEncoding).decode(contents);
@@ -149,7 +149,7 @@ export class LibrarySymbolManager {
             );
         }
 
-        return [fileUri, undefined];
+        return undefined;
     }
 
     private static getModuleNameFromFileUri(fileUri: vscode.Uri): string {
@@ -157,7 +157,7 @@ export class LibrarySymbolManager {
     }
 
     private async clearAllRegisteredSymbolModules(): Promise<void> {
-        if (this.registeredSymbolModules.length == 0) {
+        if (this.registeredSymbolModules.length === 0) {
             return;
         }
 
