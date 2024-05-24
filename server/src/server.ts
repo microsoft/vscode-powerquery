@@ -281,55 +281,31 @@ connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenPa
 
 connection.onRequest(
     "powerquery/moduleLibraryUpdated",
-    (params: ModuleLibraryUpdatedParams): LS.HandlerResult<void, unknown> => {
-        try {
-            ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
-            LibraryUtils.clearCache();
-            connection.languages.diagnostics.refresh();
-        } catch (error) {
-            if (error instanceof Error) {
-                return new LS.ResponseError(LS.ErrorCodes.InternalError, error.message, error);
-            }
-
-            return new LS.ResponseError(LS.ErrorCodes.InternalError, "An unknown error occurred.", error);
-        }
-    },
+    EventHandlerUtils.genericRequestHandler((params: ModuleLibraryUpdatedParams) => {
+        ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
+        LibraryUtils.clearCache();
+        connection.languages.diagnostics.refresh();
+    }),
 );
 
 connection.onRequest(
     "powerquery/addLibrarySymbols",
-    (params: AddLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
-        try {
-            // JSON-RPC doesn't support sending Maps, so we have to convert from tuple array.
-            const symbolMaps: ReadonlyMap<string, LibraryJson> = new Map(params.librarySymbols);
-            ExternalLibraryUtils.addLibaries(symbolMaps);
-            LibraryUtils.clearCache();
-            connection.languages.diagnostics.refresh();
-        } catch (error) {
-            if (error instanceof Error) {
-                return new LS.ResponseError(LS.ErrorCodes.InternalError, error.message, error);
-            }
-
-            return new LS.ResponseError(LS.ErrorCodes.InternalError, "An unknown error occurred.", error);
-        }
-    },
+    EventHandlerUtils.genericRequestHandler((params: AddLibrarySymbolsParams) => {
+        // JSON-RPC doesn't support sending Maps, so we have to convert from tuple array.
+        const symbolMaps: ReadonlyMap<string, LibraryJson> = new Map(params.librarySymbols);
+        ExternalLibraryUtils.addLibaries(symbolMaps);
+        LibraryUtils.clearCache();
+        connection.languages.diagnostics.refresh();
+    }),
 );
 
 connection.onRequest(
     "powerquery/removeLibrarySymbols",
-    (params: RemoveLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
-        try {
-            ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
-            LibraryUtils.clearCache();
-            connection.languages.diagnostics.refresh();
-        } catch (error) {
-            if (error instanceof Error) {
-                return new LS.ResponseError(LS.ErrorCodes.InternalError, error.message, error);
-            }
-
-            return new LS.ResponseError(LS.ErrorCodes.InternalError, "An unknown error occurred.", error);
-        }
-    },
+    EventHandlerUtils.genericRequestHandler((params: RemoveLibrarySymbolsParams) => {
+        ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
+        LibraryUtils.clearCache();
+        connection.languages.diagnostics.refresh();
+    }),
 );
 
 connection.onSignatureHelp(
