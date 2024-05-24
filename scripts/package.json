@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-scripts",
-    "version": "0.0.57",
+    "version": "0.0.59",
     "description": "Scripts for vscode-powerquery repository",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -24,10 +24,8 @@
         "webpack-prod": "node_modules\\.bin\\webpack --mode production",
         "webpack-dev": "node_modules\\.bin\\webpack --watch --mode development"
     },
-    "main": "lib\\server.d.ts",
-    "types": "lib\\server.d.ts",
     "engines": {
-        "node": ">=16.13.2"
+        "node": ">=18.17.0"
     },
     "dependencies": {
         "@microsoft/powerquery-language-services": "0.10.1",
