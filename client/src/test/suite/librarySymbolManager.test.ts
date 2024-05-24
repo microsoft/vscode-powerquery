@@ -11,23 +11,30 @@ import { LibraryJson, PowerQueryApi } from "../../powerQueryApi";
 import { LibrarySymbolManager } from "../../librarySymbolManager";
 
 class MockLibararySymbolClient implements PowerQueryApi {
-    public lastLibrarySymbols: ReadonlyMap<string, LibraryJson | null> | undefined;
+    public registeredSymbols: Map<string, LibraryJson> = new Map();
 
     onModuleLibraryUpdated(_workspaceUriPath: string, _library: LibraryJson): void {
         throw new Error("Function not implemented.");
     }
 
-    setLibrarySymbols(
-        librarySymbols: ReadonlyMap<string, LibraryJson | null>,
-        _token?: vscode.CancellationToken,
-    ): Promise<void> {
-        this.lastLibrarySymbols = librarySymbols;
+    addLibrarySymbols(librarySymbols: ReadonlyMap<string, LibraryJson>): Promise<void> {
+        for (const [key, value] of librarySymbols) {
+            this.registeredSymbols.set(key, value);
+        }
+
+        return Promise.resolve();
+    }
+
+    removeLibrarySymbols(librariesToRemove: ReadonlyArray<string>): Promise<void> {
+        for (const library of librariesToRemove) {
+            this.registeredSymbols.delete(library);
+        }
 
         return Promise.resolve();
     }
 
     reset(): void {
-        this.lastLibrarySymbols = undefined;
+        this.registeredSymbols.clear();
     }
 }
 
@@ -72,31 +79,24 @@ suite("LibrarySymbolManager.processSymbolFile", () => {
 
 suite("LibrarySymbolManager.refreshSymbolDirectories", () => {
     test("Refresh with valid file", async () => {
-        const modules: readonly string[] = await librarySymbolManager.refreshSymbolDirectories([
+        const modules: ReadonlyArray<string> = await librarySymbolManager.refreshSymbolDirectories([
             TestUtils.getTestFixturePath(),
         ]);
 
         assert.equal(modules.length, 1, "Expected one result");
         assert.equal(modules[0], "ExtensionTest");
 
-        assert.ok(mockClient.lastLibrarySymbols, "call should have been made");
-        assert.equal(mockClient.lastLibrarySymbols.size, 1, "Expected one element in the symbols call");
+        assert.ok(mockClient.registeredSymbols, "call should have been made");
+        assert.equal(mockClient.registeredSymbols.size, 1, "Expected one element in the symbols call");
 
-        const entry: [string, LibraryJson | null] = mockClient.lastLibrarySymbols.entries().next().value;
-        assert.equal(entry[0], "ExtensionTest", "Unexpected module name");
-        assert.ok(entry[1], "Expected libraries");
-        assert.equal(entry[1].length, 1, "Expected one library in the result");
-        assert.equal(entry[1][0].name, "ExtensionTest.Contents");
+        const entry: LibraryJson | undefined = mockClient.registeredSymbols.get("ExtensionTest");
+        assert(entry !== undefined, "Expected ExtensionTest to in the results");
+        assert.equal(entry.length, 1, "Expected one library in the result");
+        assert.equal(entry[0].name, "ExtensionTest.Contents");
 
-        const resetModules: readonly string[] = await librarySymbolManager.refreshSymbolDirectories(undefined);
+        const resetModules: ReadonlyArray<string> = await librarySymbolManager.refreshSymbolDirectories([]);
         assert.equal(resetModules.length, 0, "Expected empty string array");
-
-        assert.ok(mockClient.lastLibrarySymbols, "call should have been made to clear results");
-        assert.equal(mockClient.lastLibrarySymbols.size, 1, "Expected one element in cleared results");
-
-        const clearedEntry: [string, LibraryJson | null] = mockClient.lastLibrarySymbols.entries().next().value;
-        assert.equal(clearedEntry[0], "ExtensionTest", "Unexpected module name in cleared results");
-        assert.equal(clearedEntry[1], null, "Expected library value to be null");
+        assert.equal(mockClient.registeredSymbols.size, 0, "Expected registered symbols to be cleared");
     });
 });
 

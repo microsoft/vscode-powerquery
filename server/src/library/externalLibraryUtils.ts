@@ -4,19 +4,20 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 
 export type ExternalSymbolLibrary = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
-export type IncomingExternalSymbolLibrary = ExternalSymbolLibrary | null;
 
 export function getSymbols(): ReadonlyArray<ExternalSymbolLibrary> {
     return Array.from(externalLibraryByName.values());
 }
 
-export function setRange(symbols: ReadonlyMap<string, IncomingExternalSymbolLibrary>): void {
+export function addLibaries(symbols: ReadonlyMap<string, ExternalSymbolLibrary>): void {
     for (const [key, value] of symbols) {
-        if (value === undefined || value === null) {
-            externalLibraryByName.delete(key);
-        } else {
-            externalLibraryByName.set(key, value);
-        }
+        externalLibraryByName.set(key, value);
+    }
+}
+
+export function removeLibraries(libraryNames: ReadonlyArray<string>): void {
+    for (const libraryName of libraryNames) {
+        externalLibraryByName.delete(libraryName);
     }
 }
 

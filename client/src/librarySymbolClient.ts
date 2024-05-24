@@ -29,27 +29,42 @@ export class LibrarySymbolClient implements PowerQueryApi {
         }
     }
 
-    public async setLibrarySymbols(
+    public async addLibrarySymbols(
         librarySymbols: ReadonlyMap<string, LibraryJson | null>,
         token?: vscode.CancellationToken,
     ): Promise<void> {
         if (this.lsClient.isRunning()) {
-            this.lsClient.info("Calling powerquery/setLibrarySymbols");
-
             // The JSON-RPC libraries don't support sending maps, so we convert it to a tuple array.
             const librarySymbolsTuples: ReadonlyArray<[string, LibraryJson | null]> = Array.from(
                 librarySymbols.entries(),
             );
 
             await this.lsClient.sendRequest(
-                "powerquery/setLibrarySymbols",
+                "powerquery/addLibrarySymbols",
                 {
                     librarySymbols: librarySymbolsTuples,
                 },
                 token,
             );
         } else {
-            this.lsClient.error("Received setLibrarySymbols call but client is not running.", undefined, false);
+            this.lsClient.error("Received addLibrarySymbols call but client is not running.", undefined, false);
+        }
+    }
+
+    public async removeLibrarySymbols(
+        librariesToRemove: ReadonlyArray<string>,
+        token?: vscode.CancellationToken,
+    ): Promise<void> {
+        if (this.lsClient.isRunning()) {
+            await this.lsClient.sendRequest(
+                "powerquery/removeLibrarySymbols",
+                {
+                    librariesToRemove,
+                },
+                token,
+            );
+        } else {
+            this.lsClient.error("Received removeLibrarySymbols call but client is not running.", undefined, false);
         }
     }
 }

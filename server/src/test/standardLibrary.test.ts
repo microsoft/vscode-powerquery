@@ -233,10 +233,8 @@ describe(`setLibrarySymbols`, () => {
         [libraryKey, JSON.parse(additionalSymbolJsonStr)],
     ]);
 
-    const clearLibrary: ReadonlyMap<string, null> = new Map([[libraryKey, null]]);
-
     before(() => {
-        ExternalLibraryUtils.setRange(testLibrary);
+        ExternalLibraryUtils.addLibaries(testLibrary);
     });
 
     it(`Library registered`, () => {
@@ -253,7 +251,7 @@ describe(`setLibrarySymbols`, () => {
     });
 
     after(() => {
-        ExternalLibraryUtils.setRange(clearLibrary);
+        ExternalLibraryUtils.removeLibraries([libraryKey]);
         expect(ExternalLibraryUtils.getSymbols().length).to.equal(0, "expected 0 libraries");
     });
 });

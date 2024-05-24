@@ -29,7 +29,7 @@ export class LibrarySymbolManager {
         this.fs = fs ?? vscode.workspace.fs;
     }
 
-    public async refreshSymbolDirectories(directories?: ReadonlyArray<string>): Promise<readonly string[]> {
+    public async refreshSymbolDirectories(directories: ReadonlyArray<string>): Promise<readonly string[]> {
         await this.clearAllRegisteredSymbolModules();
 
         if (!directories || directories.length === 0) {
@@ -80,7 +80,7 @@ export class LibrarySymbolManager {
         this.clientTrace?.info(`Registering symbol files. Total file count: ${validSymbolLibraries.size}`);
 
         await this.librarySymbolClient
-            .setLibrarySymbols(validSymbolLibraries)
+            .addLibrarySymbols(validSymbolLibraries)
             .then(() => this.registeredSymbolModules.push(...validSymbolLibraries.keys()));
 
         return this.registeredSymbolModules;
@@ -161,14 +161,8 @@ export class LibrarySymbolManager {
             return;
         }
 
-        await this.clearSymbolModules(this.registeredSymbolModules).then(
-            () => (this.registeredSymbolModules.length = 0),
-        );
-    }
-
-    private clearSymbolModules(modules: string[]): Promise<void> {
-        const modulesToClear: Map<string, null> = new Map(modules.map((m: string) => [m, null]));
-
-        return this.librarySymbolClient.setLibrarySymbols(modulesToClear);
+        await this.librarySymbolClient
+            .removeLibrarySymbols(this.registeredSymbolModules)
+            .then(() => (this.registeredSymbolModules.length = 0));
     }
 }

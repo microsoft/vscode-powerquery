@@ -25,8 +25,12 @@ interface ModuleLibraryUpdatedParams {
     readonly library: LibraryJson;
 }
 
-interface SetLibrarySymbolsParams {
-    librarySymbols: ReadonlyArray<[string, LibraryJson | null]>;
+interface AddLibrarySymbolsParams {
+    librarySymbols: ReadonlyArray<[string, LibraryJson]>;
+}
+
+interface RemoveLibrarySymbolsParams {
+    librariesToRemove: ReadonlyArray<string>;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -293,12 +297,29 @@ connection.onRequest(
 );
 
 connection.onRequest(
-    "powerquery/setLibrarySymbols",
-    (params: SetLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
+    "powerquery/addLibrarySymbols",
+    (params: AddLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
         try {
             // JSON-RPC doesn't support sending Maps, so we have to convert from tuple array.
-            const symbolMaps: ReadonlyMap<string, LibraryJson | null> = new Map(params.librarySymbols);
-            ExternalLibraryUtils.setRange(symbolMaps);
+            const symbolMaps: ReadonlyMap<string, LibraryJson> = new Map(params.librarySymbols);
+            ExternalLibraryUtils.addLibaries(symbolMaps);
+            LibraryUtils.clearCache();
+            connection.languages.diagnostics.refresh();
+        } catch (error) {
+            if (error instanceof Error) {
+                return new LS.ResponseError(LS.ErrorCodes.InternalError, error.message, error);
+            }
+
+            return new LS.ResponseError(LS.ErrorCodes.InternalError, "An unknown error occurred.", error);
+        }
+    },
+);
+
+connection.onRequest(
+    "powerquery/removeLibrarySymbols",
+    (params: RemoveLibrarySymbolsParams): LS.HandlerResult<void, unknown> => {
+        try {
+            ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
             LibraryUtils.clearCache();
             connection.languages.diagnostics.refresh();
         } catch (error) {

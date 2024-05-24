@@ -12,7 +12,6 @@ import { LibrarySymbolClient } from "./librarySymbolClient";
 import { LibrarySymbolManager } from "./librarySymbolManager";
 import { PowerQueryApi } from "./powerQueryApi";
 
-const commands: vscode.Disposable[] = [];
 const symbolDirectoryWatchers: Map<string, vscode.Disposable> = new Map<string, vscode.Disposable>();
 
 let client: LC.LanguageClient;
@@ -21,17 +20,23 @@ let librarySymbolManager: LibrarySymbolManager;
 
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
-    // TODO: Dispose commands through context.subscriptions.
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
+    context.subscriptions.push(
+        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText),
+    );
 
-    commands.push(
+    context.subscriptions.push(
+        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText),
+    );
+
+    context.subscriptions.push(
         vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
     );
 
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
+    context.subscriptions.push(
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText),
+    );
 
-    commands.push(
+    context.subscriptions.push(
         vscode.commands.registerCommand(CommandConstant.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
     );
 
@@ -98,14 +103,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    if (commands.length > 0) {
-        for (const cmd of commands) {
-            cmd.dispose();
-        }
-
-        commands.length = 0;
-    }
-
     disposeSymbolDirectoryWatchers();
 
     return client.stop();
@@ -125,7 +122,7 @@ async function configureSymbolDirectories(): Promise<void> {
     // For example, a quoted path "c:\path\to\file" will be considered invalid and reported as an error.
     // We could modify values and write them back to the original config locations.
 
-    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories);
+    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories ?? []);
 
     // TODO: Configure file system watchers to detect library file changes.
 }
