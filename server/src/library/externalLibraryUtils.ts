@@ -10,7 +10,7 @@ export function getSymbols(): ExternalSymbolLibrary[] {
     return Array.from(externalLibraryByName.values());
 }
 
-export function setRange(symbols: [string, IncomingExternalSymbolLibrary][]): void {
+export function setRange(symbols: ReadonlyArray<[string, IncomingExternalSymbolLibrary]>): void {
     symbols.forEach((value: [string, IncomingExternalSymbolLibrary]) => {
         if (value[1] === undefined || value[1] === null) {
             externalLibraryByName.delete(value[0]);

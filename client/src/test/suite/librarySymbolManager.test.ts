@@ -11,14 +11,14 @@ import { LibraryJson, PowerQueryApi } from "../../powerQueryApi";
 import { LibrarySymbolManager } from "../../librarySymbolManager";
 
 class MockLibararySymbolClient implements PowerQueryApi {
-    public lastLibrarySymbols: [string, LibraryJson | null][] | undefined;
+    public lastLibrarySymbols: ReadonlyArray<[string, LibraryJson | null]> | undefined;
 
     onModuleLibraryUpdated(_workspaceUriPath: string, _library: LibraryJson): void {
         throw new Error("Function not implemented.");
     }
 
     setLibrarySymbols(
-        librarySymbols: [string, LibraryJson | null][],
+        librarySymbols: ReadonlyArray<[string, LibraryJson | null]>,
         _token?: vscode.CancellationToken,
     ): Promise<void> {
         this.lastLibrarySymbols = librarySymbols;

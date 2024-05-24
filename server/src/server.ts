@@ -24,7 +24,7 @@ interface ModuleLibraryUpdatedParams {
 }
 
 interface SetLibrarySymbolsParams {
-    librarySymbols: [string, ExternalLibraryUtils.IncomingExternalSymbolLibrary][];
+    librarySymbols: ReadonlyArray<[string, ExternalLibraryUtils.IncomingExternalSymbolLibrary]>;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.

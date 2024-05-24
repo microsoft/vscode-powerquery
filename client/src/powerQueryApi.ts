@@ -11,5 +11,6 @@ export type LibraryJson = ReadonlyArray<LibrarySymbol>;
 
 export interface PowerQueryApi {
     readonly onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson) => void;
-    readonly setLibrarySymbols: (librarySymbols: [string, LibraryJson | null][]) => Promise<void>;
+    // Ideally the parameter would be a ReadonlyMap, but that isn't supported by JSON-RPC libraries.
+    readonly setLibrarySymbols: (librarySymbols: ReadonlyArray<[string, LibraryJson | null]>) => Promise<void>;
 }
