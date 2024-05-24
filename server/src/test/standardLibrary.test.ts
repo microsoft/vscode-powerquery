@@ -235,7 +235,7 @@ describe(`setLibrarySymbols`, () => {
     });
 
     it(`Library registered`, () => {
-        const symbols: ExternalLibraryUtils.ExternalSymbolLibrary[] = ExternalLibraryUtils.getSymbols();
+        const symbols: ReadonlyArray<ExternalLibraryUtils.ExternalSymbolLibrary> = ExternalLibraryUtils.getSymbols();
         expect(symbols.length).to.equal(1, "expected 1 library");
         expect(symbols[0].length).to.equal(1, "expected 1 symbol");
     });
