@@ -39,11 +39,11 @@ export class LibrarySymbolManager {
         // Fetch the full list of files to process.
         const fileDiscovery: Promise<vscode.Uri[]>[] = [];
 
-        const directoryUris: vscode.Uri[] = directories.map((d: string) => {
-            const normalized: string = path.normalize(d);
+        const directoryUris: vscode.Uri[] = directories.map((directory: string) => {
+            const normalized: string = path.normalize(directory);
 
-            if (d !== normalized) {
-                this.clientTrace?.info(`Normalized symbol file path '${d}' => '${normalized}'`);
+            if (directory !== normalized) {
+                this.clientTrace?.info(`Normalized symbol file path '${directory}' => '${normalized}'`);
             }
 
             return vscode.Uri.file(normalized);
