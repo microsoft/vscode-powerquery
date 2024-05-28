@@ -2,10 +2,13 @@
 // Licensed under the MIT license.
 
 import * as assert from "assert";
+import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 
-import { PowerQueryApi } from "../../vscode-powerquery.api";
+import { PowerQueryApi } from "../../powerQueryApi";
+
+const testFixurePath: string = "../../../src/test/testFixture";
 
 export const extensionId: string = "powerquery.vscode-powerquery";
 
@@ -37,8 +40,23 @@ export async function activateExtension(): Promise<PowerQueryApi> {
     return await ext.activate();
 }
 
-export const getDocPath: (p: string) => string = (p: string): string =>
-    path.resolve(__dirname, "../../../src/test/testFixture", p);
+export async function closeFileIfOpen(file: vscode.Uri): Promise<void> {
+    const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map((tg: vscode.TabGroup) => tg.tabs).flat();
+
+    const index: number = tabs.findIndex(
+        (tab: vscode.Tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.path === file.path,
+    );
+
+    if (index !== -1) {
+        await vscode.window.tabGroups.close(tabs[index]);
+    }
+}
+
+export function getTestFixturePath(): string {
+    return path.resolve(__dirname, testFixurePath);
+}
+
+export const getDocPath: (p: string) => string = (p: string): string => path.resolve(getTestFixturePath(), p);
 
 export const getDocUri: (p: string) => vscode.Uri = (p: string): vscode.Uri => vscode.Uri.file(getDocPath(p));
 
@@ -59,3 +77,6 @@ export enum Commands {
     Hover = "vscode.executeHoverProvider",
     SignatureHelp = "vscode.executeSignatureHelpProvider ",
 }
+
+export const randomDirName: (length?: number) => string = (length: number = 8): string =>
+    path.resolve(os.tmpdir(), Math.random().toString(16).substring(2, length));

@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.58",
+    "version": "0.1.59",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -60,6 +60,7 @@
     },
     "icon": "imgs/PQIcon_256.png",
     "main": "./client/dist/extension",
+    "types": "./client/dist/extension.d.ts",
     "engines": {
         "node": ">=18.17.0",
         "vscode": "^1.87.0"
@@ -135,6 +136,17 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Recommended always off. Enables benchmark traces to be generated for the extension."
+                },
+                "powerquery.client.additionalSymbolsDirectories": {
+                    "scope": "machine-overridable",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        "c:\\PowerQuerySymbols\\"
+                    ],
+                    "markdownDescription": "One or more absolute file system paths to directories containing M language symbols in json format."
                 },
                 "powerquery.diagnostics.isWorkspaceCacheAllowed": {
                     "scope": "window",

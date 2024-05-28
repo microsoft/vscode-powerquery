@@ -4,13 +4,13 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { AnalysisSettings, Hover, Position, SignatureHelp } from "@microsoft/powerquery-language-services";
+import { assert, expect } from "chai";
 import { Assert, ResultUtils } from "@microsoft/powerquery-parser";
+import { ExternalLibraryUtils, LibrarySymbolUtils, LibraryUtils, ModuleLibraryUtils } from "../library";
 import { MarkupContent, ParameterInformation, SignatureInformation } from "vscode-languageserver";
-import { expect } from "chai";
+import { SettingsUtils } from "../settings";
 
-import { LibrarySymbolUtils, LibraryUtils, ModuleLibraryUtils } from "../library";
-
-const library: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
+const defaultLibrary: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
     [LibrarySymbolUtils.getSymbolsForLocaleAndMode(PQP.Locale.en_US, "Power Query")],
     [],
 );
@@ -25,8 +25,8 @@ class NoOpCancellationToken implements PQP.ICancellationToken {
 
 const NoOpCancellationTokenInstance: NoOpCancellationToken = new NoOpCancellationToken();
 
-async function assertGetHover(text: string): Promise<Hover> {
-    const [analysis, position]: [PQLS.Analysis, Position] = createAnalysis(text);
+async function assertGetHover(text: string, library?: PQLS.Library.ILibrary): Promise<PQLS.Hover | undefined> {
+    const [analysis, position]: [PQLS.Analysis, Position] = createAnalysis(text, library);
 
     const result: PQP.Result<PQLS.Hover | undefined, PQP.CommonError.CommonError> = await analysis.getHover(
         position,
@@ -35,12 +35,7 @@ async function assertGetHover(text: string): Promise<Hover> {
 
     ResultUtils.assertIsOk(result);
 
-    return (
-        result.value ?? {
-            range: undefined,
-            contents: [],
-        }
-    );
+    return result.value;
 }
 
 async function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
@@ -62,8 +57,13 @@ async function assertGetSignatureHelp(text: string): Promise<SignatureHelp> {
     );
 }
 
-async function assertHoverContentEquals(text: string, expected: string): Promise<void> {
-    const hover: Hover = await assertGetHover(text);
+async function assertHoverContentEquals(
+    text: string,
+    expected: string,
+    library?: PQLS.Library.ILibrary,
+): Promise<void> {
+    const hover: PQLS.Hover | undefined = await assertGetHover(text, library);
+    assert(hover !== undefined, "expected hover to be defined");
     const markupContent: MarkupContent = assertAsMarkupContent(hover.contents);
     expect(markupContent.value).to.equal(expected);
 }
@@ -84,7 +84,7 @@ function assertIsMarkupContent(value: Hover["contents"]): asserts value is Marku
     }
 }
 
-function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
+function createAnalysis(textWithPipe: string, library?: PQLS.Library.ILibrary): [PQLS.Analysis, Position] {
     const text: string = textWithPipe.replace("|", "");
 
     const position: Position = {
@@ -93,7 +93,9 @@ function createAnalysis(textWithPipe: string): [PQLS.Analysis, Position] {
     };
 
     const analysisSettings: AnalysisSettings = {
-        inspectionSettings: PQLS.InspectionUtils.inspectionSettings(PQP.DefaultSettings, { library }),
+        inspectionSettings: PQLS.InspectionUtils.inspectionSettings(PQP.DefaultSettings, {
+            library: library ?? defaultLibrary,
+        }),
         isWorkspaceCacheAllowed: false,
         traceManager: PQP.Trace.NoOpTraceManagerInstance,
         initialCorrelationId: undefined,
@@ -108,7 +110,7 @@ describe(`StandardLibrary`, () => {
             const definitionKey: string = "BinaryOccurrence.Required";
 
             const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                library.libraryDefinitions.staticLibraryDefinitions.get(definitionKey);
+                defaultLibrary.libraryDefinitions.staticLibraryDefinitions.get(definitionKey);
 
             if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${definitionKey}' was not found`);
@@ -124,7 +126,7 @@ describe(`StandardLibrary`, () => {
             const exportKey: string = "List.Distinct";
 
             const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                library.libraryDefinitions.staticLibraryDefinitions.get(exportKey);
+                defaultLibrary.libraryDefinitions.staticLibraryDefinitions.get(exportKey);
 
             if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
@@ -141,7 +143,7 @@ describe(`StandardLibrary`, () => {
             const exportKey: string = "#date";
 
             const libraryDefinition: PQLS.Library.TLibraryDefinition | undefined =
-                library.libraryDefinitions.staticLibraryDefinitions.get(exportKey);
+                defaultLibrary.libraryDefinitions.staticLibraryDefinitions.get(exportKey);
 
             if (libraryDefinition === undefined) {
                 throw new Error(`expected constant '${exportKey}' was not found`);
@@ -199,27 +201,57 @@ describe(`StandardLibrary`, () => {
     });
 });
 
+// TODO: This is hardcoded for testing purposes but needs to be kept in sync with the actual library symbol format.
+const additionalSymbolJsonStr: string = `[{"name":"ExtensionTest.Contents","documentation":null,"completionItemKind":3,"functionParameters":[{"name":"message","type":"nullable text","isRequired":false,"isNullable":true,"caption":null,"description":null,"sampleValues":null,"allowedValues":null,"defaultValue":null,"fields":null,"enumNames":null,"enumCaptions":null}],"isDataSource":true,"type":"any"}]`;
+
 describe(`moduleLibraryUpdated`, () => {
     describe(`single export`, () => {
-        // TODO: This is hardcoded for testing purposes but needs to be kept in sync with the actual SDK output.
-        const sdkJsonStr: string = `[{"name":"ExtensionTest.Contents","documentation":null,"completionItemKind":3,"functionParameters":[{"name":"message","type":"nullable text","isRequired":false,"isNullable":true,"caption":null,"description":null,"sampleValues":null,"allowedValues":null,"defaultValue":null,"fields":null,"enumNames":null,"enumCaptions":null}],"isDataSource":true,"type":"any"}]`;
-
-        it("SDK call format", () => {
-            const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
+        it(`SDK call format`, () => {
+            const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(additionalSymbolJsonStr);
             expect(libraryJson.length).to.equal(1, "expected 1 export");
             expect(libraryJson[0].name).to.equal("ExtensionTest.Contents");
         });
 
-        it("ModuleLibraries", () => {
+        it(`ModuleLibraries`, () => {
             ModuleLibraryUtils.clearCache();
             expect(ModuleLibraryUtils.getModuleCount()).to.equal(0);
 
-            const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(sdkJsonStr);
+            const libraryJson: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(additionalSymbolJsonStr);
             ModuleLibraryUtils.onModuleAdded("testing", libraryJson);
             expect(ModuleLibraryUtils.getModuleCount()).to.equal(1);
 
             ModuleLibraryUtils.clearCache();
             expect(ModuleLibraryUtils.getModuleCount()).to.equal(0);
         });
+    });
+});
+
+describe(`setLibrarySymbols`, () => {
+    const libraryKey: string = "Testing";
+
+    const testLibrary: ReadonlyMap<string, PQLS.LibrarySymbol.LibrarySymbol[]> = new Map([
+        [libraryKey, JSON.parse(additionalSymbolJsonStr)],
+    ]);
+
+    before(() => {
+        ExternalLibraryUtils.addLibaries(testLibrary);
+    });
+
+    it(`Library registered`, () => {
+        const symbols: ReadonlyArray<ExternalLibraryUtils.ExternalSymbolLibrary> = ExternalLibraryUtils.getSymbols();
+        expect(symbols.length).to.equal(1, "expected 1 library");
+        expect(symbols[0].length).to.equal(1, "expected 1 symbol");
+    });
+
+    it(`hover for external symbol`, async () => {
+        const expression: string = `let foo = ExtensionTest.Con|tents("hello") in foo`;
+        const expected: string = "[library function] ExtensionTest.Contents: (message: optional nullable text) => any";
+        const library: PQLS.Library.ILibrary = SettingsUtils.getLibrary("test");
+        await assertHoverContentEquals(expression, expected, library);
+    });
+
+    after(() => {
+        ExternalLibraryUtils.removeLibraries([libraryKey]);
+        expect(ExternalLibraryUtils.getSymbols().length).to.equal(0, "expected 0 libraries");
     });
 });

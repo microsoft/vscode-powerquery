@@ -9,6 +9,10 @@ import * as TestUtils from "./testUtils";
 suite("Should get diagnostics", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("diagnostics.pq");
 
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
+
     test("Simple diagnostics test", async () => {
         await testDiagnostics(docUri, [
             {
@@ -24,6 +28,10 @@ suite("Should get diagnostics", () => {
 suite("No errors", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.NoErrors.pq");
 
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
+
     test("No errors", async () => {
         await testDiagnostics(docUri, []);
     });
@@ -31,6 +39,10 @@ suite("No errors", () => {
 
 suite("Experimental diagnostics", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.TableIsEmpty.Error.pq");
+
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
 
     test("No error reported with default settings", async () => {
         await testDiagnostics(docUri, []);

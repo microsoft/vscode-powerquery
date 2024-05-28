@@ -7,8 +7,13 @@ import * as DocumentSymbolUtils from "./documentSymbolUtils";
 import * as TestUtils from "./testUtils";
 
 suite("DocumentSymbols", () => {
+    const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
+
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
+
     test("section.pq", async () => {
-        const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
         void vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
 
         await DocumentSymbolUtils.testDocumentSymbols(docUri, [

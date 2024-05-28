@@ -25,12 +25,31 @@
             "path": "client/",
             "group": "build",
             "isBackground": true,
-            "problemMatcher": ["$tsc-watch"],
+            "problemMatcher": [
+                {
+                    "base": "$tsc-watch",
+                    "fileLocation": ["relative", "${workspaceFolder}/client/"]
+                }
+            ],
             "label": "Build UI Tests"
         },
         {
+            "type": "npm",
+            "script": "watch",
+            "path": "server/",
+            "group": "build",
+            "isBackground": true,
+            "problemMatcher": [
+                {
+                    "base": "$tsc-watch",
+                    "fileLocation": ["relative", "${workspaceFolder}/server/"]
+                }
+            ],
+            "label": "Watch server unit tests"
+        },
+        {
             "label": "Run Watchers",
-            "dependsOn": ["Webpack Server", "Webpack Client", "Build UI Tests"]
+            "dependsOn": ["Webpack Server", "Webpack Client", "Build UI Tests", "Watch server unit tests"]
         }
     ]
 }

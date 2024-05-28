@@ -1,7 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { CancellationToken, Disposable, LSPErrorCodes, ResponseError } from "vscode-languageserver/node";
+import {
+    CancellationToken,
+    Disposable,
+    ErrorCodes,
+    GenericRequestHandler,
+    LSPErrorCodes,
+    ResponseError,
+} from "vscode-languageserver/node";
 
 interface RuntimeEnvironment {
     readonly timer: {
@@ -24,6 +31,22 @@ const environment: RuntimeEnvironment = {
         },
     },
 };
+
+export function genericRequestHandler<T, R>(func: (params: T) => R): GenericRequestHandler<R, unknown> {
+    const handler: GenericRequestHandler<R, unknown> = (params: T): R | ResponseError<unknown> => {
+        try {
+            return func(params);
+        } catch (error: unknown) {
+            return new ResponseError(
+                ErrorCodes.InternalError,
+                error instanceof Error ? error.message : "An unknown error occurred",
+                error,
+            );
+        }
+    };
+
+    return handler;
+}
 
 export function runSafeAsync<T, E>(
     func: () => Thenable<T>,
