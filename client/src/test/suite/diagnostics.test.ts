@@ -9,11 +9,9 @@ import * as TestUtils from "./testUtils";
 suite("Should get diagnostics", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("diagnostics.pq");
 
-    suiteSetup(async () => {
-        await TestUtils.closeFileIfOpen(docUri);
-    });
+    suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("Simple diagnostics test", async () => {
+    test("Simple diagnostics test", async () =>
         await testDiagnostics(docUri, [
             {
                 message:
@@ -21,32 +19,23 @@ suite("Should get diagnostics", () => {
                 range: toRange(0, 9, 0, 12),
                 severity: vscode.DiagnosticSeverity.Error,
             },
-        ]);
-    });
+        ]));
 });
 
 suite("No errors", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.NoErrors.pq");
 
-    suiteSetup(async () => {
-        await TestUtils.closeFileIfOpen(docUri);
-    });
+    suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("No errors", async () => {
-        await testDiagnostics(docUri, []);
-    });
+    test("No errors", async () => await testDiagnostics(docUri, []));
 });
 
 suite("Experimental diagnostics", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("Diagnostics.TableIsEmpty.Error.pq");
 
-    suiteSetup(async () => {
-        await TestUtils.closeFileIfOpen(docUri);
-    });
+    suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("No error reported with default settings", async () => {
-        await testDiagnostics(docUri, []);
-    });
+    test("No error reported with default settings", async () => await testDiagnostics(docUri, []));
 
     // TODO: Tests that change the local configuration settings.
     // Investigate support for scoped settings / Document Settings.

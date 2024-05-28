@@ -42,7 +42,7 @@
         "lint:client": "eslint client/src --ext ts",
         "lint:server": "eslint server/src --ext ts",
         "lint:scripts": "eslint  scripts --ext ts",
-        "test": "npm run test:client && npm run test:server",
+        "test": "npm run test:server && npm run test:client",
         "test:client": "cd client && npm run test",
         "test:server": "cd server && npm run test",
         "webpack-dev": "npm run webpack-dev:client && npm run webpack-dev:server",
