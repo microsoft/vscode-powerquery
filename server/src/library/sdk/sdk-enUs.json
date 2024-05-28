@@ -826,6 +826,47 @@
     "type": "function"
   },
   {
+    "name": "Action.WithErrorContext",
+    "documentation": {
+      "description": "This function is intended for internal use only.",
+      "longDescription": null,
+      "category": "Values.Implementation"
+    },
+    "functionParameters": [
+      {
+        "name": "action",
+        "type": "action",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "context",
+        "type": "text",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "action"
+  },
+  {
     "name": "ActiveDirectory.Domains",
     "documentation": {
       "description": "Returns a list of Active Directory domains in the same forest as the specified domain or of the current machine's domain if none is specified.",
@@ -2051,6 +2092,47 @@
     "completionItemKind": 3,
     "isDataSource": false,
     "type": "binary"
+  },
+  {
+    "name": "Binary.Split",
+    "documentation": {
+      "description": "Splits the specified binary into a list of binaries using the specified page size.",
+      "longDescription": null,
+      "category": "Binary"
+    },
+    "functionParameters": [
+      {
+        "name": "binary",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "pageSize",
+        "type": "number",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "list {any}"
   },
   {
     "name": "Binary.ToList",
@@ -3312,7 +3394,7 @@
   {
     "name": "Character.FromNumber",
     "documentation": {
-      "description": "Converts the number to its character value.",
+      "description": "Converts a number to a text character.",
       "longDescription": null,
       "category": "Text.Conversions from and to text"
     },
@@ -3339,7 +3421,7 @@
   {
     "name": "Character.ToNumber",
     "documentation": {
-      "description": "Converts a character to its number value.",
+      "description": "Converts a character to a number value.",
       "longDescription": null,
       "category": "Text.Conversions from and to text"
     },
@@ -3378,7 +3460,7 @@
   {
     "name": "Combiner.CombineTextByDelimiter",
     "documentation": {
-      "description": "Returns a function that combines a list of text into a single text using the specified delimiter.",
+      "description": "Returns a function that combines a list of text using the specified delimiter.",
       "longDescription": null,
       "category": "Combiner"
     },
@@ -3428,7 +3510,7 @@
   {
     "name": "Combiner.CombineTextByEachDelimiter",
     "documentation": {
-      "description": "Returns a function that combines a list of text into a single text using each specified delimiter in sequence.",
+      "description": "Returns a function that combines a list of text using a sequence of delimiters.",
       "longDescription": null,
       "category": "Combiner"
     },
@@ -3478,7 +3560,7 @@
   {
     "name": "Combiner.CombineTextByLengths",
     "documentation": {
-      "description": "Returns a function that combines a list of text into a single text using the specified lengths.",
+      "description": "Returns a function that combines a list of text using the specified lengths.",
       "longDescription": null,
       "category": "Combiner"
     },
@@ -3519,7 +3601,7 @@
   {
     "name": "Combiner.CombineTextByPositions",
     "documentation": {
-      "description": "Returns a function that combines a list of text into a single text using the specified positions.",
+      "description": "Returns a function that combines a list of text using the specified output positions.",
       "longDescription": null,
       "category": "Combiner"
     },
@@ -3560,7 +3642,7 @@
   {
     "name": "Combiner.CombineTextByRanges",
     "documentation": {
-      "description": "Returns a function that combines a list of text into a single text using the specified positions and lengths.",
+      "description": "Returns a function that combines a list of text using the specified positions and lengths.",
       "longDescription": null,
       "category": "Combiner"
     },
@@ -3656,7 +3738,7 @@
   {
     "name": "Comparer.FromCulture",
     "documentation": {
-      "description": "Returns a comparer function given the culture and a logical value for case sensitivity for the comparison.",
+      "description": "Returns a comparer function based on the specified culture and case-sensitivity.",
       "longDescription": null,
       "category": "Comparer"
     },
@@ -4197,7 +4279,7 @@
   {
     "name": "Cube.AddAndExpandDimensionColumn",
     "documentation": {
-      "description": "Merges the specified dimension table into the cube's filter context and changes the dimensional granularity of the filter context by expanding the specified set of dimension attributes.",
+      "description": "Merges the specified dimension table into the cube’s filter context and changes the dimensional granularity of the filter context by expanding the specified set of dimension attributes.",
       "longDescription": null,
       "category": "Cube"
     },
@@ -8536,9 +8618,84 @@
     "type": "table"
   },
   {
+    "name": "DeltaLake.Table",
+    "documentation": {
+      "description": "Returns the contents of the Delta Lake table.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [
+      {
+        "name": "directory",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "MaxDepth",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "Compression",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "PreserveOrder",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
+  },
+  {
     "name": "Diagnostics.ActivityId",
     "documentation": {
       "description": "Returns an opaque identifier for the currently-running evaluation.",
+      "longDescription": null,
+      "category": "Diagnostics"
+    },
+    "functionParameters": [],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "nullable text"
+  },
+  {
+    "name": "Diagnostics.CorrelationId",
+    "documentation": {
+      "description": "Returns an opaque identifier to correlate incoming requests with outgoing ones.",
       "longDescription": null,
       "category": "Diagnostics"
     },
@@ -10189,6 +10346,47 @@
     "type": "any"
   },
   {
+    "name": "Function.InvokeWithErrorContext",
+    "documentation": {
+      "description": "This function is intended for internal use only.",
+      "longDescription": null,
+      "category": "Values.Implementation"
+    },
+    "functionParameters": [
+      {
+        "name": "function",
+        "type": "function",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "context",
+        "type": "text",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
+  },
+  {
     "name": "Function.IsDataSource",
     "documentation": {
       "description": "Returns whether or not a particular function is considered a data source.",
@@ -10600,7 +10798,30 @@
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [],
+    "functionParameters": [
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "Implementation",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
     "completionItemKind": 3,
     "isDataSource": true,
     "type": "table"
@@ -11667,7 +11888,7 @@
   {
     "name": "JoinKind.LeftAnti",
     "documentation": {
-      "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A left anti join returns that all rows from the first table which do not have a match in the second table.",
+      "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A left anti join returns all rows from the first table that do not have a match in the second table.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -11689,9 +11910,21 @@
     "type": "number"
   },
   {
+    "name": "JoinKind.LeftSemi",
+    "documentation": {
+      "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A left semi join returns all rows from the first table that have a match in the second table.",
+      "longDescription": null,
+      "category": "Table.Parameter values"
+    },
+    "functionParameters": null,
+    "completionItemKind": 20,
+    "isDataSource": false,
+    "type": "number"
+  },
+  {
     "name": "JoinKind.RightAnti",
     "documentation": {
-      "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A right anti join returns that all rows from the second table which do not have a match in the first table.",
+      "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A right anti join returns all rows from the second table that do not have a match in the first table.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -11704,6 +11937,18 @@
     "name": "JoinKind.RightOuter",
     "documentation": {
       "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A right outer join ensures that all rows of the second table appear in the result.",
+      "longDescription": null,
+      "category": "Table.Parameter values"
+    },
+    "functionParameters": null,
+    "completionItemKind": 20,
+    "isDataSource": false,
+    "type": "number"
+  },
+  {
+    "name": "JoinKind.RightSemi",
+    "documentation": {
+      "description": "A possible value for the optional <code>JoinKind</code> parameter in <code>Table.Join</code>.\r\n    A right semi join returns all rows from the second table that have a match in the first table.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -15877,6 +16122,18 @@
     "type": "number"
   },
   {
+    "name": "Module.Versions",
+    "documentation": {
+      "description": "Returns a record of module versions for the current module and its dependencies.",
+      "longDescription": null,
+      "category": "Values.Implementation"
+    },
+    "functionParameters": [],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "record"
+  },
+  {
     "name": "MySQL.Database",
     "documentation": {
       "description": "Returns a table of SQL tables, views, and stored scalar functions available in a MySQL database.",
@@ -17551,7 +17808,7 @@
   {
     "name": "Number.ToText",
     "documentation": {
-      "description": "Formats the given number as text.",
+      "description": "Converts the given number to text.",
       "longDescription": null,
       "category": "Number.Conversion and formatting"
     },
@@ -18425,6 +18682,33 @@
             "description": null
           }
         ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
+  },
+  {
+    "name": "Parquet.Metadata",
+    "documentation": {
+      "description": "This function is intended for internal use only.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [
+      {
+        "name": "binary",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
         "enumNames": null,
         "enumCaptions": null
       }
@@ -20645,6 +20929,13 @@
             "isRequired": true,
             "caption": null,
             "description": null
+          },
+          {
+            "name": "DisableAppendNoteColumns",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
           }
         ],
         "enumNames": null,
@@ -21296,6 +21587,13 @@
             "isRequired": false,
             "caption": null,
             "description": null
+          },
+          {
+            "name": "EnableCrossDatabaseFolding",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
           }
         ],
         "enumNames": null,
@@ -21412,6 +21710,13 @@
           {
             "name": "OmitSRID",
             "type": "nullable binary",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "EnableCrossDatabaseFolding",
+            "type": "nullable logical",
             "isRequired": false,
             "caption": null,
             "description": null
@@ -23924,7 +24229,9 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "defaultValue": null,
         "fields": null,
@@ -23934,9 +24241,13 @@
           "JoinKind.RightOuter",
           "JoinKind.FullOuter",
           "JoinKind.LeftAnti",
-          "JoinKind.RightAnti"
+          "JoinKind.RightAnti",
+          "JoinKind.LeftSemi",
+          "JoinKind.RightSemi"
         ],
         "enumCaptions": [
+          null,
+          null,
           null,
           null,
           null,
@@ -24113,7 +24424,9 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "defaultValue": null,
         "fields": null,
@@ -24123,9 +24436,13 @@
           "JoinKind.RightOuter",
           "JoinKind.FullOuter",
           "JoinKind.LeftAnti",
-          "JoinKind.RightAnti"
+          "JoinKind.RightAnti",
+          "JoinKind.LeftSemi",
+          "JoinKind.RightSemi"
         ],
         "enumCaptions": [
+          null,
+          null,
           null,
           null,
           null,
@@ -24544,7 +24861,9 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "defaultValue": null,
         "fields": null,
@@ -24554,9 +24873,13 @@
           "JoinKind.RightOuter",
           "JoinKind.FullOuter",
           "JoinKind.LeftAnti",
-          "JoinKind.RightAnti"
+          "JoinKind.RightAnti",
+          "JoinKind.LeftSemi",
+          "JoinKind.RightSemi"
         ],
         "enumCaptions": [
+          null,
+          null,
           null,
           null,
           null,
@@ -25125,7 +25448,9 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "defaultValue": null,
         "fields": null,
@@ -25135,9 +25460,13 @@
           "JoinKind.RightOuter",
           "JoinKind.FullOuter",
           "JoinKind.LeftAnti",
-          "JoinKind.RightAnti"
+          "JoinKind.RightAnti",
+          "JoinKind.LeftSemi",
+          "JoinKind.RightSemi"
         ],
         "enumCaptions": [
+          null,
+          null,
           null,
           null,
           null,
@@ -27649,6 +27978,47 @@
     "completionItemKind": 3,
     "isDataSource": false,
     "type": "function"
+  },
+  {
+    "name": "Table.WithErrorContext",
+    "documentation": {
+      "description": "This function is intended for internal use only.",
+      "longDescription": null,
+      "category": "Values.Implementation"
+    },
+    "functionParameters": [
+      {
+        "name": "value",
+        "type": "any",
+        "isRequired": true,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "context",
+        "type": "text",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
   },
   {
     "name": "TableAction.DeleteRows",
@@ -31373,7 +31743,7 @@
   {
     "name": "Value.Compare",
     "documentation": {
-      "description": "Returns -1, 0, or 1 based on whether the first value is less than, equal to, or greater than the second one.",
+      "description": "Returns -1, 0, or 1 based on whether the first value is less than, equal to, or greater than the second.",
       "longDescription": null,
       "category": "Values"
     },
@@ -32549,6 +32919,13 @@
         "allowedValues": null,
         "defaultValue": null,
         "fields": [
+          {
+            "name": "ApiKeyName",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
           {
             "name": "WaitFor",
             "type": "nullable record",
