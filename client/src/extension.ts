@@ -7,25 +7,23 @@ import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
 import * as Subscriptions from "./subscriptions";
-import { LibraryJson, PowerQueryApi } from "./vscode-powerquery.api";
-import { CommandConstant } from "./commandConstant";
+import { CommandConstant, ConfigurationConstant } from "./constants";
+import { LibrarySymbolClient } from "./librarySymbolClient";
+import { LibrarySymbolManager } from "./librarySymbolManager";
+import { PowerQueryApi } from "./powerQueryApi";
 
-const commands: vscode.Disposable[] = [];
 let client: LC.LanguageClient;
+let librarySymbolClient: LibrarySymbolClient;
+let librarySymbolManager: LibrarySymbolManager;
 
 export async function activate(context: vscode.ExtensionContext): Promise<PowerQueryApi> {
     // Register commands
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText));
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText));
-
-    commands.push(
-        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
-    );
-
-    commands.push(vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText));
-
-    commands.push(
+    context.subscriptions.push(
         vscode.commands.registerCommand(CommandConstant.ExtractDataflowDocument, CommandFn.extractDataflowDocument),
+        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeJsonText, CommandFn.escapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.EscapeMText, CommandFn.escapeMText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeJsonText, CommandFn.unescapeJsonText),
+        vscode.commands.registerTextEditorCommand(CommandConstant.UnescapeMText, CommandFn.unescapeMText),
     );
 
     // The server is implemented in node
@@ -49,23 +47,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     const clientOptions: LC.LanguageClientOptions = {
         // Register the server for plain text documents
         documentSelector: [
-            {
-                scheme: "file",
-                language: "powerquery",
-            },
-            {
-                scheme: "untitled",
-                language: "powerquery",
-            },
+            { scheme: "file", language: "powerquery" },
+            { scheme: "untitled", language: "powerquery" },
         ],
     };
 
     // Create the language client and start the client.
     client = new LC.LanguageClient("powerquery", "Power Query", serverOptions, clientOptions);
 
-    // Start the client. This will also launch the server
+    // Start the client. This will also launch the server.
     await client.start();
 
+    // TODO: Move this to the LSP based API.
     context.subscriptions.push(
         vscode.languages.registerDocumentSemanticTokensProvider(
             { language: "powerquery" },
@@ -74,27 +67,43 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
         ),
     );
 
-    return Object.freeze({
-        languageClient: client,
-        // TODO: make async/return promise
-        onModuleLibraryUpdated: (workspaceUriPath: string, library: LibraryJson): void => {
-            void client.sendRequest("powerquery/moduleLibraryUpdated", {
-                workspaceUriPath,
-                library,
-            });
-        },
-    });
+    librarySymbolClient = new LibrarySymbolClient(client);
+    librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);
+
+    await configureSymbolDirectories();
+
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(async (event: vscode.ConfigurationChangeEvent) => {
+            const symbolDirs: string = ConfigurationConstant.BasePath.concat(
+                ".",
+                ConfigurationConstant.AdditionalSymbolsDirectories,
+            );
+
+            if (event.affectsConfiguration(symbolDirs)) {
+                await configureSymbolDirectories();
+            }
+        }),
+    );
+
+    return Object.freeze(librarySymbolClient);
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    if (commands.length > 0) {
-        commands.forEach((disposable: vscode.Disposable) => disposable.dispose());
-        commands.length = 0;
-    }
+    return client?.stop();
+}
 
-    if (!client) {
-        return undefined;
-    }
+async function configureSymbolDirectories(): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstant.BasePath);
 
-    return client.stop();
+    const additionalSymbolsDirectories: string[] | undefined = config.get(
+        ConfigurationConstant.AdditionalSymbolsDirectories,
+    );
+
+    // TODO: Should we fix/remove invalid and malformed directory path values?
+    // For example, a quoted path "c:\path\to\file" will be considered invalid and reported as an error.
+    // We could modify values and write them back to the original config locations.
+
+    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories ?? []);
+
+    // TODO: Configure file system watchers to detect library file changes.
 }

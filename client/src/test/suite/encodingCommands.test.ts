@@ -3,7 +3,7 @@
 
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { CommandConstant } from "../../commandConstant";
+import { CommandConstant } from "../../constants";
 import { expect } from "chai";
 
 import * as TestUtils from "./testUtils";

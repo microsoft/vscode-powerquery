@@ -8,3 +8,8 @@ export const enum CommandConstant {
     UnescapeJsonText = "powerquery.jsonUnescapeText",
     UnescapeMText = "powerquery.mUnescapeText",
 }
+
+export const enum ConfigurationConstant {
+    AdditionalSymbolsDirectories = "additionalSymbolsDirectories",
+    BasePath = "powerquery.client",
+}

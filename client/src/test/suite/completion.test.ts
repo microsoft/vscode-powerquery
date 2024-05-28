@@ -14,6 +14,10 @@ import * as TestUtils from "./testUtils";
 suite("Access.Dat completion", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
 
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
+
     test("Simple completion item test", async () => {
         await CompletionUtils.testCompletion(
             docUri,

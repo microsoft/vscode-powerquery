@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 
 import * as TestUtils from "./testUtils";
 
-import { PowerQueryApi } from "../../vscode-powerquery.api";
+import { PowerQueryApi } from "../../powerQueryApi";
 
 suite("Extension Tests", () => {
     test("extension loads", () => {

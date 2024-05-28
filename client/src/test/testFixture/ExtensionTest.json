@@ -1,0 +1,25 @@
+[
+    {
+        "name": "ExtensionTest.Contents",
+        "documentation": null,
+        "completionItemKind": 3,
+        "functionParameters": [
+            {
+                "name": "message",
+                "type": "nullable text",
+                "isRequired": false,
+                "isNullable": true,
+                "caption": null,
+                "description": null,
+                "sampleValues": null,
+                "allowedValues": null,
+                "defaultValue": null,
+                "fields": null,
+                "enumNames": null,
+                "enumCaptions": null
+            }
+        ],
+        "isDataSource": true,
+        "type": "any"
+    }
+]
