@@ -52,6 +52,10 @@ export async function closeFileIfOpen(file: vscode.Uri): Promise<void> {
     }
 }
 
+export function delay(ms: number): Promise<void> {
+    return new Promise((resolve: () => void) => setTimeout(resolve, ms));
+}
+
 export function getTestFixturePath(): string {
     return path.resolve(__dirname, testFixurePath);
 }
