@@ -19,7 +19,7 @@ suite("Diagnostics: Simple", () => {
             {
                 message:
                     "Expected to find a equal operator <'='>, but a not equal to operator ('<>') was found instead",
-                range: toRange(0, 9, 0, 12),
+                range: new vscode.Range(0, 9, 0, 12),
                 severity: vscode.DiagnosticSeverity.Error,
             },
         ]));
@@ -39,7 +39,7 @@ suite("Diagnostics: External Library Symbols", () => {
 
     const expectedDiagnostic: PartialDiagnostic = {
         message: "Cannot find the name 'TestSymbol.ShouldNotExistOrMatchExisting'.",
-        range: toRange(0, 0, 0, 22),
+        range: new vscode.Range(0, 0, 0, 22),
         severity: vscode.DiagnosticSeverity.Error,
     };
 
@@ -52,7 +52,9 @@ suite("Diagnostics: External Library Symbols", () => {
     // Closing the file after every test ensures no state conflicts.
     teardown(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("Missing symbol", async () => await testDiagnostics(docUri, [expectedDiagnostic]));
+    test("Missing symbol", async () => {
+        await testDiagnostics(docUri, [expectedDiagnostic]);
+    });
 
     test("Add symbol", async () => {
         const extensionApi: PowerQueryApi = await TestUtils.activateExtension();
@@ -70,13 +72,13 @@ suite("Diagnostics: External Library Symbols", () => {
 
         await extensionApi.addLibrarySymbols(symbolMap);
 
-        return await testDiagnostics(docUri, []);
+        await testDiagnostics(docUri, []);
     });
 
     test("Remove symbol", async () => {
         await extensionApi.removeLibrarySymbols([testLibraryName]);
 
-        return await testDiagnostics(docUri, [expectedDiagnostic]);
+        await testDiagnostics(docUri, [expectedDiagnostic]);
     });
 });
 
@@ -85,18 +87,13 @@ suite("Diagnostics: Experimental", () => {
 
     suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("No error reported with default settings", async () => await testDiagnostics(docUri, []));
+    test("No error reported with default settings", async () => {
+        await testDiagnostics(docUri, []);
+    });
 
     // TODO: Tests that change the local configuration settings.
     // Investigate support for scoped settings / Document Settings.
 });
-
-function toRange(sLine: number, sChar: number, eLine: number, eChar: number): vscode.Range {
-    const start: vscode.Position = new vscode.Position(sLine, sChar);
-    const end: vscode.Position = new vscode.Position(eLine, eChar);
-
-    return new vscode.Range(start, end);
-}
 
 async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: PartialDiagnostic[]): Promise<void> {
     const editor: vscode.TextEditor = await TestUtils.activate(docUri);
