@@ -10,7 +10,7 @@ module.exports = defineConfig([
     files: "lib/test/**/*.test.js",
     workspaceFolder: "src/test/testFixture",
     extensionDevelopmentPath: "..",
-    launchArgs: ["--disable-extensions"],
+    launchArgs: ["--profile-temp", "--disable-extensions"],
     
     mocha: {
       ui: "tdd",
