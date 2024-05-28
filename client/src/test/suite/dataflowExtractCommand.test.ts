@@ -14,7 +14,8 @@ suite("Dataflow Extract Command", () => {
 
     suiteSetup(async () => {
         await TestUtils.activateExtension();
-        await TestUtils.closeFileIfOpen(docUri);
+
+        return await TestUtils.closeFileIfOpen(docUri);
     });
 
     test("Command is registered", async () => {
@@ -37,5 +38,7 @@ suite("Dataflow Extract Command", () => {
         );
 
         expect(newDocUri !== undefined, "command did not return new document URI");
+
+        return await TestUtils.closeFileIfOpen(newDocUri as vscode.Uri);
     });
 });

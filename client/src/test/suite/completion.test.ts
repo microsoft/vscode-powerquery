@@ -14,11 +14,9 @@ import * as TestUtils from "./testUtils";
 suite("Access.Dat completion", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
 
-    suiteSetup(async () => {
-        await TestUtils.closeFileIfOpen(docUri);
-    });
+    suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("Simple completion item test", async () => {
+    test("Simple completion item test", async () =>
         await CompletionUtils.testCompletion(
             docUri,
             new vscode.Position(0, 9),
@@ -26,6 +24,5 @@ suite("Access.Dat completion", () => {
                 items: [{ label: "Access.Database", kind: vscode.CompletionItemKind.Function }],
             },
             CompletionUtils.VertificationType.Contains,
-        );
-    });
+        ));
 });

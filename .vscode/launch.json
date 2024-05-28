@@ -24,13 +24,8 @@
             "name": "Language UI Test",
             "type": "extensionHost",
             "request": "launch",
-            "runtimeExecutable": "${execPath}",
-            "args": [
-                "--disable-extensions",
-                "--extensionDevelopmentPath=${workspaceRoot}",
-                "--extensionTestsPath=${workspaceRoot}/client/lib/test/suite/index",
-                "${workspaceRoot}/client/src/test/testFixture"
-            ],
+            "testConfiguration": "${workspaceFolder}/client/.vscode-test.js",
+            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
             "sourceMaps": true,
             "outFiles": ["${workspaceRoot}/client/lib/**/*.js"],
             "internalConsoleOptions": "openOnSessionStart",

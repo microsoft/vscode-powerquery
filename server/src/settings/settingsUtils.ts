@@ -107,7 +107,7 @@ export function getLibrary(uri: string): PQLS.Library.ILibrary {
         cacheKey,
         [
             LibrarySymbolUtils.getSymbolsForLocaleAndMode(serverSettings.locale, serverSettings.mode),
-            ...ExternalLibraryUtils.getSymbols(),
+            ExternalLibraryUtils.getSymbols().flat(),
         ],
         [ModuleLibraryUtils.getAsDynamicLibraryDefinitions(uri)],
     );

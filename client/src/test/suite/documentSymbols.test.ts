@@ -7,15 +7,11 @@ import * as DocumentSymbolUtils from "./documentSymbolUtils";
 import * as TestUtils from "./testUtils";
 
 suite("DocumentSymbols", () => {
-    const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
+    const docUri: vscode.Uri = TestUtils.getDocUri("DocumentSymbols.pq");
 
-    suiteSetup(async () => {
-        await TestUtils.closeFileIfOpen(docUri);
-    });
+    suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
-    test("section.pq", async () => {
-        void vscode.window.showInformationMessage(`Starting tests using based file: ${docUri}`);
-
+    test("DocumentSymbols.pq", async () =>
         await DocumentSymbolUtils.testDocumentSymbols(docUri, [
             { name: "firstMember", kind: vscode.SymbolKind.Number },
             { name: "secondMember", kind: vscode.SymbolKind.String },
@@ -29,6 +25,5 @@ suite("DocumentSymbols", () => {
                     { name: "c", kind: vscode.SymbolKind.Number },
                 ],
             },
-        ]);
-    });
+        ]));
 });

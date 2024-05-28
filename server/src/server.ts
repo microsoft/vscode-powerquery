@@ -26,11 +26,11 @@ interface ModuleLibraryUpdatedParams {
 }
 
 interface AddLibrarySymbolsParams {
-    librarySymbols: ReadonlyArray<[string, LibraryJson]>;
+    readonly librarySymbols: ReadonlyArray<[string, LibraryJson]>;
 }
 
 interface RemoveLibrarySymbolsParams {
-    librariesToRemove: ReadonlyArray<string>;
+    readonly librariesToRemove: ReadonlyArray<string>;
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.

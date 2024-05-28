@@ -43,13 +43,17 @@ export async function activateExtension(): Promise<PowerQueryApi> {
 export async function closeFileIfOpen(file: vscode.Uri): Promise<void> {
     const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map((tg: vscode.TabGroup) => tg.tabs).flat();
 
-    const index: number = tabs.findIndex(
+    const tab: vscode.Tab | undefined = tabs.find(
         (tab: vscode.Tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.path === file.path,
     );
 
-    if (index !== -1) {
-        await vscode.window.tabGroups.close(tabs[index]);
+    if (tab) {
+        await vscode.window.tabGroups.close(tab);
     }
+}
+
+export function delay(ms: number): Promise<void> {
+    return new Promise((resolve: () => void) => setTimeout(resolve, ms));
 }
 
 export function getTestFixturePath(): string {
