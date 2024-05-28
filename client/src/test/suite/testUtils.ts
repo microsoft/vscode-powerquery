@@ -8,6 +8,8 @@ import * as vscode from "vscode";
 
 import { PowerQueryApi } from "../../powerQueryApi";
 
+const testFixurePath: string = "../../../src/test/testFixture";
+
 export const extensionId: string = "powerquery.vscode-powerquery";
 
 export async function activate(docUri: vscode.Uri): Promise<vscode.TextEditor> {
@@ -38,7 +40,17 @@ export async function activateExtension(): Promise<PowerQueryApi> {
     return await ext.activate();
 }
 
-const testFixurePath: string = "../../../src/test/testFixture";
+export async function closeFileIfOpen(file: vscode.Uri): Promise<void> {
+    const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map((tg: vscode.TabGroup) => tg.tabs).flat();
+
+    const index: number = tabs.findIndex(
+        (tab: vscode.Tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.path === file.path,
+    );
+
+    if (index !== -1) {
+        await vscode.window.tabGroups.close(tabs[index]);
+    }
+}
 
 export function getTestFixturePath(): string {
     return path.resolve(__dirname, testFixurePath);

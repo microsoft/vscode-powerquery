@@ -9,6 +9,10 @@ import * as TestUtils from "./testUtils";
 suite("Section completion tests", () => {
     const docUri: vscode.Uri = TestUtils.getDocUri("section.pq");
 
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
+
     test("Keywords", async () => {
         await CompletionUtils.testCompletion(
             docUri,

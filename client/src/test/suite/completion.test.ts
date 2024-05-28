@@ -12,9 +12,13 @@ import * as TestUtils from "./testUtils";
 // TODO: Add test case for identifier with trailing. ex - "Access.|"
 
 suite("Access.Dat completion", () => {
-    test("Simple completion item test", async () => {
-        const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
+    const docUri: vscode.Uri = TestUtils.getDocUri("completion.pq");
 
+    suiteSetup(async () => {
+        await TestUtils.closeFileIfOpen(docUri);
+    });
+
+    test("Simple completion item test", async () => {
         await CompletionUtils.testCompletion(
             docUri,
             new vscode.Position(0, 9),

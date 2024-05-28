@@ -10,8 +10,11 @@ import * as TestUtils from "./testUtils";
 
 // TODO: We could add command unit tests that use mocks to avoid UI based tests.
 suite("Dataflow Extract Command", () => {
+    const docUri: vscode.Uri = TestUtils.getDocUri("dataflow.json");
+
     suiteSetup(async () => {
         await TestUtils.activateExtension();
+        await TestUtils.closeFileIfOpen(docUri);
     });
 
     test("Command is registered", async () => {
@@ -25,7 +28,6 @@ suite("Dataflow Extract Command", () => {
     });
 
     test("Extract command", async () => {
-        const docUri: vscode.Uri = TestUtils.getDocUri("dataflow.json");
         const doc: vscode.TextDocument = await vscode.workspace.openTextDocument(docUri);
 
         await vscode.window.showTextDocument(doc);
