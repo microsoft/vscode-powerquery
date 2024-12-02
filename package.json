@@ -56,13 +56,13 @@
         "version:server": "cd server && npm version patch",
         "version:scripts": "cd scripts && npm version patch",
         "vscode:prepublish": "npm run webpack-prod",
-        "vsix": "vsce package"
+        "vsix": "npx @vscode/vsce@latest package"
     },
     "icon": "imgs/PQIcon_256.png",
     "main": "./client/dist/extension",
     "types": "./client/dist/extension.d.ts",
     "engines": {
-        "node": ">=18.17.0",
+        "node": ">= 20",
         "vscode": "^1.87.0"
     },
     "capabilities": {
@@ -291,7 +291,6 @@
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "5.24.0",
         "@typescript-eslint/parser": "5.24.0",
-        "@vscode/vsce": "2.26.1",
         "eslint": "8.15.0",
         "eslint-config-prettier": "8.5.0",
         "eslint-plugin-prettier": "4.0.0",
