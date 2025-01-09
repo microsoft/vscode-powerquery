@@ -894,6 +894,30 @@
     "type": "table"
   },
   {
+    "name": "Adbc.DataSource",
+    "documentation": {
+      "description": "Returns a table of SQL tables and views from the ADBC data source. ",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "nullable none"
+  },
+  {
+    "name": "Adbc.Query",
+    "documentation": {
+      "description": "Returns the result of running a native query on an ADBC data source.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "nullable none"
+  },
+  {
     "name": "AdoDotNet.DataSource",
     "documentation": {
       "description": "Returns the schema collection for an ADO.NET data source.",
@@ -3344,25 +3368,10 @@
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [
-      {
-        "name": "table",
-        "type": "table",
-        "isRequired": true,
-        "isNullable": false,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": null,
-        "enumNames": null,
-        "enumCaptions": null
-      }
-    ],
+    "functionParameters": [],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "table"
+    "type": "nullable none"
   },
   {
     "name": "Cdpa.Database",
@@ -8376,7 +8385,7 @@
   {
     "name": "DateTimeZone.ZoneHours",
     "documentation": {
-      "description": "Changes the timezone of the value.",
+      "description": "Gets the timezone hour of the value.",
       "longDescription": null,
       "category": "DateTimeZone"
     },
@@ -8403,7 +8412,7 @@
   {
     "name": "DateTimeZone.ZoneMinutes",
     "documentation": {
-      "description": "Changes the timezone of the value.",
+      "description": "Gets the timezone minute of the value.",
       "longDescription": null,
       "category": "DateTimeZone"
     },
@@ -8620,65 +8629,14 @@
   {
     "name": "DeltaLake.Table",
     "documentation": {
-      "description": "Returns the contents of the Delta Lake table.",
+      "description": null,
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [
-      {
-        "name": "directory",
-        "type": "table",
-        "isRequired": true,
-        "isNullable": false,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": null,
-        "enumNames": null,
-        "enumCaptions": null
-      },
-      {
-        "name": "options",
-        "type": "nullable record",
-        "isRequired": false,
-        "isNullable": true,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": [
-          {
-            "name": "MaxDepth",
-            "type": "nullable number",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "Compression",
-            "type": "nullable number",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "PreserveOrder",
-            "type": "nullable logical",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          }
-        ],
-        "enumNames": null,
-        "enumCaptions": null
-      }
-    ],
+    "functionParameters": [],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "any"
+    "type": "nullable none"
   },
   {
     "name": "Diagnostics.ActivityId",
@@ -9349,7 +9307,7 @@
   {
     "name": "Error.Record",
     "documentation": {
-      "description": "Returns an error record from the provided text values for reason, message and detail.",
+      "description": "Returns an error record from the provided text values for reason, message, detail and error code.",
       "longDescription": null,
       "category": "Error"
     },
@@ -9399,6 +9357,20 @@
       {
         "name": "parameters",
         "type": "nullable list {any}",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "errorCode",
+        "type": "nullable text",
         "isRequired": false,
         "isNullable": true,
         "caption": null,
@@ -9544,6 +9516,13 @@
           {
             "name": "AllowedTypeNames",
             "type": "nullable list {text}",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "ApiVersion",
+            "type": "nullable text",
             "isRequired": false,
             "caption": null,
             "description": null
@@ -10026,6 +10005,14 @@
     "completionItemKind": 3,
     "isDataSource": false,
     "type": "any"
+  },
+  {
+    "name": "Extension.State",
+    "documentation": null,
+    "functionParameters": [],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "table"
   },
   {
     "name": "ExtraValues.Error",
@@ -12225,26 +12212,17 @@
       },
       {
         "name": "quoteStyle",
-        "type": "nullable number",
+        "type": "any",
         "isRequired": false,
         "isNullable": true,
         "caption": null,
         "description": null,
         "sampleValues": null,
-        "allowedValues": [
-          0,
-          1
-        ],
+        "allowedValues": null,
         "defaultValue": null,
         "fields": null,
-        "enumNames": [
-          "QuoteStyle.None",
-          "QuoteStyle.Csv"
-        ],
-        "enumCaptions": [
-          null,
-          null
-        ]
+        "enumNames": null,
+        "enumCaptions": null
       },
       {
         "name": "includeLineSeparators",
@@ -12324,26 +12302,17 @@
       },
       {
         "name": "quoteStyle",
-        "type": "nullable number",
+        "type": "any",
         "isRequired": false,
         "isNullable": true,
         "caption": null,
         "description": null,
         "sampleValues": null,
-        "allowedValues": [
-          0,
-          1
-        ],
+        "allowedValues": null,
         "defaultValue": null,
         "fields": null,
-        "enumNames": [
-          "QuoteStyle.None",
-          "QuoteStyle.Csv"
-        ],
-        "enumCaptions": [
-          null,
-          null
-        ]
+        "enumNames": null,
+        "enumCaptions": null
       },
       {
         "name": "includeLineSeparators",
@@ -18616,106 +18585,26 @@
   {
     "name": "Parquet.Document",
     "documentation": {
-      "description": "Returns the contents of the Parquet document as a table.",
+      "description": null,
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [
-      {
-        "name": "binary",
-        "type": "binary",
-        "isRequired": true,
-        "isNullable": false,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": null,
-        "enumNames": null,
-        "enumCaptions": null
-      },
-      {
-        "name": "options",
-        "type": "nullable record",
-        "isRequired": false,
-        "isNullable": true,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": [
-          {
-            "name": "MaxDepth",
-            "type": "nullable number",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "Compression",
-            "type": "nullable number",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "PreserveOrder",
-            "type": "nullable logical",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "LegacyColumnNameEncoding",
-            "type": "nullable logical",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "TypeMapping",
-            "type": "nullable text",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          }
-        ],
-        "enumNames": null,
-        "enumCaptions": null
-      }
-    ],
+    "functionParameters": [],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "any"
+    "type": "nullable none"
   },
   {
     "name": "Parquet.Metadata",
     "documentation": {
-      "description": "This function is intended for internal use only.",
+      "description": null,
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [
-      {
-        "name": "binary",
-        "type": "binary",
-        "isRequired": true,
-        "isNullable": false,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": null,
-        "enumNames": null,
-        "enumCaptions": null
-      }
-    ],
+    "functionParameters": [],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "any"
+    "type": "nullable none"
   },
   {
     "name": "Password.Type",
@@ -18732,79 +18621,14 @@
   {
     "name": "Pdf.Tables",
     "documentation": {
-      "description": "Returns any tables found in a PDF file.",
+      "description": null,
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [
-      {
-        "name": "pdf",
-        "type": "binary",
-        "isRequired": true,
-        "isNullable": false,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": null,
-        "enumNames": null,
-        "enumCaptions": null
-      },
-      {
-        "name": "options",
-        "type": "nullable record",
-        "isRequired": false,
-        "isNullable": true,
-        "caption": null,
-        "description": null,
-        "sampleValues": null,
-        "allowedValues": null,
-        "defaultValue": null,
-        "fields": [
-          {
-            "name": "Implementation",
-            "type": "nullable text",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "StartPage",
-            "type": "nullable number",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "EndPage",
-            "type": "nullable number",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "MultiPageTables",
-            "type": "nullable logical",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          },
-          {
-            "name": "EnforceBorderLines",
-            "type": "nullable logical",
-            "isRequired": false,
-            "caption": null,
-            "description": null
-          }
-        ],
-        "enumNames": null,
-        "enumCaptions": null
-      }
-    ],
+    "functionParameters": [],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "table"
+    "type": "nullable none"
   },
   {
     "name": "Percentage.From",
@@ -19003,6 +18827,13 @@
           },
           {
             "name": "HierarchicalNavigation",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "EnableBulkInsert",
             "type": "nullable logical",
             "isRequired": false,
             "caption": null,
@@ -21187,6 +21018,29 @@
           null,
           null
         ]
+      },
+      {
+        "name": "csvStyle",
+        "type": "nullable number",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": [
+          0,
+          1
+        ],
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": [
+          "CsvStyle.QuoteAfterDelimiter",
+          "CsvStyle.QuoteAlways"
+        ],
+        "enumCaptions": [
+          null,
+          null
+        ]
       }
     ],
     "completionItemKind": 3,
@@ -21797,6 +21651,61 @@
     "completionItemKind": 3,
     "isDataSource": false,
     "type": "text"
+  },
+  {
+    "name": "SqlView.Generator",
+    "documentation": {
+      "description": "This function is intended for internal use only.",
+      "longDescription": null,
+      "category": "Table.Table construction"
+    },
+    "functionParameters": [
+      {
+        "name": "uniqueIdentifier",
+        "type": "any",
+        "isRequired": true,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "sqlGenerator",
+        "type": "record",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [],
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "getData",
+        "type": "function",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "function"
   },
   {
     "name": "Sybase.Database",
@@ -30104,7 +30013,7 @@
   {
     "name": "Text.Trim",
     "documentation": {
-      "description": "Removes all leading and trailing whitespace.",
+      "description": "Removes all the specified leading and trailing characters.",
       "longDescription": null,
       "category": "Text.Transformations"
     },
@@ -30145,7 +30054,7 @@
   {
     "name": "Text.TrimEnd",
     "documentation": {
-      "description": "Removes all trailing whitespace.",
+      "description": "Removes all specified trailing characters.",
       "longDescription": null,
       "category": "Text.Transformations"
     },
@@ -30186,7 +30095,7 @@
   {
     "name": "Text.TrimStart",
     "documentation": {
-      "description": "Removes all leading whitespace.",
+      "description": "Removes all specified leading characters.",
       "longDescription": null,
       "category": "Text.Transformations"
     },
