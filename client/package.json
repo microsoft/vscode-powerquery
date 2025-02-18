@@ -48,7 +48,7 @@
         "eslint-plugin-prettier": "4.0.0",
         "eslint-plugin-security": "1.5.0",
         "glob": "8.0.3",
-        "mocha": "10.4.0",
+        "mocha": "10.8.2",
         "mocha-junit-reporter": "2.2.1",
         "mocha-multi-reporters": "1.5.1",
         "npm-check-updates": "16.1.0",
