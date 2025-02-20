@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-scripts",
-    "version": "0.0.61",
+    "version": "0.0.62",
     "description": "Scripts for vscode-powerquery repository",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -28,8 +28,8 @@
         "node": ">=18.17.0"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "0.10.1",
-        "@microsoft/powerquery-parser": "0.15.10",
+        "@microsoft/powerquery-language-services": "0.10.4",
+        "@microsoft/powerquery-parser": "0.16.0",
         "vscode-languageserver-textdocument": "1.0.4"
     },
     "devDependencies": {
@@ -40,7 +40,7 @@
         "eslint-plugin-prettier": "4.0.0",
         "eslint-plugin-promise": "6.0.0",
         "eslint-plugin-security": "1.5.0",
-        "mocha": "10.4.0",
+        "mocha": "^10.8.2",
         "prettier": "2.6.2",
         "ts-loader": "9.3.0",
         "ts-node": "10.7.0",

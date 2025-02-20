@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery-client",
-    "version": "0.0.61",
+    "version": "0.0.62",
     "description": "VS Code part of language server",
     "author": "Microsoft Corporation",
     "license": "MIT",
@@ -30,8 +30,8 @@
         "vscode": "^1.87.0"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "0.10.1",
-        "@microsoft/powerquery-parser": "0.15.10",
+        "@microsoft/powerquery-language-services": "0.10.4",
+        "@microsoft/powerquery-parser": "0.16.0",
         "vscode-languageclient": "9.0.1"
     },
     "devDependencies": {
@@ -48,7 +48,7 @@
         "eslint-plugin-prettier": "4.0.0",
         "eslint-plugin-security": "1.5.0",
         "glob": "8.0.3",
-        "mocha": "10.4.0",
+        "mocha": "^10.8.2",
         "mocha-junit-reporter": "2.2.1",
         "mocha-multi-reporters": "1.5.1",
         "npm-check-updates": "16.1.0",
