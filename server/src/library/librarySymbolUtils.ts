@@ -26,28 +26,28 @@ export function getSymbolsForLocaleAndMode(
 export function toLibraryDefinitions(
     librarySymbols: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>,
 ): ReadonlyMap<string, PQLS.Library.TLibraryDefinition> {
-    const libraryDefinitionsResult: PQP.PartialResult<
+    const libraryDefinitionsResult: PQP.Result<
         ReadonlyMap<string, PQLS.Library.TLibraryDefinition>,
-        PQLS.LibrarySymbolUtils.IncompleteLibraryDefinitions,
-        ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>
+        PQLS.LibrarySymbolUtils.IncompleteLibraryDefinitions
     > = PQLS.LibrarySymbolUtils.createLibraryDefinitions(librarySymbols);
 
     let libraryDefinitions: ReadonlyMap<string, PQLS.Library.TLibraryDefinition>;
-    let invalidSymbols: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
+    let failedLibrarySymbolConversions: ReadonlyArray<PQLS.LibrarySymbolUtils.FailedLibrarySymbolConversion>;
 
-    if (PQP.PartialResultUtils.isOk(libraryDefinitionsResult)) {
+    if (PQP.ResultUtils.isOk(libraryDefinitionsResult)) {
         libraryDefinitions = libraryDefinitionsResult.value;
-        invalidSymbols = [];
-    } else if (PQP.PartialResultUtils.isIncomplete(libraryDefinitionsResult)) {
-        libraryDefinitions = libraryDefinitionsResult.partial.libraryDefinitions;
-        invalidSymbols = libraryDefinitionsResult.partial.invalidSymbols;
+        failedLibrarySymbolConversions = [];
     } else {
         libraryDefinitions = new Map();
-        invalidSymbols = libraryDefinitionsResult.error;
+        failedLibrarySymbolConversions = libraryDefinitionsResult.error.failedLibrarySymbolConversions;
     }
 
-    if (invalidSymbols.length) {
-        console.warn(`Failed to convert library symbols: ${JSON.stringify(invalidSymbols)}`);
+    if (failedLibrarySymbolConversions.length) {
+        console.warn(
+            `Failed to convert the following LibrarySymbol to LibraryDefinitions: ${JSON.stringify(
+                failedLibrarySymbolConversions,
+            )}`,
+        );
     }
 
     return libraryDefinitions;

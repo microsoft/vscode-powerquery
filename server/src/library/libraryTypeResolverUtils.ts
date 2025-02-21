@@ -4,12 +4,26 @@
 // Contains smart type resolvers for library functions,
 // such as Table.AddColumn(...) returning a DefinedTable.
 
+import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { Type, TypeUtils } from "@microsoft/powerquery-parser/lib/powerquery-parser/language";
 import { ExternalType } from "@microsoft/powerquery-language-services";
+import { LibrarySymbolUtils } from ".";
+
+export function getLibraryTypeResolver(
+    staticLibrarySymbols: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>,
+    dynamicLibraryDefinitions: () => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>,
+): ExternalType.TExternalTypeResolverFn {
+    return wrapSmartTypeResolver(
+        PQLS.LibraryDefinitionUtils.externalTypeResolver({
+            staticLibraryDefinitions: LibrarySymbolUtils.toLibraryDefinitions(staticLibrarySymbols),
+            dynamicLibraryDefinitions,
+        }),
+    );
+}
 
 // Wraps an external type resolver with smart type resolvers for invocation requests.
-export function wrapSmartTypeResolver(
+function wrapSmartTypeResolver(
     externalTypeResolver: ExternalType.TExternalTypeResolverFn,
 ): ExternalType.TExternalTypeResolverFn {
     return (request: ExternalType.TExternalTypeRequest): PQP.Language.Type.TPowerQueryType | undefined => {
@@ -70,7 +84,9 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
         columnType = Type.AnyInstance;
     }
 
-    const normalizedColumnName: string = PQP.Language.TextUtils.normalizeIdentifier(columnName.literal.slice(1, -1));
+    const normalizedColumnName: string = PQP.Language.IdentifierUtils.normalizeIdentifier(
+        columnName.literal.slice(1, -1),
+    );
 
     if (TypeUtils.isDefinedTable(table)) {
         // We can't overwrite an existing key.

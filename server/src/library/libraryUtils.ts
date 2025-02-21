@@ -6,8 +6,7 @@ import * as PQP from "@microsoft/powerquery-parser";
 
 import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
 import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
-import { LibrarySymbolUtils } from ".";
-import { wrapSmartTypeResolver } from "./libraryTypeResolver";
+import { LibraryTypeResolverUtils } from ".";
 
 export const StandardLibrarySymbolByLocale: ReadonlyMap<
     string,
@@ -27,16 +26,10 @@ export function createCacheKey(locale: string, mode: string): string {
 }
 
 export function createLibrary(
-    staticLibraryDefinitionCollection: ReadonlyArray<ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>>,
+    staticLibrarySymbolCollections: ReadonlyArray<ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>>,
     dynamicLibraryDefinitionCollection: ReadonlyArray<() => ReadonlyMap<string, PQLS.Library.TLibraryDefinition>>,
 ): PQLS.Library.ILibrary {
-    const staticLibraryDefinitions: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
-
-    for (const collection of staticLibraryDefinitionCollection) {
-        for (const [key, value] of LibrarySymbolUtils.toLibraryDefinitions(collection).entries()) {
-            staticLibraryDefinitions.set(key, value);
-        }
-    }
+    const staticLibrarySymbols: ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol> = staticLibrarySymbolCollections.flat();
 
     const dynamicLibraryDefinitions: () => ReadonlyMap<string, PQLS.Library.TLibraryDefinition> = () => {
         const result: Map<string, PQLS.Library.TLibraryDefinition> = new Map();
@@ -50,18 +43,24 @@ export function createLibrary(
         return result;
     };
 
-    const library: PQLS.Library.ILibrary = {
-        externalTypeResolver: wrapSmartTypeResolver(
-            PQLS.LibraryDefinitionUtils.externalTypeResolver({
-                staticLibraryDefinitions,
-                dynamicLibraryDefinitions,
-            }),
-        ),
-        libraryDefinitions: {
-            staticLibraryDefinitions,
+    const libraryResult: PQP.Result<PQLS.Library.ILibrary, PQLS.LibrarySymbolUtils.IncompleteLibrary> =
+        PQLS.LibrarySymbolUtils.createLibrary(
+            staticLibrarySymbols,
             dynamicLibraryDefinitions,
-        },
-    };
+            LibraryTypeResolverUtils.getLibraryTypeResolver(staticLibrarySymbols, dynamicLibraryDefinitions),
+        );
+
+    let library: PQLS.Library.ILibrary;
+
+    if (PQP.ResultUtils.isOk(libraryResult)) {
+        library = libraryResult.value;
+    } else {
+        console.warn(
+            `Failed to convert library symbols: ${JSON.stringify(libraryResult.error.failedLibrarySymbolConversions)}`,
+        );
+
+        library = libraryResult.error.library;
+    }
 
     return library;
 }
