@@ -25,7 +25,7 @@
         "webpack-dev": "node_modules\\.bin\\webpack --watch --mode development"
     },
     "engines": {
-        "node": ">=18.17.0"
+        "node": ">= 20"
     },
     "dependencies": {
         "@microsoft/powerquery-language-services": "0.10.1",
