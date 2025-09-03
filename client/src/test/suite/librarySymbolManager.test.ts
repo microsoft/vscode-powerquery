@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as assert from "assert";
+import assert from "assert";
 import * as fs from "fs";
 import * as vscode from "vscode";
 

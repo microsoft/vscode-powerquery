@@ -27,35 +27,35 @@
     "main": "lib\\server.d.ts",
     "types": "lib\\server.d.ts",
     "engines": {
-        "node": ">= 20"
+        "node": ">= 22"
     },
     "dependencies": {
-        "@microsoft/powerquery-formatter": "0.3.14",
-        "@microsoft/powerquery-language-services": "0.10.1",
-        "@microsoft/powerquery-parser": "0.15.10",
-        "vscode-languageserver": "9.0.1",
-        "vscode-languageserver-textdocument": "1.0.11",
-        "vscode-languageserver-types": "3.17.5"
+        "@microsoft/powerquery-formatter": "^0.3.17",
+        "@microsoft/powerquery-language-services": "^0.10.5",
+        "@microsoft/powerquery-parser": "^0.18.1",
+        "vscode-languageserver": "^9.0.1",
+        "vscode-languageserver-textdocument": "^1.0.11",
+        "vscode-languageserver-types": "^3.17.5"
     },
     "devDependencies": {
-        "@types/chai": "4.3.1",
-        "@types/mocha": "10.0.6",
-        "@types/node": "20.12.12",
-        "@types/vscode": "1.87.0",
-        "chai": "4.3.6",
-        "cross-env": "7.0.3",
-        "eslint": "8.15.0",
-        "eslint-config-prettier": "8.5.0",
-        "eslint-plugin-prettier": "4.0.0",
-        "eslint-plugin-security": "1.5.0",
-        "mocha": "10.8.2",
-        "mocha-junit-reporter": "2.2.1",
-        "mocha-multi-reporters": "1.5.1",
-        "prettier": "2.6.2",
-        "ts-loader": "9.3.0",
-        "ts-node": "10.7.0",
-        "typescript": "5.4.5",
-        "webpack": "5.95.0",
-        "webpack-cli": "5.1.4"
+        "@types/chai": "^4.3.1",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "^22.13.14",
+        "@types/vscode": "^1.87.0",
+        "chai": "^4.3.6",
+        "cross-env": "^7.0.3",
+        "eslint": "^8.15.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "eslint-plugin-security": "^1.5.0",
+        "mocha": "^10.8.2",
+        "mocha-junit-reporter": "^2.2.1",
+        "mocha-multi-reporters": "^1.5.1",
+        "prettier": "^2.6.2",
+        "ts-loader": "^9.3.0",
+        "ts-node": "^10.7.0",
+        "typescript": "^5.9.2",
+        "webpack": "^5.95.0",
+        "webpack-cli": "^5.1.4"
     }
 }
