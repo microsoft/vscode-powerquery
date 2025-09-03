@@ -71,3 +71,6 @@ dist/
 *.zip
 .vs/
 test-results.xml
+
+# Copilot task tracking files (temporary, not committed)
+.copilot-current-task.md
