@@ -38,7 +38,7 @@ export function toLibraryDefinitions(
         libraryDefinitions = libraryDefinitionsResult.value;
         failedLibrarySymbolConversions = [];
     } else {
-        libraryDefinitions = new Map();
+        libraryDefinitions = libraryDefinitionsResult.error.libraryDefinitions;
         failedLibrarySymbolConversions = libraryDefinitionsResult.error.failedLibrarySymbolConversions;
     }
 

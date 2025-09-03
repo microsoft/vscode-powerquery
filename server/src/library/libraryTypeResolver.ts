@@ -70,11 +70,7 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
         columnType = Type.AnyInstance;
     }
 
-    // Removes surrounding quotes from the column name argument
-    const normalizedColumnName: string = PQP.Language.IdentifierUtils.assertNormalizedIdentifier(
-        columnName.literal.slice(1, -1),
-        { allowGeneralizedIdentifier: true },
-    );
+    const normalizedColumnName: string = columnName.literal.slice(1, -1);
 
     if (TypeUtils.isDefinedTable(table)) {
         // We can't overwrite an existing key.
