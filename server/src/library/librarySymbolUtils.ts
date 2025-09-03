@@ -4,8 +4,8 @@
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 
-import * as SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
-import * as StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
+import SdkLibrarySymbolsEnUs from "./sdk/sdk-enUs.json";
+import StandardLibrarySymbolsEnUs from "./standard/standard-enUs.json";
 
 export function getSymbolsForLocaleAndMode(
     locale: string,
