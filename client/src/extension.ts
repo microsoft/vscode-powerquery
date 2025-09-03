@@ -6,7 +6,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
-import * as Subscriptions from "./subscriptions";
+// import * as Subscriptions from "./subscriptions"; // TODO: Re-enable when semantic tokens are reimplemented
 import { CommandConstant, ConfigurationConstant } from "./constants";
 import { LibrarySymbolClient } from "./librarySymbolClient";
 import { LibrarySymbolManager } from "./librarySymbolManager";
@@ -58,14 +58,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     // Start the client. This will also launch the server.
     await client.start();
 
-    // TODO: Move this to the LSP based API.
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSemanticTokensProvider(
-            { language: "powerquery" },
-            Subscriptions.createDocumentSemanticTokensProvider(client),
-            Subscriptions.SemanticTokensLegend,
-        ),
-    );
+    // TODO: TEMPORARILY DISABLED - Custom semantic tokens implementation conflicts with standard LSP operations
+    // This was implemented before official LSP semantic tokens API existed and needs to be rewritten
+    // to use the standard LSP semantic tokens provider pattern.
+    //
+    // context.subscriptions.push(
+    //     vscode.languages.registerDocumentSemanticTokensProvider(
+    //         { language: "powerquery" },
+    //         Subscriptions.createDocumentSemanticTokensProvider(client),
+    //         Subscriptions.SemanticTokensLegend,
+    //     ),
+    // );
 
     librarySymbolClient = new LibrarySymbolClient(client);
     librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);

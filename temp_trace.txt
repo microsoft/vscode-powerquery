@@ -1,0 +1,106 @@
+[Trace - 6:12:34 PM] Sending request 'textDocument/hover - (8)'.
+[Trace - 6:12:34 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:12:35 PM] Sending request 'textDocument/hover - (9)'.
+[Trace - 6:12:35 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:12:37 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:37 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:12:37 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:37 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:37 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:38 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:38 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:38 PM] Sending request 'textDocument/documentSymbol - (10)'.
+[Trace - 6:12:38 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:12:38 PM] Sending request 'textDocument/documentSymbol - (11)'.
+[Trace - 6:12:38 PM] Sending notification 'textDocument/didChange'.
+[Trace - 6:12:38 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:12:39 PM] Sending request 'textDocument/documentSymbol - (12)'.
+[Trace - 6:12:39 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:12:39 PM] Sending request 'textDocument/documentSymbol - (13)'.
+[Trace - 6:12:59 PM] Received notification 'window/logMessage'.
+[Warn  - 6:12:59 PM] [PERF] Slow operation: getDocumentDiagnostics took 37740.84ms (getDocumentDiagnostics_1756937542063_0.03201680440606269) [textDocument/diagnostic-(1)]
+[Trace - 6:12:59 PM] Received response 'textDocument/diagnostic - (1)' in 38328ms.
+[Trace - 6:12:59 PM] Sending request 'textDocument/diagnostic - (14)'.
+[Trace - 6:12:59 PM] Received request 'workspace/configuration - (2)'.
+[Trace - 6:12:59 PM] Sending response 'workspace/configuration - (2)'. Processing request took 0ms
+[Trace - 6:12:59 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: documentSymbols (documentSymbols_1756937579806_0.22925801428489834) [textDocument/documentSymbol-(3)]
+[Trace - 6:12:59 PM] Received notification 'window/logMessage'.
+[PERF] Completed operation: documentSymbols in 2.06ms (documentSymbols_1756937579806_0.22925801428489834) [textDocument/documentSymbol-(3)]
+[Trace - 6:12:59 PM] Received response 'textDocument/documentSymbol - (3)' in 37578ms.
+[Trace - 6:12:59 PM] Received response 'textDocument/hover - (4)' in 33191ms. Request failed: Request cancelled (-32800).
+[Trace - 6:12:59 PM] Received response 'textDocument/hover - (5)' in 32938ms. Request failed: Request cancelled (-32800).
+[Trace - 6:12:59 PM] Received response 'textDocument/hover - (6)' in 32726ms. Request failed: Request cancelled (-32800).
+[Trace - 6:12:59 PM] Received response 'textDocument/hover - (7)' in 32500ms. Request failed: Request cancelled (-32800).
+[Trace - 6:12:59 PM] Received response 'textDocument/hover - (8)' in 24876ms. Request failed: Request cancelled (-32800).
+[Trace - 6:12:59 PM] Received response 'textDocument/hover - (9)' in 24305ms. Request failed: Request cancelled (-32800).
+[Trace - 6:12:59 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: documentSymbols (documentSymbols_1756937579812_0.9346400339971914) [textDocument/documentSymbol-(4)]
+[Trace - 6:13:00 PM] Received notification 'window/logMessage'.
+[Warn  - 6:13:00 PM] [PERF] Slow operation: documentSymbols took 1116.86ms (documentSymbols_1756937579812_0.9346400339971914) [textDocument/documentSymbol-(4)]
+[Trace - 6:13:00 PM] Received response 'textDocument/documentSymbol - (10)' in 22321ms.
+[Trace - 6:13:00 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: documentSymbols (documentSymbols_1756937580933_0.35745210128817007) [textDocument/documentSymbol-(5)]
+[Trace - 6:13:00 PM] Received notification 'window/logMessage'.
+[PERF] Completed operation: documentSymbols in 2.14ms (documentSymbols_1756937580933_0.35745210128817007) [textDocument/documentSymbol-(5)]
+[Trace - 6:13:00 PM] Received response 'textDocument/documentSymbol - (11)' in 22155ms.
+[Trace - 6:13:00 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: documentSymbols (documentSymbols_1756937580936_0.17961807234362848) [textDocument/documentSymbol-(6)]
+[Trace - 6:13:02 PM] Received notification 'window/logMessage'.
+[Warn  - 6:13:02 PM] [PERF] Slow operation: documentSymbols took 1304.60ms (documentSymbols_1756937580936_0.17961807234362848) [textDocument/documentSymbol-(6)]
+[Trace - 6:13:02 PM] Received response 'textDocument/documentSymbol - (12)' in 22941ms.
+[Trace - 6:13:02 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: documentSymbols (documentSymbols_1756937582242_0.5007705643234669) [textDocument/documentSymbol-(7)]
+[Trace - 6:13:02 PM] Received notification 'window/logMessage'.
+[PERF] Completed operation: documentSymbols in 1.54ms (documentSymbols_1756937582242_0.5007705643234669) [textDocument/documentSymbol-(7)]
+[Trace - 6:13:02 PM] Received response 'textDocument/documentSymbol - (13)' in 22777ms.
+[Trace - 6:13:02 PM] Received request 'workspace/diagnostic/refresh - (3)'.
+[Trace - 6:13:02 PM] Sending notification '$/cancelRequest'.
+[Trace - 6:13:02 PM] Sending response 'workspace/diagnostic/refresh - (3)'. Processing request took 0ms
+[Trace - 6:13:02 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: getDocumentDiagnostics (getDocumentDiagnostics_1756937582746_0.6136262644427466) [textDocument/diagnostic-(8)]
+[Trace - 6:13:02 PM] Received notification 'window/logMessage'.
+[PERF] Operation was cancelled: getDocumentDiagnostics after 1.85ms (getDocumentDiagnostics_1756937582746_0.6136262644427466) [textDocument/diagnostic-(8)]
+formatError: Error while computing diagnostics for file:///d%3A/pq/DataConnectors/Extensions/Kusto/Kusto.pq: Operation was cancelled
+Error: Operation was cancelled
+    at CancellationUtils.throwIfCancelled (d:\src\vscode-powerquery\server\dist\server.js:34080:19)
+    at d:\src\vscode-powerquery\server\dist\server.js:35400:47
+    at PerformanceTracker.<anonymous> (d:\src\vscode-powerquery\server\dist\server.js:34643:38)
+    at Generator.next (<anonymous>)
+    at d:\src\vscode-powerquery\server\dist\server.js:34608:71
+    at new Promise (<anonymous>)
+    at d:\src\vscode-powerquery\server\dist\server.js:34604:12
+    at PerformanceTracker.track (d:\src\vscode-powerquery\server\dist\server.js:34637:16)
+    at Object.trackOperation (d:\src\vscode-powerquery\server\dist\server.js:34860:41)
+    at d:\src\vscode-powerquery\server\dist\server.js:35398:114
+[Trace - 6:13:02 PM] Received response 'textDocument/diagnostic - (14)' in 2944ms.
+[Trace - 6:13:02 PM] Sending request 'textDocument/diagnostic - (15)'.
+[Trace - 6:13:03 PM] Received notification 'window/logMessage'.
+[PERF] Starting operation: getDocumentDiagnostics (getDocumentDiagnostics_1756937583264_0.013633384532276804) [textDocument/diagnostic-(9)]
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[Warn  - 6:13:42 PM] [PERF] Slow operation: getDocumentDiagnostics took 39214.38ms (getDocumentDiagnostics_1756937583264_0.013633384532276804) [textDocument/diagnostic-(9)]
+[Trace - 6:13:42 PM] Received response 'textDocument/diagnostic - (15)' in 39730ms.
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[PERF] === Performance Report ===
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[PERF] getDocumentDiagnostics: count=3, avg=25652.36ms, max=39214.38ms, min=1.85ms, total=76957.07ms, errors=0 (0.0%)
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[PERF] documentSymbols: count=6, avg=450.64ms, max=1304.60ms, min=1.54ms, total=2703.83ms, errors=0 (0.0%)
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[Warn  - 6:13:42 PM] [PERF] Operations averaging > 1000ms:
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[Warn  - 6:13:42 PM] [PERF]   getDocumentDiagnostics: 25652.36ms average (3 calls)
+[Trace - 6:13:42 PM] Received notification 'window/logMessage'.
+[PERF] === End Performance Report ===
+[Trace - 6:14:42 PM] Received notification 'window/logMessage'.
+[PERF] === Performance Report ===
+[Trace - 6:14:42 PM] Received notification 'window/logMessage'.
+[PERF] getDocumentDiagnostics: count=3, avg=25652.36ms, max=39214.38ms, min=1.85ms, total=76957.07ms, errors=0 (0.0%)
+[Trace - 6:14:42 PM] Received notification 'window/logMessage'.
+[PERF] documentSymbols: count=6, avg=450.64ms, max=1304.60ms, min=1.54ms, total=2703.83ms, errors=0 (0.0%)
+[Trace - 6:14:42 PM] Received notification 'window/logMessage'.
+[Warn  - 6:14:42 PM] [PERF] Operations averaging > 1000ms:
+[Trace - 6:14:42 PM] Received notification 'window/logMessage'.
+[Warn  - 6:14:42 PM] [PERF]   getDocumentDiagnostics: 25652.36ms average (3 calls)
+[Trace - 6:14:42 PM] Received notification 'window/logMessage'.
+[PERF] === End Performance Report ===
