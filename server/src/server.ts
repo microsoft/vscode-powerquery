@@ -114,7 +114,7 @@ connection.onDefinition(async (params: LS.DefinitionParams, cancellationToken: L
     if (PQP.ResultUtils.isOk(result)) {
         return result.value ?? [];
     } else {
-        ErrorUtils.handleError(connection, result.error, "onComplection", traceManager);
+        ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
 
         return [];
     }
