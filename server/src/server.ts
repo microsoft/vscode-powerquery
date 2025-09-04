@@ -38,6 +38,23 @@ interface RemoveLibrarySymbolsParams {
 const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
 const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
 
+// Create runtime environment for better cancellation handling
+const runtime: EventHandlerUtils.RuntimeEnvironment = {
+    timer: {
+        setImmediate(callback: (...args: unknown[]) => void, ...args: unknown[]): LS.Disposable {
+            const handle: NodeJS.Timeout = setTimeout(callback, 0, ...args);
+
+            return { dispose: () => clearTimeout(handle) };
+        },
+        setTimeout(callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]): LS.Disposable {
+            const handle: NodeJS.Timeout = setTimeout(callback, ms, ...args);
+
+            return { dispose: () => clearTimeout(handle) };
+        },
+    },
+    console: connection.console,
+};
+
 connection.onCompletion(
     async (
         params: LS.TextDocumentPositionParams,
@@ -140,7 +157,49 @@ connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationTok
     }
 });
 
-connection.onDocumentSymbol(documentSymbols);
+connection.onDocumentSymbol((params: LS.DocumentSymbolParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return [];
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onDocumentSymbol",
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const triedParseState: PQP.Result<PQP.Parser.ParseState | undefined, PQP.CommonError.CommonError> =
+                await analysis.getParseState();
+
+            if (PQP.ResultUtils.isError(triedParseState)) {
+                ErrorUtils.handleError(connection, triedParseState.error, "onDocumentSymbol", traceManager);
+
+                return [];
+            }
+
+            if (triedParseState.value === undefined) {
+                return [];
+            }
+
+            return PQLS.getDocumentSymbols(
+                triedParseState.value.contextState.nodeIdMapCollection,
+                pqpCancellationToken,
+            );
+        },
+        [],
+        `Error while computing document symbols for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 const emptyHover: LS.Hover = {
     range: undefined,
@@ -150,6 +209,7 @@ const emptyHover: LS.Hover = {
 // eslint-disable-next-line require-await
 connection.onHover(async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
+        runtime,
         async () => {
             const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
@@ -386,6 +446,7 @@ connection.languages.diagnostics.on(
     // eslint-disable-next-line require-await
     async (params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
         EventHandlerUtils.runSafeAsync(
+            runtime,
             async () => {
                 const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
@@ -420,47 +481,6 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
     const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
-}
-
-async function documentSymbols(
-    params: LS.DocumentSymbolParams,
-    cancellationToken: LS.CancellationToken,
-): Promise<LS.DocumentSymbol[] | undefined> {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-    if (document === undefined) {
-        return undefined;
-    }
-
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        params.textDocument.uri,
-        "onDocumentSymbol",
-    );
-
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-    const triedParseState: PQP.Result<PQP.Parser.ParseState | undefined, PQP.CommonError.CommonError> =
-        await analysis.getParseState();
-
-    if (PQP.ResultUtils.isError(triedParseState)) {
-        ErrorUtils.handleError(connection, triedParseState.error, "onDocumentSymbol", traceManager);
-
-        return undefined;
-    }
-
-    if (triedParseState.value === undefined) {
-        return undefined;
-    }
-
-    try {
-        return PQLS.getDocumentSymbols(triedParseState.value.contextState.nodeIdMapCollection, pqpCancellationToken);
-    } catch (error: unknown) {
-        ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
-
-        return undefined;
-    }
 }
 
 async function getDocumentDiagnostics(
