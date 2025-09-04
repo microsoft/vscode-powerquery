@@ -50,10 +50,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
             { scheme: "untitled", language: "powerquery" },
         ],
         outputChannel: vscode.window.createOutputChannel("Power Query"),
-        synchronize: {
-            // Synchronize the setting section 'powerquery' to the server
-            configurationSection: "powerquery",
-        },
     };
 
     // Create the language client and start the client.
