@@ -10,6 +10,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import * as ErrorUtils from "./errorUtils";
 import * as EventHandlerUtils from "./eventHandlerUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
+import * as ValidationUtils from "./validationUtils";
 import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
 import { SettingsUtils } from "./settings";
 
@@ -53,6 +54,52 @@ const runtime: EventHandlerUtils.RuntimeEnvironment = {
         },
     },
     console: connection.console,
+};
+
+let diagnosticsSupport: ValidationUtils.DiagnosticsSupport | undefined;
+let isServerReady: boolean = false;
+
+// Validator function for diagnostics support
+const validateTextDocument: ValidationUtils.Validator = async (
+    textDocument: TextDocument,
+    cancellationToken?: LS.CancellationToken,
+): Promise<LS.Diagnostic[]> => {
+    // Don't validate until server is fully initialized
+    if (!isServerReady) {
+        return [];
+    }
+
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+        textDocument.uri,
+        "validateTextDocument",
+    );
+
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
+
+    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
+        localizedLibrary,
+        traceManager,
+    );
+
+    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
+        localizedLibrary,
+        traceManager,
+        SettingsUtils.createCancellationToken(cancellationToken),
+    );
+
+    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
+        textDocument,
+        analysisSettings,
+        validationSettings,
+    );
+
+    if (PQP.ResultUtils.isOk(result) && result.value) {
+        return result.value.diagnostics;
+    } else {
+        ErrorUtils.handleError(connection, result, "validateTextDocument", traceManager);
+
+        return [];
+    }
 };
 
 connection.onCompletion(
@@ -248,15 +295,52 @@ connection.onHover(async (params: LS.TextDocumentPositionParams, cancellationTok
 );
 
 connection.onInitialize((params: LS.InitializeParams) => {
+    function getClientCapability<T>(name: string, def: T): T {
+        const keys: string[] = name.split(".");
+        let c: unknown = params.capabilities;
+
+        for (let i: number = 0; c && i < keys.length; i += 1) {
+            if (!c || typeof c !== "object" || !Object.prototype.hasOwnProperty.call(c, keys[i])) {
+                return def;
+            }
+
+            c = (c as Record<string, unknown>)[keys[i]];
+        }
+
+        return c as T;
+    }
+
+    const supportsDiagnosticPull: unknown = getClientCapability("textDocument.diagnostic", undefined);
+
+    // Choose between push and pull diagnostics based on client capabilities
+    if (supportsDiagnosticPull === undefined) {
+        diagnosticsSupport = ValidationUtils.registerDiagnosticsPushSupport(
+            documents,
+            connection,
+            runtime,
+            validateTextDocument,
+        );
+    } else {
+        diagnosticsSupport = ValidationUtils.registerDiagnosticsPullSupport(
+            documents,
+            connection,
+            runtime,
+            validateTextDocument,
+        );
+    }
+
     const capabilities: LS.ServerCapabilities = {
         completionProvider: {
             resolveProvider: false,
         },
         definitionProvider: true,
-        diagnosticProvider: {
-            interFileDependencies: false,
-            workspaceDiagnostics: false,
-        },
+        diagnosticProvider:
+            supportsDiagnosticPull !== undefined
+                ? {
+                      interFileDependencies: false,
+                      workspaceDiagnostics: false,
+                  }
+                : undefined,
         documentFormattingProvider: true,
         documentSymbolProvider: {
             workDoneProgress: false,
@@ -288,6 +372,12 @@ connection.onInitialized(async () => {
     }
 
     await SettingsUtils.initializeServerSettings(connection);
+
+    // Mark server as ready after full initialization (including configuration loading)
+    isServerReady = true;
+
+    // Trigger initial diagnostics for all open documents
+    diagnosticsSupport?.requestRefresh();
 });
 
 connection.onRenameRequest(async (params: LS.RenameParams, cancellationToken: LS.CancellationToken) => {
@@ -442,33 +532,11 @@ connection.onDocumentFormatting(
     },
 );
 
-connection.languages.diagnostics.on(
-    // eslint-disable-next-line require-await
-    async (params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
-        EventHandlerUtils.runSafeAsync(
-            runtime,
-            async () => {
-                const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-                if (document === undefined) {
-                    return {
-                        kind: LS.DocumentDiagnosticReportKind.Full,
-                        items: [],
-                    };
-                }
-
-                const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document, cancellationToken);
-
-                return {
-                    kind: LS.DocumentDiagnosticReportKind.Full,
-                    items: diagnostics,
-                };
-            },
-            { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
-            `Error while computing diagnostics for ${params.textDocument.uri}`,
-            cancellationToken,
-        ),
-);
+// Configuration change handler
+connection.onDidChangeConfiguration(() => {
+    // Refresh diagnostics when configuration changes
+    diagnosticsSupport?.requestRefresh();
+});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -481,41 +549,4 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
     const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
-}
-
-async function getDocumentDiagnostics(
-    document: TextDocument,
-    cancellationToken: LS.CancellationToken,
-): Promise<LS.Diagnostic[]> {
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        document.uri,
-        "getDocumentDiagnostics",
-    );
-
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
-
-    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
-        localizedLibrary,
-        traceManager,
-    );
-
-    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
-        localizedLibrary,
-        traceManager,
-        SettingsUtils.createCancellationToken(cancellationToken),
-    );
-
-    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
-        document,
-        analysisSettings,
-        validationSettings,
-    );
-
-    if (PQP.ResultUtils.isOk(result) && result.value) {
-        return result.value.diagnostics;
-    } else {
-        ErrorUtils.handleError(connection, result, "getDocumentDiagnostics", traceManager);
-
-        return [];
-    }
 }
