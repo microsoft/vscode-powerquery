@@ -63,7 +63,7 @@
     "types": "./client/dist/extension.d.ts",
     "engines": {
         "node": ">= 22",
-        "vscode": "^1.87.0"
+        "vscode": "^1.91.0"
     },
     "capabilities": {
         "untrustedWorkspaces": {
