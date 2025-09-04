@@ -51,10 +51,6 @@
         "webpack-prod": "npm run webpack-prod:server && npm run webpack-prod:client",
         "webpack-prod:client": "cd client && npm run webpack-prod",
         "webpack-prod:server": "cd server && npm run webpack-prod",
-        "version-all": "npm version patch && npm run version:client && npm run version:server && npm run version:scripts",
-        "version:client": "cd client && npm version patch",
-        "version:server": "cd server && npm version patch",
-        "version:scripts": "cd scripts && npm version patch",
         "vscode:prepublish": "npm run webpack-prod",
         "vsix": "npx @vscode/vsce@latest package"
     },

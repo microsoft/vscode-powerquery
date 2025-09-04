@@ -1,6 +1,5 @@
 {
     "name": "vscode-powerquery-client",
-    "version": "0.1.63",
     "description": "VS Code part of language server",
     "author": "Microsoft Corporation",
     "license": "MIT",
