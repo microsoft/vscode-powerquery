@@ -12,13 +12,9 @@
         "noImplicitReturns": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "outDir": "lib",
         "resolveJsonModule": true,
         "sourceMap": true,
         "strict": true,
-        "target": "ES2022",
-        "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
-    },
-    "include": ["**/src/**/*.ts"],
-    "exclude": ["node_modules"]
+        "target": "ES2022"
+    }
 }
