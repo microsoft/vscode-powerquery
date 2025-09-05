@@ -116,70 +116,81 @@ const validateTextDocument: ValidationUtils.Validator = async (
     }
 };
 
-connection.onCompletion(
-    async (
-        params: LS.TextDocumentPositionParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.CompletionItem[]> => {
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-        if (document === undefined) {
-            return [];
-        }
+            if (document === undefined) {
+                return [];
+            }
 
-        const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onCompletion",
-            params.position,
-        );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onCompletion",
+                params.position,
+            );
 
-        const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-        const result: PQP.Result<PQLS.Inspection.AutocompleteItem[] | undefined, PQP.CommonError.CommonError> =
-            await analysis.getAutocompleteItems(params.position, pqpCancellationToken);
+            const result: PQP.Result<PQLS.Inspection.AutocompleteItem[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getAutocompleteItems(params.position, pqpCancellationToken);
 
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? [];
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
 
-            return [];
-        }
-    },
+                return [];
+            }
+        },
+        [],
+        `Error while computing completion items for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
-connection.onDefinition(async (params: LS.DefinitionParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+connection.onDefinition((params: LS.DefinitionParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-    if (document === undefined) {
-        return undefined;
-    }
+            if (document === undefined) {
+                return undefined;
+            }
 
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        params.textDocument.uri,
-        "onDefinition",
-        params.position,
-    );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onDefinition",
+                params.position,
+            );
 
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-    const result: PQP.Result<LS.Location[] | undefined, PQP.CommonError.CommonError> = await analysis.getDefinition(
-        params.position,
-        pqpCancellationToken,
-    );
+            const result: PQP.Result<LS.Location[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getDefinition(params.position, pqpCancellationToken);
 
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ?? [];
-    } else {
-        ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onDefinition", traceManager);
 
-        return [];
-    }
-});
+                return [];
+            }
+        },
+        [],
+        `Error while computing definition for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
@@ -195,28 +206,42 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
     });
 });
 
-connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+connection.onFoldingRanges((params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-    if (document === undefined) {
-        return [];
-    }
+            if (document === undefined) {
+                return [];
+            }
 
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onFoldingRanges");
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-    const result: PQP.Result<LS.FoldingRange[] | undefined, PQP.CommonError.CommonError> =
-        await analysis.getFoldingRanges(pqpCancellationToken);
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                document.uri,
+                "onFoldingRanges",
+            );
 
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ?? [];
-    } else {
-        ErrorUtils.handleError(connection, result.error, "onFoldingRanges", traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-        return [];
-    }
-});
+            const result: PQP.Result<LS.FoldingRange[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getFoldingRanges(pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onFoldingRanges", traceManager);
+
+                return [];
+            }
+        },
+        [],
+        `Error while computing folding ranges for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 connection.onDocumentSymbol((params: LS.DocumentSymbolParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
@@ -395,31 +420,42 @@ connection.onInitialized(async () => {
     diagnosticsSupport?.requestRefresh();
 });
 
-connection.onRenameRequest(async (params: LS.RenameParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
+connection.onRenameRequest((params: LS.RenameParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
 
-    if (document === undefined) {
-        return undefined;
-    }
+            if (document === undefined) {
+                return undefined;
+            }
 
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onRenameRequest");
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-    const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await analysis.getRenameEdits(
-        params.position,
-        params.newName,
-        pqpCancellationToken,
-    );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                document.uri,
+                "onRenameRequest",
+            );
 
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ? { changes: { [document.uri]: result.value } } : undefined;
-    } else {
-        ErrorUtils.handleError(connection, result.error, "onRenameRequest", traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-        return undefined;
-    }
-});
+            const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getRenameEdits(params.position, params.newName, pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ? { changes: { [document.uri]: result.value } } : undefined;
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onRenameRequest", traceManager);
+
+                return undefined;
+            }
+        },
+        undefined,
+        `Error while computing rename edits for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 // connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
 //     const document: TextDocument | undefined = documents.get(params.textDocumentUri);
@@ -473,78 +509,92 @@ connection.onRequest(
     }),
 );
 
-connection.onSignatureHelp(
-    async (
-        params: LS.TextDocumentPositionParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.SignatureHelp> => {
-        const emptySignatureHelp: LS.SignatureHelp = {
+connection.onSignatureHelp((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const emptySignatureHelp: LS.SignatureHelp = {
+                signatures: [],
+                activeParameter: undefined,
+                activeSignature: 0,
+            };
+
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return emptySignatureHelp;
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onSignatureHelp",
+                params.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const result: PQP.Result<LS.SignatureHelp | undefined, PQP.CommonError.CommonError> =
+                await analysis.getSignatureHelp(params.position, pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? emptySignatureHelp;
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onSignatureHelp", traceManager);
+
+                return emptySignatureHelp;
+            }
+        },
+        {
             signatures: [],
             activeParameter: undefined,
             activeSignature: 0,
-        };
-
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-        if (document === undefined) {
-            return emptySignatureHelp;
-        }
-
-        const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onSignatureHelp",
-            params.position,
-        );
-
-        const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-        const result: PQP.Result<LS.SignatureHelp | undefined, PQP.CommonError.CommonError> =
-            await analysis.getSignatureHelp(params.position, pqpCancellationToken);
-
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? emptySignatureHelp;
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onSignatureHelp", traceManager);
-
-            return emptySignatureHelp;
-        }
-    },
+        },
+        `Error while computing signature help for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
-connection.onDocumentFormatting(
-    async (params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken): Promise<LS.TextEdit[]> => {
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-        if (document === undefined) {
-            return [];
-        }
+            if (document === undefined) {
+                return [];
+            }
 
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onDocumentFormatting",
-            undefined,
-        );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onDocumentFormatting",
+                undefined,
+            );
 
-        const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
-            document,
-            {
-                ...PQP.DefaultSettings,
-                ...PQF.DefaultSettings,
-                cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
-                traceManager,
-            },
-        );
+            const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
+                document,
+                {
+                    ...PQP.DefaultSettings,
+                    ...PQF.DefaultSettings,
+                    cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
+                    traceManager,
+                },
+            );
 
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? [];
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onDocumentFormatting", traceManager);
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onDocumentFormatting", traceManager);
 
-            return [];
-        }
-    },
+                return [];
+            }
+        },
+        [],
+        `Error while formatting document ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
 // Configuration change handler
