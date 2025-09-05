@@ -42,10 +42,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
         },
     };
 
-    // Document symbol debouncing
-    const DOCUMENT_SYMBOL_DEBOUNCE_MS: number = 500;
-    const pendingDocumentSymbolRequests: Map<string, NodeJS.Timeout> = new Map<string, NodeJS.Timeout>();
-
     // Options to control the language client
     const outputChannel: vscode.LogOutputChannel = vscode.window.createOutputChannel("Power Query", { log: true });
 
@@ -56,56 +52,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
             { scheme: "untitled", language: "powerquery" },
         ],
         outputChannel,
-        middleware: {
-            provideDocumentSymbols: (
-                document: vscode.TextDocument,
-                token: vscode.CancellationToken,
-                next: LC.ProvideDocumentSymbolsSignature,
-            ) => {
-                const uri: string = document.uri.toString();
-
-                // Cancel any pending request for this document
-                const existingTimeout: NodeJS.Timeout | undefined = pendingDocumentSymbolRequests.get(uri);
-
-                if (existingTimeout) {
-                    clearTimeout(existingTimeout);
-                    pendingDocumentSymbolRequests.delete(uri);
-                    outputChannel.info("[Client] Debounced textDocument/documentSymbol event");
-                }
-
-                // Return a promise that resolves after debounce delay
-                return new Promise<vscode.DocumentSymbol[] | vscode.SymbolInformation[]>(
-                    (
-                        resolve: (value: vscode.DocumentSymbol[] | vscode.SymbolInformation[]) => void,
-                        reject: (reason?: unknown) => void,
-                    ) => {
-                        const timeout: NodeJS.Timeout = setTimeout(async () => {
-                            pendingDocumentSymbolRequests.delete(uri);
-
-                            try {
-                                const result: vscode.DocumentSymbol[] | vscode.SymbolInformation[] | null | undefined =
-                                    await next(document, token);
-
-                                resolve(result ?? []);
-                            } catch (error) {
-                                reject(error);
-                            }
-                        }, DOCUMENT_SYMBOL_DEBOUNCE_MS);
-
-                        pendingDocumentSymbolRequests.set(uri, timeout);
-
-                        // Handle cancellation
-                        if (token) {
-                            token.onCancellationRequested(() => {
-                                clearTimeout(timeout);
-                                pendingDocumentSymbolRequests.delete(uri);
-                                reject(new Error("Request was cancelled"));
-                            });
-                        }
-                    },
-                );
-            },
-        },
     };
 
     // Create the language client and start the client.
