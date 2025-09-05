@@ -105,13 +105,13 @@ const validateTextDocument: ValidationUtils.Validator = async (
             validationSettings,
         );
 
-        if (PQP.ResultUtils.isOk(result) && result.value) {
-            return result.value.diagnostics;
-        } else {
-            ErrorUtils.handleError(connection, result, "validateTextDocument", traceManager);
+        if (PQP.ResultUtils.isError(result)) {
+            ErrorUtils.handleError(connection, result.error, "getDocumentDiagnostics", traceManager);
 
             return [];
         }
+
+        return result.value?.diagnostics ?? [];
     } catch (error) {
         runtime.console.error(`Error while validating document ${textDocument.uri}: ${String(error)}`);
 
