@@ -37,9 +37,6 @@ interface RemoveLibrarySymbolsParams {
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 const connection: LS.Connection = LS.createConnection();
 
-console.log = connection.console.log.bind(connection.console);
-console.error = connection.console.error.bind(connection.console);
-
 process.on("unhandledRejection", (e: unknown) => {
     if (e instanceof Error) {
         connection.console.error(`Unhandled exception: ${ErrorUtils.formatError(e)}`);
