@@ -17,6 +17,7 @@ const config = {
     devtool: "source-map",
     externals: {
         vscode: "commonjs vscode",
+        "vscode-languageserver/node": "commonjs vscode-languageserver/node",
     },
     infrastructureLogging: {
         level: "log",

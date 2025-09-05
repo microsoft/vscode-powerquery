@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.62",
+    "version": "0.1.63",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",
@@ -51,10 +51,6 @@
         "webpack-prod": "npm run webpack-prod:server && npm run webpack-prod:client",
         "webpack-prod:client": "cd client && npm run webpack-prod",
         "webpack-prod:server": "cd server && npm run webpack-prod",
-        "version": "npm version patch && npm run version:client && npm run version:server && npm run version:scripts",
-        "version:client": "cd client && npm version patch",
-        "version:server": "cd server && npm version patch",
-        "version:scripts": "cd scripts && npm version patch",
         "vscode:prepublish": "npm run webpack-prod",
         "vsix": "npx @vscode/vsce@latest package"
     },
@@ -62,8 +58,8 @@
     "main": "./client/dist/extension",
     "types": "./client/dist/extension.d.ts",
     "engines": {
-        "node": ">= 20",
-        "vscode": "^1.87.0"
+        "node": ">= 22",
+        "vscode": "^1.100.0"
     },
     "capabilities": {
         "untrustedWorkspaces": {
@@ -289,14 +285,14 @@
         ]
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "5.24.0",
-        "@typescript-eslint/parser": "5.24.0",
-        "eslint": "8.15.0",
-        "eslint-config-prettier": "8.5.0",
-        "eslint-plugin-prettier": "4.0.0",
-        "eslint-plugin-promise": "6.0.0",
-        "eslint-plugin-security": "1.5.0",
-        "prettier": "2.6.2",
-        "typescript": "4.6.4"
+        "@typescript-eslint/eslint-plugin": "^5.24.0",
+        "@typescript-eslint/parser": "^5.24.0",
+        "eslint": "^8.15.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "eslint-plugin-promise": "^6.0.0",
+        "eslint-plugin-security": "^1.5.0",
+        "prettier": "^2.6.2",
+        "typescript": "^5.9.2"
     }
 }

@@ -6,7 +6,6 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import * as CommandFn from "./commands";
-import * as Subscriptions from "./subscriptions";
 import { CommandConstant, ConfigurationConstant } from "./constants";
 import { LibrarySymbolClient } from "./librarySymbolClient";
 import { LibrarySymbolManager } from "./librarySymbolManager";
@@ -50,6 +49,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
             { scheme: "file", language: "powerquery" },
             { scheme: "untitled", language: "powerquery" },
         ],
+        outputChannel: vscode.window.createOutputChannel("Power Query"),
+        synchronize: {
+            // Synchronize the setting section 'powerquery' to the server
+            configurationSection: "powerquery",
+        },
     };
 
     // Create the language client and start the client.
@@ -59,13 +63,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     await client.start();
 
     // TODO: Move this to the LSP based API.
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSemanticTokensProvider(
-            { language: "powerquery" },
-            Subscriptions.createDocumentSemanticTokensProvider(client),
-            Subscriptions.SemanticTokensLegend,
-        ),
-    );
+    // context.subscriptions.push(
+    //     vscode.languages.registerDocumentSemanticTokensProvider(
+    //         { language: "powerquery" },
+    //         Subscriptions.createDocumentSemanticTokensProvider(client),
+    //         Subscriptions.SemanticTokensLegend,
+    //     ),
+    // );
 
     librarySymbolClient = new LibrarySymbolClient(client);
     librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);

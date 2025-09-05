@@ -15,10 +15,10 @@ import { SettingsUtils } from "./settings";
 
 type LibraryJson = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
 
-interface SemanticTokenParams {
-    readonly textDocumentUri: string;
-    readonly cancellationToken: LS.CancellationToken;
-}
+// interface SemanticTokenParams {
+//     readonly textDocumentUri: string;
+//     readonly cancellationToken: LS.CancellationToken;
+// }
 
 interface ModuleLibraryUpdatedParams {
     readonly workspaceUriPath: string;
@@ -256,28 +256,28 @@ connection.onRenameRequest(async (params: LS.RenameParams, cancellationToken: LS
     }
 });
 
-connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
-    const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+// connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
+//     const document: TextDocument | undefined = documents.get(params.textDocumentUri);
 
-    if (document === undefined) {
-        return [];
-    }
+//     if (document === undefined) {
+//         return [];
+//     }
 
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(undefined);
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+//     const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(undefined);
+//     const traceManager: PQP.Trace.TraceManager =TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
+//     const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-    const result: PQP.Result<PQLS.PartialSemanticToken[] | undefined, PQP.CommonError.CommonError> =
-        await analysis.getPartialSemanticTokens(pqpCancellationToken);
+//     const result: PQP.Result<PQLS.PartialSemanticToken[] | undefined, PQP.CommonError.CommonError> =
+//         await analysis.getPartialSemanticTokens(pqpCancellationToken);
 
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ?? [];
-    } else {
-        ErrorUtils.handleError(connection, result.error, "semanticTokens", traceManager);
+//     if (PQP.ResultUtils.isOk(result)) {
+//         return result.value ?? [];
+//     } else {
+//         ErrorUtils.handleError(connection, result.error, "semanticTokens", traceManager);
 
-        return [];
-    }
-});
+//         return [];
+//     }
+// });
 
 connection.onRequest(
     "powerquery/moduleLibraryUpdated",

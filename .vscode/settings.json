@@ -4,5 +4,8 @@
     "typescript.preferences.quoteStyle": "single",
     "typescript.tsdk": "node_modules\\typescript\\lib",
     "editor.formatOnSave": true,
-    "sarif-viewer.connectToGithubCodeScanning": "off"
+    "sarif-viewer.connectToGithubCodeScanning": "off",
+    "chat.instructionsFilesLocations": {
+        ".github/copilot.instructions.md": true
+    }
 }

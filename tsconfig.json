@@ -3,20 +3,18 @@
         "declaration": true,
         "downlevelIteration": true,
         "incremental": true,
-        "module": "commonjs",
+        "lib": ["ES2023"],
+        "module": "node16",
+        "moduleResolution": "node16",
         "noEmitOnError": true,
         "noFallthroughCasesInSwitch": true,
         "noImplicitOverride": true,
         "noImplicitReturns": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "outDir": "lib",
         "resolveJsonModule": true,
         "sourceMap": true,
         "strict": true,
-        "target": "es6",
-        "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
-    },
-    "include": ["**/src/**/*.ts"],
-    "exclude": ["node_modules"]
+        "target": "ES2022"
+    }
 }
