@@ -64,39 +64,45 @@ const validateTextDocument: ValidationUtils.Validator = async (
     textDocument: TextDocument,
     cancellationToken?: LS.CancellationToken,
 ): Promise<LS.Diagnostic[]> => {
-    // Don't validate until server is fully initialized
-    if (!isServerReady) {
-        return [];
-    }
+    try {
+        // Don't validate until server is fully initialized
+        if (!isServerReady) {
+            return [];
+        }
 
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        textDocument.uri,
-        "validateTextDocument",
-    );
+        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+            textDocument.uri,
+            "validateTextDocument",
+        );
 
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
+        const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
 
-    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
-        localizedLibrary,
-        traceManager,
-    );
+        const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
+            localizedLibrary,
+            traceManager,
+        );
 
-    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
-        localizedLibrary,
-        traceManager,
-        SettingsUtils.createCancellationToken(cancellationToken),
-    );
+        const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
+            localizedLibrary,
+            traceManager,
+            SettingsUtils.createCancellationToken(cancellationToken),
+        );
 
-    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
-        textDocument,
-        analysisSettings,
-        validationSettings,
-    );
+        const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
+            textDocument,
+            analysisSettings,
+            validationSettings,
+        );
 
-    if (PQP.ResultUtils.isOk(result) && result.value) {
-        return result.value.diagnostics;
-    } else {
-        ErrorUtils.handleError(connection, result, "validateTextDocument", traceManager);
+        if (PQP.ResultUtils.isOk(result) && result.value) {
+            return result.value.diagnostics;
+        } else {
+            ErrorUtils.handleError(connection, result, "validateTextDocument", traceManager);
+
+            return [];
+        }
+    } catch (error) {
+        runtime.console.error(`Error while validating document ${textDocument.uri}: ${String(error)}`);
 
         return [];
     }
