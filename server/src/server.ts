@@ -329,7 +329,8 @@ connection.onInitialize((params: LS.InitializeParams) => {
 
     const supportsDiagnosticPull: unknown = getClientCapability("textDocument.diagnostic", undefined);
 
-    // Choose between push and pull diagnostics based on client capabilities
+    // Choose between push and pull diagnostics based on client capabilities.
+    // Modern VS Code clients will use Pull.
     if (supportsDiagnosticPull === undefined) {
         diagnosticsSupport = ValidationUtils.registerDiagnosticsPushSupport(
             documents,
@@ -451,7 +452,7 @@ connection.onRequest(
     EventHandlerUtils.genericRequestHandler((params: ModuleLibraryUpdatedParams) => {
         ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
         LibraryUtils.clearCache();
-        connection.languages.diagnostics.refresh();
+        diagnosticsSupport?.requestRefresh();
     }),
 );
 
@@ -462,7 +463,7 @@ connection.onRequest(
         const symbolMaps: ReadonlyMap<string, LibraryJson> = new Map(params.librarySymbols);
         ExternalLibraryUtils.addLibaries(symbolMaps);
         LibraryUtils.clearCache();
-        connection.languages.diagnostics.refresh();
+        diagnosticsSupport?.requestRefresh();
     }),
 );
 
@@ -471,7 +472,7 @@ connection.onRequest(
     EventHandlerUtils.genericRequestHandler((params: RemoveLibrarySymbolsParams) => {
         ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
         LibraryUtils.clearCache();
-        connection.languages.diagnostics.refresh();
+        diagnosticsSupport?.requestRefresh();
     }),
 );
 

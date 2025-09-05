@@ -14,7 +14,6 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as EventHandlerUtils from "./eventHandlerUtils";
-import { RuntimeEnvironment } from "./eventHandlerUtils";
 
 export type Validator = (textDocument: TextDocument, cancellationToken?: CancellationToken) => Promise<Diagnostic[]>;
 
@@ -26,7 +25,7 @@ export type DiagnosticsSupport = {
 export function registerDiagnosticsPushSupport(
     documents: TextDocuments<TextDocument>,
     connection: Connection,
-    runtime: RuntimeEnvironment,
+    runtime: EventHandlerUtils.RuntimeEnvironment,
     validate: Validator,
 ): DiagnosticsSupport {
     const pendingValidationRequests: { [uri: string]: Disposable } = {};
@@ -105,7 +104,7 @@ export function registerDiagnosticsPushSupport(
 export function registerDiagnosticsPullSupport(
     documents: TextDocuments<TextDocument>,
     connection: Connection,
-    runtime: RuntimeEnvironment,
+    runtime: EventHandlerUtils.RuntimeEnvironment,
     validate: Validator,
 ): DiagnosticsSupport {
     function newDocumentDiagnosticReport(diagnostics: Diagnostic[]): DocumentDiagnosticReport {
