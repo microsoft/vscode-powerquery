@@ -339,53 +339,24 @@ connection.onHover((params: LS.TextDocumentPositionParams, cancellationToken: LS
 );
 
 connection.onInitialize((params: LS.InitializeParams) => {
-    function getClientCapability<T>(name: string, def: T): T {
-        const keys: string[] = name.split(".");
-        let c: unknown = params.capabilities;
-
-        for (let i: number = 0; c && i < keys.length; i += 1) {
-            if (!c || typeof c !== "object" || !Object.prototype.hasOwnProperty.call(c, keys[i])) {
-                return def;
-            }
-
-            c = (c as Record<string, unknown>)[keys[i]];
-        }
-
-        return c as T;
-    }
-
-    const supportsDiagnosticPull: unknown = getClientCapability("textDocument.diagnostic", undefined);
-
-    // Choose between push and pull diagnostics based on client capabilities.
-    // Modern VS Code clients will use Pull.
-    if (supportsDiagnosticPull === undefined) {
-        diagnosticsSupport = ValidationUtils.registerDiagnosticsPushSupport(
-            documents,
-            connection,
-            runtime,
-            validateTextDocument,
-        );
-    } else {
-        diagnosticsSupport = ValidationUtils.registerDiagnosticsPullSupport(
-            documents,
-            connection,
-            runtime,
-            validateTextDocument,
-        );
-    }
+    // Modern VS Code clients use Pull diagnostics (LSP 3.17+)
+    // Since we require VS Code 1.100.0+, we can assume pull diagnostics support
+    diagnosticsSupport = ValidationUtils.registerDiagnosticsPullSupport(
+        documents,
+        connection,
+        runtime,
+        validateTextDocument,
+    );
 
     const capabilities: LS.ServerCapabilities = {
         completionProvider: {
             resolveProvider: false,
         },
         definitionProvider: true,
-        diagnosticProvider:
-            supportsDiagnosticPull !== undefined
-                ? {
-                      interFileDependencies: false,
-                      workspaceDiagnostics: false,
-                  }
-                : undefined,
+        diagnosticProvider: {
+            interFileDependencies: false,
+            workspaceDiagnostics: false,
+        },
         documentFormattingProvider: true,
         documentSymbolProvider: {
             workDoneProgress: false,
