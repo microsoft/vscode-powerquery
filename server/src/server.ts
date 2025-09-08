@@ -151,7 +151,7 @@ connection.onDidChangeConfiguration(async () => {
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // Cancel any active diagnostic operation for this document
-    cancelActiveDiagnostics(event.document.uri, "Document closed");
+    cancelActiveDiagnostics(event.document.uri, "onDidClose");
 
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
@@ -164,7 +164,7 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
 documents.onDidChangeContent((event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // Cancel any active diagnostic operation when document changes
     // This will allow fresh diagnostics to start immediately
-    cancelActiveDiagnostics(event.document.uri, "Document content changed");
+    cancelActiveDiagnostics(event.document.uri, "onDidChangeContent");
 });
 
 connection.onFoldingRanges((params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) =>
@@ -519,6 +519,11 @@ connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellati
     ),
 );
 
+// We use the VS Code Pull diagnostics model.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_pullDiagnostics
+// Diagnostics requests aren't cancelled when the document changes. VS Code waits for the original request to complete
+// and then fires a new request. Therefore, we maintain our own map of active diagnostic operations so we can cancel
+// them when a document changes or is closed.
 connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
         runtime,
