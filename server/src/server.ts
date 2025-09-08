@@ -549,9 +549,6 @@ connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancel
             try {
                 const diagnostics: LS.Diagnostic[] = await validateTextDocument(document, pqpCancellationToken);
 
-                // Clean up successful operation
-                activeDiagnosticOperations.delete(params.textDocument.uri);
-
                 return {
                     kind: LS.DocumentDiagnosticReportKind.Full,
                     items: diagnostics,
