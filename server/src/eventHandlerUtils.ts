@@ -50,39 +50,18 @@ export function runSafeAsync<T, E>(
                 return;
             }
 
-            let isResolved: boolean = false;
-
-            // Register cancellation listener to interrupt operation
-            const cancellationListener: Disposable = token.onCancellationRequested(() => {
-                if (!isResolved) {
-                    isResolved = true;
-                    resolve(cancelValue());
-                }
-            });
-
             // eslint-disable-next-line promise/prefer-await-to-then
             return func().then(
                 (result: T) => {
-                    cancellationListener.dispose();
-
-                    if (!isResolved) {
-                        isResolved = true;
-
-                        if (token.isCancellationRequested) {
-                            resolve(cancelValue());
-                        } else {
-                            resolve(result);
-                        }
+                    if (token.isCancellationRequested) {
+                        resolve(cancelValue());
+                    } else {
+                        resolve(result);
                     }
                 },
                 (e: Error) => {
-                    cancellationListener.dispose();
-
-                    if (!isResolved) {
-                        isResolved = true;
-                        runtime.console.error(formatError(errorMessage, e));
-                        resolve(errorVal);
-                    }
+                    runtime.console.error(formatError(errorMessage, e));
+                    resolve(errorVal);
                 },
             );
         });
