@@ -10,7 +10,6 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import * as ErrorUtils from "./errorUtils";
 import * as EventHandlerUtils from "./eventHandlerUtils";
 import * as TraceManagerUtils from "./traceManagerUtils";
-import * as ValidationUtils from "./validationUtils";
 import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
 import { SettingsUtils } from "./settings";
 
@@ -64,14 +63,13 @@ const runtime: EventHandlerUtils.RuntimeEnvironment = {
     console: connection.console,
 };
 
-let diagnosticsSupport: ValidationUtils.DiagnosticsSupport | undefined;
 let isServerReady: boolean = false;
 
 // Validator function for diagnostics support
-const validateTextDocument: ValidationUtils.Validator = async (
+async function validateTextDocument(
     textDocument: TextDocument,
     cancellationToken?: LS.CancellationToken,
-): Promise<LS.Diagnostic[]> => {
+): Promise<LS.Diagnostic[]> {
     // Don't validate until server is fully initialized
     if (!isServerReady) {
         return [];
@@ -120,7 +118,33 @@ const validateTextDocument: ValidationUtils.Validator = async (
     }
 
     return result.value?.diagnostics ?? [];
-};
+}
+
+connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return {
+                    kind: LS.DocumentDiagnosticReportKind.Full,
+                    items: [],
+                };
+            }
+
+            const diagnostics: LS.Diagnostic[] = await validateTextDocument(document, cancellationToken);
+
+            return {
+                kind: LS.DocumentDiagnosticReportKind.Full,
+                items: diagnostics,
+            };
+        },
+        { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
+        `Error while computing diagnostics for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
@@ -339,15 +363,6 @@ connection.onHover((params: LS.TextDocumentPositionParams, cancellationToken: LS
 );
 
 connection.onInitialize((params: LS.InitializeParams) => {
-    // Modern VS Code clients use Pull diagnostics (LSP 3.17+)
-    // Since we require VS Code 1.100.0+, we can assume pull diagnostics support
-    diagnosticsSupport = ValidationUtils.registerDiagnosticsPullSupport(
-        documents,
-        connection,
-        runtime,
-        validateTextDocument,
-    );
-
     const capabilities: LS.ServerCapabilities = {
         completionProvider: {
             resolveProvider: false,
@@ -393,7 +408,7 @@ connection.onInitialized(async () => {
     isServerReady = true;
 
     // Trigger initial diagnostics for all open documents
-    diagnosticsSupport?.requestRefresh();
+    connection.languages.diagnostics.refresh();
 });
 
 connection.onRenameRequest((params: LS.RenameParams, cancellationToken: LS.CancellationToken) =>
@@ -461,7 +476,7 @@ connection.onRequest(
     EventHandlerUtils.genericRequestHandler((params: ModuleLibraryUpdatedParams) => {
         ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
         LibraryUtils.clearCache();
-        diagnosticsSupport?.requestRefresh();
+        connection.languages.diagnostics.refresh();
     }),
 );
 
@@ -472,7 +487,7 @@ connection.onRequest(
         const symbolMaps: ReadonlyMap<string, LibraryJson> = new Map(params.librarySymbols);
         ExternalLibraryUtils.addLibaries(symbolMaps);
         LibraryUtils.clearCache();
-        diagnosticsSupport?.requestRefresh();
+        connection.languages.diagnostics.refresh();
     }),
 );
 
@@ -481,7 +496,7 @@ connection.onRequest(
     EventHandlerUtils.genericRequestHandler((params: RemoveLibrarySymbolsParams) => {
         ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
         LibraryUtils.clearCache();
-        diagnosticsSupport?.requestRefresh();
+        connection.languages.diagnostics.refresh();
     }),
 );
 
@@ -576,7 +591,7 @@ connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellati
 // Configuration change handler
 connection.onDidChangeConfiguration(() => {
     // Refresh diagnostics when configuration changes
-    diagnosticsSupport?.requestRefresh();
+    connection.languages.diagnostics.refresh();
 });
 
 // Make the text document manager listen on the connection
