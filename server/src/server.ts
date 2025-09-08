@@ -38,9 +38,9 @@ const connection: LS.Connection = LS.createConnection();
 
 process.on("unhandledRejection", (e: unknown) => {
     if (e instanceof Error) {
-        connection.console.error(`Unhandled exception: ${ErrorUtils.formatError(e)}`);
+        connection?.console?.error(`Unhandled exception: ${ErrorUtils.formatError(e)}`);
     } else {
-        connection.console.error(`Unhandled exception (non-Error): ${String(e)}`);
+        connection?.console?.error(`Unhandled exception (non-Error): ${String(e)}`);
     }
 });
 
@@ -65,86 +65,8 @@ const runtime: EventHandlerUtils.RuntimeEnvironment = {
 
 let isServerReady: boolean = false;
 
-// Validator function for diagnostics support
-async function validateTextDocument(
-    textDocument: TextDocument,
-    cancellationToken?: LS.CancellationToken,
-): Promise<LS.Diagnostic[]> {
-    // Don't validate until server is fully initialized
-    if (!isServerReady) {
-        return [];
-    }
-
-    const startTime: number = Date.now();
-    runtime.console.log(`[Diagnostics] Start ${textDocument.uri}#${textDocument.version}`);
-
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        textDocument.uri,
-        "validateTextDocument",
-    );
-
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
-
-    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
-        localizedLibrary,
-        traceManager,
-    );
-
-    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
-        localizedLibrary,
-        traceManager,
-        SettingsUtils.createCancellationToken(cancellationToken),
-    );
-
-    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
-        textDocument,
-        analysisSettings,
-        validationSettings,
-    );
-
-    const endTime: number = Date.now();
-    const processingTime: number = endTime - startTime;
-
-    const completeMessage: string = `[Diagnostics] ${
-        validationSettings.cancellationToken?.isCancelled() ? "Cancelled" : "Completed"
-    } ${textDocument.uri}#${textDocument.version}, time spent: ${processingTime}ms`;
-
-    runtime.console.log(completeMessage);
-
-    if (PQP.ResultUtils.isError(result)) {
-        ErrorUtils.handleError(connection, result.error, "validateTextDocument", traceManager);
-
-        return [];
-    }
-
-    return result.value?.diagnostics ?? [];
-}
-
-connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
-    EventHandlerUtils.runSafeAsync(
-        runtime,
-        async () => {
-            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-            if (document === undefined) {
-                return {
-                    kind: LS.DocumentDiagnosticReportKind.Full,
-                    items: [],
-                };
-            }
-
-            const diagnostics: LS.Diagnostic[] = await validateTextDocument(document, cancellationToken);
-
-            return {
-                kind: LS.DocumentDiagnosticReportKind.Full,
-                items: diagnostics,
-            };
-        },
-        { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
-        `Error while computing diagnostics for ${params.textDocument.uri}`,
-        cancellationToken,
-    ),
-);
+// Track active diagnostic operations for cancellation
+const activeDiagnosticOperations: Map<string, PQP.ICancellationToken> = new Map<string, PQP.ICancellationToken>();
 
 connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
@@ -228,12 +150,21 @@ connection.onDidChangeConfiguration(async () => {
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // Cancel any active diagnostic operation for this document
+    cancelActiveDiagnostics(event.document.uri, "Document closed");
+
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
         uri: event.document.uri,
         version: event.document.version,
         diagnostics: [],
     });
+});
+
+documents.onDidChangeContent((event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // Cancel any active diagnostic operation when document changes
+    // This will allow fresh diagnostics to start immediately
+    cancelActiveDiagnostics(event.document.uri, "Document content changed");
 });
 
 connection.onFoldingRanges((params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) =>
@@ -588,11 +519,47 @@ connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellati
     ),
 );
 
-// Configuration change handler
-connection.onDidChangeConfiguration(() => {
-    // Refresh diagnostics when configuration changes
-    connection.languages.diagnostics.refresh();
-});
+connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return {
+                    kind: LS.DocumentDiagnosticReportKind.Full,
+                    items: [],
+                };
+            }
+
+            // Cancel any existing diagnostic operation for this document
+            cancelActiveDiagnostics(params.textDocument.uri, "New diagnostic request");
+
+            // Create PQP cancellation token that forwards from VS Code's token
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            activeDiagnosticOperations.set(params.textDocument.uri, pqpCancellationToken);
+
+            try {
+                const diagnostics: LS.Diagnostic[] = await validateTextDocument(document, pqpCancellationToken);
+
+                // Clean up successful operation
+                activeDiagnosticOperations.delete(params.textDocument.uri);
+
+                return {
+                    kind: LS.DocumentDiagnosticReportKind.Full,
+                    items: diagnostics,
+                };
+            } finally {
+                activeDiagnosticOperations.delete(params.textDocument.uri);
+            }
+        },
+        { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
+        `Error while computing diagnostics for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -605,4 +572,69 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
     const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
 
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
+}
+
+function cancelActiveDiagnostics(uri: string, reason: string): void {
+    const activeOperation: PQP.ICancellationToken | undefined = activeDiagnosticOperations.get(uri);
+
+    if (activeOperation) {
+        runtime.console.log(`[Diagnostics] Cancelling active operation for ${uri}: ${reason}`);
+        activeOperation.cancel(reason);
+        activeDiagnosticOperations.delete(uri);
+    }
+}
+
+// Validator function for diagnostics support
+async function validateTextDocument(
+    textDocument: TextDocument,
+    cancellationToken?: PQP.ICancellationToken,
+): Promise<LS.Diagnostic[]> {
+    // Don't validate until server is fully initialized
+    if (!isServerReady) {
+        return [];
+    }
+
+    const startTime: number = Date.now();
+    runtime.console.log(`[Diagnostics] Start ${textDocument.uri}#${textDocument.version}`);
+
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+        textDocument.uri,
+        "validateTextDocument",
+    );
+
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
+
+    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
+        localizedLibrary,
+        traceManager,
+    );
+
+    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
+        localizedLibrary,
+        traceManager,
+        cancellationToken,
+    );
+
+    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
+        textDocument,
+        analysisSettings,
+        validationSettings,
+    );
+
+    const endTime: number = Date.now();
+    const processingTime: number = endTime - startTime;
+
+    const completeMessage: string = `[Diagnostics] ${
+        validationSettings.cancellationToken?.isCancelled() ? "Cancelled" : "Completed"
+    } ${textDocument.uri}#${textDocument.version}, time spent: ${processingTime}ms`;
+
+    runtime.console.log(completeMessage);
+
+    if (PQP.ResultUtils.isError(result)) {
+        ErrorUtils.handleError(connection, result.error, "validateTextDocument", traceManager);
+
+        return [];
+    }
+
+    return result.value?.diagnostics ?? [];
 }
