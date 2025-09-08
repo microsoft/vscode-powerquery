@@ -127,6 +127,7 @@ function deriveMode(value: string | undefined): "Power Query" | "SDK" {
         case "Power Query":
             return value;
 
+        case undefined:
         default:
             return "Power Query";
     }

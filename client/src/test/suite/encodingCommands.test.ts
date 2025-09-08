@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import assert from "assert";
 import * as vscode from "vscode";
-import { CommandConstant } from "../../constants";
+import assert from "assert";
 import { expect } from "chai";
 
 import * as TestUtils from "./testUtils";
+import { CommandConstant } from "../../constants";
 
 // TODO: We could add command unit tests that use mocks to avoid UI based tests.
 suite("Encode/Decode Commands", () => {

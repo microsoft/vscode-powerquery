@@ -17,9 +17,7 @@ const defaultLibrary: PQLS.Library.ILibrary = LibraryUtils.createLibrary(
 
 class NoOpCancellationToken implements PQP.ICancellationToken {
     isCancelled: () => boolean = () => false;
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     throwIfCancelled: () => void = () => {};
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     cancel: () => void = () => {};
 }
 
