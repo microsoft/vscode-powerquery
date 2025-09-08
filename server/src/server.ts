@@ -72,48 +72,54 @@ const validateTextDocument: ValidationUtils.Validator = async (
     textDocument: TextDocument,
     cancellationToken?: LS.CancellationToken,
 ): Promise<LS.Diagnostic[]> => {
-    try {
-        // Don't validate until server is fully initialized
-        if (!isServerReady) {
-            return [];
-        }
+    // Don't validate until server is fully initialized
+    if (!isServerReady) {
+        return [];
+    }
 
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            textDocument.uri,
-            "validateTextDocument",
-        );
+    const startTime: number = Date.now();
+    runtime.console.log(`[Diagnostics] Start ${textDocument.uri}#${textDocument.version}`);
 
-        const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
+    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+        textDocument.uri,
+        "validateTextDocument",
+    );
 
-        const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
-            localizedLibrary,
-            traceManager,
-        );
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
 
-        const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
-            localizedLibrary,
-            traceManager,
-            SettingsUtils.createCancellationToken(cancellationToken),
-        );
+    const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
+        localizedLibrary,
+        traceManager,
+    );
 
-        const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
-            textDocument,
-            analysisSettings,
-            validationSettings,
-        );
+    const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
+        localizedLibrary,
+        traceManager,
+        SettingsUtils.createCancellationToken(cancellationToken),
+    );
 
-        if (PQP.ResultUtils.isError(result)) {
-            ErrorUtils.handleError(connection, result.error, "getDocumentDiagnostics", traceManager);
+    const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
+        textDocument,
+        analysisSettings,
+        validationSettings,
+    );
 
-            return [];
-        }
+    const endTime: number = Date.now();
+    const processingTime: number = endTime - startTime;
 
-        return result.value?.diagnostics ?? [];
-    } catch (error) {
-        runtime.console.error(`Error while validating document ${textDocument.uri}: ${String(error)}`);
+    const completeMessage: string = `[Diagnostics] ${
+        validationSettings.cancellationToken?.isCancelled() ? "Cancelled" : "Completed"
+    } ${textDocument.uri}#${textDocument.version}, time spent: ${processingTime}ms`;
+
+    runtime.console.log(completeMessage);
+
+    if (PQP.ResultUtils.isError(result)) {
+        ErrorUtils.handleError(connection, result.error, "validateTextDocument", traceManager);
 
         return [];
     }
+
+    return result.value?.diagnostics ?? [];
 };
 
 connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
@@ -292,8 +298,7 @@ const emptyHover: LS.Hover = {
     contents: [],
 };
 
-// eslint-disable-next-line require-await
-connection.onHover(async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+connection.onHover((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
         runtime,
         async () => {
