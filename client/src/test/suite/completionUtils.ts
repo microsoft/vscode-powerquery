@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import assert from "assert";
-import * as vscode from "vscode";
-
 import * as TestUtils from "./testUtils";
+import * as vscode from "vscode";
+import assert from "assert";
+
 import { Commands } from "./testUtils";
 
 export enum VertificationType {

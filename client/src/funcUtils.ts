@@ -16,7 +16,7 @@ export function debounce<This, Parameters extends unknown[]>(
 
     function startTimer(this: This, ...args: Parameters): void {
         _args = args;
-        // eslint-disable-next-line no-invalid-this, @typescript-eslint/no-this-alias
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         _this = this;
         clearTimeout(triggerId);
         triggerId = setTimeout(execute, timeout);
@@ -40,22 +40,19 @@ export function partitionFn<This, Parameters extends unknown[], ReturnType>(
     >();
 
     return function (this: This, ...args: Parameters): ReturnType {
-        // eslint-disable-next-line no-invalid-this
         const key: unknown = keyGenerator.apply(this, args);
 
         // Attempt to reuse a pre-generated function
         const fn: ((this: This, ...args: Parameters) => ReturnType) | undefined = cache.get(key);
 
         if (fn) {
-            // eslint-disable-next-line no-invalid-this
             return fn.apply(this, args);
         } else {
             // Otherwise, make a new one and cache it
-            // eslint-disable-next-line no-invalid-this
+
             const fn: (this: This, ...args: Parameters) => ReturnType = fnGenerator.apply(this, args);
             cache.set(key, fn);
 
-            // eslint-disable-next-line no-invalid-this
             return fn.apply(this, args);
         }
     };

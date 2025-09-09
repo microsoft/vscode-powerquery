@@ -15,8 +15,8 @@ jobs:
                   node-version-file: "package.json"
             - run: node -v
             - run: npm ci
-            # temporarily disable audit
-            # - run: npm run audit
+            - run: npm run audit
+            - run: npm run lint
             - run: npm run build
             - run: npm run test:server
             - run: npm run vsix
