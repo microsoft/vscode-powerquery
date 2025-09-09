@@ -43,17 +43,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     };
 
     // Options to control the language client
+    const outputChannel: vscode.LogOutputChannel = vscode.window.createOutputChannel("Power Query", { log: true });
+
     const clientOptions: LC.LanguageClientOptions = {
         // Register the server for plain text documents
         documentSelector: [
             { scheme: "file", language: "powerquery" },
             { scheme: "untitled", language: "powerquery" },
         ],
-        outputChannel: vscode.window.createOutputChannel("Power Query"),
-        synchronize: {
-            // Synchronize the setting section 'powerquery' to the server
-            configurationSection: "powerquery",
-        },
+        outputChannel,
     };
 
     // Create the language client and start the client.

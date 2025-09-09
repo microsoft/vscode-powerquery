@@ -1,6 +1,6 @@
 {
     "name": "vscode-powerquery",
-    "version": "0.1.63",
+    "version": "0.1.64",
     "displayName": "Power Query / M Language",
     "description": "Language service for the Power Query / M formula language",
     "author": "Microsoft Corporation",

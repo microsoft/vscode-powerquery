@@ -34,74 +34,115 @@ interface RemoveLibrarySymbolsParams {
 }
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
-const connection: LS.Connection = LS.createConnection(LS.ProposedFeatures.all);
-const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
+const connection: LS.Connection = LS.createConnection();
 
-connection.onCompletion(
-    async (
-        params: LS.TextDocumentPositionParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.CompletionItem[]> => {
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-        if (document === undefined) {
-            return [];
-        }
-
-        const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onCompletion",
-            params.position,
-        );
-
-        const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-        const result: PQP.Result<PQLS.Inspection.AutocompleteItem[] | undefined, PQP.CommonError.CommonError> =
-            await analysis.getAutocompleteItems(params.position, pqpCancellationToken);
-
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? [];
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
-
-            return [];
-        }
-    },
-);
-
-connection.onDefinition(async (params: LS.DefinitionParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-    if (document === undefined) {
-        return undefined;
-    }
-
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        params.textDocument.uri,
-        "onDefinition",
-        params.position,
-    );
-
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-    const result: PQP.Result<LS.Location[] | undefined, PQP.CommonError.CommonError> = await analysis.getDefinition(
-        params.position,
-        pqpCancellationToken,
-    );
-
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ?? [];
+process.on("unhandledRejection", (e: unknown) => {
+    if (e instanceof Error) {
+        connection?.console?.error(`Unhandled exception: ${ErrorUtils.formatError(e)}`);
     } else {
-        ErrorUtils.handleError(connection, result.error, "onComplection", traceManager);
-
-        return [];
+        connection?.console?.error(`Unhandled exception (non-Error): ${String(e)}`);
     }
 });
+
+const documents: LS.TextDocuments<TextDocument> = new LS.TextDocuments(TextDocument);
+
+// Create runtime environment for better cancellation handling
+const runtime: EventHandlerUtils.RuntimeEnvironment = {
+    timer: {
+        setImmediate(callback: (...args: unknown[]) => void, ...args: unknown[]): LS.Disposable {
+            const handle: NodeJS.Timeout = setTimeout(callback, 0, ...args);
+
+            return { dispose: () => clearTimeout(handle) };
+        },
+        setTimeout(callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]): LS.Disposable {
+            const handle: NodeJS.Timeout = setTimeout(callback, ms, ...args);
+
+            return { dispose: () => clearTimeout(handle) };
+        },
+    },
+    console: connection.console,
+};
+
+let isServerReady: boolean = false;
+
+// Track active diagnostic operations for cancellation
+const activeDiagnosticOperations: Map<string, PQP.ICancellationToken> = new Map<string, PQP.ICancellationToken>();
+
+connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return [];
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onCompletion",
+                params.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const result: PQP.Result<PQLS.Inspection.AutocompleteItem[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getAutocompleteItems(params.position, pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onCompletion", traceManager);
+
+                return [];
+            }
+        },
+        [],
+        `Error while computing completion items for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
+
+connection.onDefinition((params: LS.DefinitionParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return undefined;
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onDefinition",
+                params.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const result: PQP.Result<LS.Location[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getDefinition(params.position, pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onDefinition", traceManager);
+
+                return [];
+            }
+        },
+        [],
+        `Error while computing definition for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
@@ -109,6 +150,9 @@ connection.onDidChangeConfiguration(async () => {
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // Cancel any active diagnostic operation for this document
+    cancelActiveDiagnostics(event.document.uri, "onDidClose");
+
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
         uri: event.document.uri,
@@ -117,39 +161,101 @@ documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => 
     });
 });
 
-connection.onFoldingRanges(async (params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-    if (document === undefined) {
-        return [];
-    }
-
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onFoldingRanges");
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-    const result: PQP.Result<LS.FoldingRange[] | undefined, PQP.CommonError.CommonError> =
-        await analysis.getFoldingRanges(pqpCancellationToken);
-
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ?? [];
-    } else {
-        ErrorUtils.handleError(connection, result.error, "onFoldingRanges", traceManager);
-
-        return [];
-    }
+documents.onDidChangeContent((event: LS.TextDocumentChangeEvent<TextDocument>) => {
+    // Cancel any active diagnostic operation when document changes
+    // This will allow fresh diagnostics to start immediately
+    cancelActiveDiagnostics(event.document.uri, "onDidChangeContent");
 });
 
-connection.onDocumentSymbol(documentSymbols);
+connection.onFoldingRanges((params: LS.FoldingRangeParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return [];
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                document.uri,
+                "onFoldingRanges",
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const result: PQP.Result<LS.FoldingRange[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getFoldingRanges(pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onFoldingRanges", traceManager);
+
+                return [];
+            }
+        },
+        [],
+        `Error while computing folding ranges for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
+
+connection.onDocumentSymbol((params: LS.DocumentSymbolParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return [];
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onDocumentSymbol",
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const triedParseState: PQP.Result<PQP.Parser.ParseState | undefined, PQP.CommonError.CommonError> =
+                await analysis.getParseState();
+
+            if (PQP.ResultUtils.isError(triedParseState)) {
+                ErrorUtils.handleError(connection, triedParseState.error, "onDocumentSymbol", traceManager);
+
+                return [];
+            }
+
+            if (triedParseState.value === undefined) {
+                return [];
+            }
+
+            return PQLS.getDocumentSymbols(
+                triedParseState.value.contextState.nodeIdMapCollection,
+                pqpCancellationToken,
+            );
+        },
+        [],
+        `Error while computing document symbols for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 const emptyHover: LS.Hover = {
     range: undefined,
     contents: [],
 };
 
-// eslint-disable-next-line require-await
-connection.onHover(async (params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+connection.onHover((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
+        runtime,
         async () => {
             const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
@@ -228,33 +334,50 @@ connection.onInitialized(async () => {
     }
 
     await SettingsUtils.initializeServerSettings(connection);
+
+    // Mark server as ready after full initialization (including configuration loading)
+    isServerReady = true;
+
+    // Trigger initial diagnostics for all open documents
+    connection.languages.diagnostics.refresh();
 });
 
-connection.onRenameRequest(async (params: LS.RenameParams, cancellationToken: LS.CancellationToken) => {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
+connection.onRenameRequest((params: LS.RenameParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri.toString());
 
-    if (document === undefined) {
-        return undefined;
-    }
+            if (document === undefined) {
+                return undefined;
+            }
 
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(document.uri, "onRenameRequest");
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-    const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await analysis.getRenameEdits(
-        params.position,
-        params.newName,
-        pqpCancellationToken,
-    );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                document.uri,
+                "onRenameRequest",
+            );
 
-    if (PQP.ResultUtils.isOk(result)) {
-        return result.value ? { changes: { [document.uri]: result.value } } : undefined;
-    } else {
-        ErrorUtils.handleError(connection, result.error, "onRenameRequest", traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-        return undefined;
-    }
-});
+            const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getRenameEdits(params.position, params.newName, pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ? { changes: { [document.uri]: result.value } } : undefined;
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onRenameRequest", traceManager);
+
+                return undefined;
+            }
+        },
+        undefined,
+        `Error while computing rename edits for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 // connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
 //     const document: TextDocument | undefined = documents.get(params.textDocumentUri);
@@ -308,105 +431,136 @@ connection.onRequest(
     }),
 );
 
-connection.onSignatureHelp(
-    async (
-        params: LS.TextDocumentPositionParams,
-        cancellationToken: LS.CancellationToken,
-    ): Promise<LS.SignatureHelp> => {
-        const emptySignatureHelp: LS.SignatureHelp = {
+connection.onSignatureHelp((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const emptySignatureHelp: LS.SignatureHelp = {
+                signatures: [],
+                activeParameter: undefined,
+                activeSignature: 0,
+            };
+
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+
+            if (document === undefined) {
+                return emptySignatureHelp;
+            }
+
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onSignatureHelp",
+                params.position,
+            );
+
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+
+            const result: PQP.Result<LS.SignatureHelp | undefined, PQP.CommonError.CommonError> =
+                await analysis.getSignatureHelp(params.position, pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? emptySignatureHelp;
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onSignatureHelp", traceManager);
+
+                return emptySignatureHelp;
+            }
+        },
+        {
             signatures: [],
             activeParameter: undefined,
             activeSignature: 0,
-        };
-
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
-
-        if (document === undefined) {
-            return emptySignatureHelp;
-        }
-
-        const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onSignatureHelp",
-            params.position,
-        );
-
-        const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-        const result: PQP.Result<LS.SignatureHelp | undefined, PQP.CommonError.CommonError> =
-            await analysis.getSignatureHelp(params.position, pqpCancellationToken);
-
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? emptySignatureHelp;
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onSignatureHelp", traceManager);
-
-            return emptySignatureHelp;
-        }
-    },
+        },
+        `Error while computing signature help for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
-connection.onDocumentFormatting(
-    async (params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken): Promise<LS.TextEdit[]> => {
-        const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-        if (document === undefined) {
-            return [];
-        }
+            if (document === undefined) {
+                return [];
+            }
 
-        const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-            params.textDocument.uri,
-            "onDocumentFormatting",
-            undefined,
-        );
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onDocumentFormatting",
+                undefined,
+            );
 
-        const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
-            document,
-            {
-                ...PQP.DefaultSettings,
-                ...PQF.DefaultSettings,
-                cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
-                traceManager,
-            },
-        );
+            const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
+                document,
+                {
+                    ...PQP.DefaultSettings,
+                    ...PQF.DefaultSettings,
+                    cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
+                    traceManager,
+                },
+            );
 
-        if (PQP.ResultUtils.isOk(result)) {
-            return result.value ?? [];
-        } else {
-            ErrorUtils.handleError(connection, result.error, "onDocumentFormatting", traceManager);
+            if (PQP.ResultUtils.isOk(result)) {
+                return result.value ?? [];
+            } else {
+                ErrorUtils.handleError(connection, result.error, "onDocumentFormatting", traceManager);
 
-            return [];
-        }
-    },
+                return [];
+            }
+        },
+        [],
+        `Error while formatting document ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
-connection.languages.diagnostics.on(
-    // eslint-disable-next-line require-await
-    async (params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
-        EventHandlerUtils.runSafeAsync(
-            async () => {
-                const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+// We use the VS Code Pull diagnostics model.
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_pullDiagnostics
+// Diagnostics requests aren't cancelled when the document changes. VS Code waits for the original request to complete
+// and then fires a new request. Therefore, we maintain our own map of active diagnostic operations so we can cancel
+// them when a document changes or is closed.
+connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync(
+        runtime,
+        async () => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-                if (document === undefined) {
-                    return {
-                        kind: LS.DocumentDiagnosticReportKind.Full,
-                        items: [],
-                    };
-                }
+            if (document === undefined) {
+                return {
+                    kind: LS.DocumentDiagnosticReportKind.Full,
+                    items: [],
+                };
+            }
 
-                const diagnostics: LS.Diagnostic[] = await getDocumentDiagnostics(document, cancellationToken);
+            // Cancel any existing diagnostic operation for this document
+            cancelActiveDiagnostics(params.textDocument.uri, "New diagnostic request");
+
+            // Create PQP cancellation token that forwards from VS Code's token
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
+
+            activeDiagnosticOperations.set(params.textDocument.uri, pqpCancellationToken);
+
+            try {
+                const diagnostics: LS.Diagnostic[] = await validateTextDocument(document, pqpCancellationToken);
 
                 return {
                     kind: LS.DocumentDiagnosticReportKind.Full,
                     items: diagnostics,
                 };
-            },
-            { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
-            `Error while computing diagnostics for ${params.textDocument.uri}`,
-            cancellationToken,
-        ),
+            } finally {
+                activeDiagnosticOperations.delete(params.textDocument.uri);
+            }
+        },
+        { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
+        `Error while computing diagnostics for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
 );
 
 // Make the text document manager listen on the connection
@@ -422,57 +576,35 @@ function createAnalysis(document: TextDocument, traceManager: PQP.Trace.TraceMan
     return PQLS.AnalysisUtils.analysis(document, SettingsUtils.createAnalysisSettings(localizedLibrary, traceManager));
 }
 
-async function documentSymbols(
-    params: LS.DocumentSymbolParams,
-    cancellationToken: LS.CancellationToken,
-): Promise<LS.DocumentSymbol[] | undefined> {
-    const document: TextDocument | undefined = documents.get(params.textDocument.uri);
+function cancelActiveDiagnostics(uri: string, reason: string): void {
+    const activeOperation: PQP.ICancellationToken | undefined = activeDiagnosticOperations.get(uri);
 
-    if (document === undefined) {
-        return undefined;
-    }
-
-    const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(cancellationToken);
-
-    const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        params.textDocument.uri,
-        "onDocumentSymbol",
-    );
-
-    const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
-
-    const triedParseState: PQP.Result<PQP.Parser.ParseState | undefined, PQP.CommonError.CommonError> =
-        await analysis.getParseState();
-
-    if (PQP.ResultUtils.isError(triedParseState)) {
-        ErrorUtils.handleError(connection, triedParseState.error, "onDocumentSymbol", traceManager);
-
-        return undefined;
-    }
-
-    if (triedParseState.value === undefined) {
-        return undefined;
-    }
-
-    try {
-        return PQLS.getDocumentSymbols(triedParseState.value.contextState.nodeIdMapCollection, pqpCancellationToken);
-    } catch (error: unknown) {
-        ErrorUtils.handleError(connection, error, "onDocumentSymbol", traceManager);
-
-        return undefined;
+    if (activeOperation) {
+        runtime.console.log(`[Diagnostics] Cancelling active operation for ${uri}: ${reason}`);
+        activeOperation.cancel(reason);
+        activeDiagnosticOperations.delete(uri);
     }
 }
 
-async function getDocumentDiagnostics(
-    document: TextDocument,
-    cancellationToken: LS.CancellationToken,
+// Validator function for diagnostics support
+async function validateTextDocument(
+    textDocument: TextDocument,
+    cancellationToken?: PQP.ICancellationToken,
 ): Promise<LS.Diagnostic[]> {
+    // Don't validate until server is fully initialized
+    if (!isServerReady) {
+        return [];
+    }
+
+    const startTime: number = Date.now();
+    runtime.console.log(`[Diagnostics] Start ${textDocument.uri}#${textDocument.version}`);
+
     const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
-        document.uri,
-        "getDocumentDiagnostics",
+        textDocument.uri,
+        "validateTextDocument",
     );
 
-    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(document.uri);
+    const localizedLibrary: PQLS.Library.ILibrary = SettingsUtils.getLibrary(textDocument.uri);
 
     const analysisSettings: PQLS.AnalysisSettings = SettingsUtils.createAnalysisSettings(
         localizedLibrary,
@@ -482,20 +614,29 @@ async function getDocumentDiagnostics(
     const validationSettings: PQLS.ValidationSettings = SettingsUtils.createValidationSettings(
         localizedLibrary,
         traceManager,
-        SettingsUtils.createCancellationToken(cancellationToken),
+        cancellationToken,
     );
 
     const result: PQP.Result<PQLS.ValidateOk | undefined, PQP.CommonError.CommonError> = await PQLS.validate(
-        document,
+        textDocument,
         analysisSettings,
         validationSettings,
     );
 
-    if (PQP.ResultUtils.isOk(result) && result.value) {
-        return result.value.diagnostics;
-    } else {
-        ErrorUtils.handleError(connection, result, "getDocumentDiagnostics", traceManager);
+    const endTime: number = Date.now();
+    const processingTime: number = endTime - startTime;
+
+    const completeMessage: string = `[Diagnostics] ${
+        validationSettings.cancellationToken?.isCancelled() ? "Cancelled" : "Completed"
+    } ${textDocument.uri}#${textDocument.version}, time spent: ${processingTime}ms`;
+
+    runtime.console.log(completeMessage);
+
+    if (PQP.ResultUtils.isError(result)) {
+        ErrorUtils.handleError(connection, result.error, "validateTextDocument", traceManager);
 
         return [];
     }
+
+    return result.value?.diagnostics ?? [];
 }
