@@ -16,6 +16,7 @@ jobs:
             - run: node -v
             - run: npm ci
             - run: npm run audit
+            - run: npm run lint
             - run: npm run build
             - run: npm run test:server
             - run: npm run vsix
