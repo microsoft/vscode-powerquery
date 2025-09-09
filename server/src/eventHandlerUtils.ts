@@ -7,30 +7,17 @@ import {
     ErrorCodes,
     GenericRequestHandler,
     LSPErrorCodes,
+    RemoteConsole,
     ResponseError,
 } from "vscode-languageserver/node";
 
-interface RuntimeEnvironment {
+export interface RuntimeEnvironment {
     readonly timer: {
         readonly setImmediate: (callback: (...args: unknown[]) => void, ...args: unknown[]) => Disposable;
         readonly setTimeout: (callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]) => Disposable;
     };
+    readonly console: RemoteConsole;
 }
-
-const environment: RuntimeEnvironment = {
-    timer: {
-        setImmediate(callback: (...args: unknown[]) => void, ...args: unknown[]): Disposable {
-            const handle: NodeJS.Timeout = setTimeout(callback, 0, ...args);
-
-            return { dispose: () => clearTimeout(handle) };
-        },
-        setTimeout(callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]): Disposable {
-            const handle: NodeJS.Timeout = setTimeout(callback, ms, ...args);
-
-            return { dispose: () => clearTimeout(handle) };
-        },
-    },
-};
 
 export function genericRequestHandler<T, R>(func: (params: T) => R): GenericRequestHandler<R, unknown> {
     const handler: GenericRequestHandler<R, unknown> = (params: T): R | ResponseError<unknown> => {
@@ -49,13 +36,14 @@ export function genericRequestHandler<T, R>(func: (params: T) => R): GenericRequ
 }
 
 export function runSafeAsync<T, E>(
+    runtime: RuntimeEnvironment,
     func: () => Thenable<T>,
     errorVal: T,
     errorMessage: string,
     token: CancellationToken,
 ): Thenable<T | ResponseError<E>> {
     return new Promise<T | ResponseError<E>>((resolve: (value: T | ResponseError<E>) => void) => {
-        environment.timer.setImmediate(() => {
+        runtime.timer.setImmediate(() => {
             if (token.isCancellationRequested) {
                 resolve(cancelValue());
 
@@ -72,8 +60,7 @@ export function runSafeAsync<T, E>(
                     }
                 },
                 (e: Error) => {
-                    // TODO: Should we be passing through tracemanager?
-                    console.error(formatError(errorMessage, e));
+                    runtime.console.error(formatError(errorMessage, e));
                     resolve(errorVal);
                 },
             );
