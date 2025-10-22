@@ -27,7 +27,7 @@
         ["\"", "\""],
         ["'", "'"]
     ],
-    // If you change this pattern also change it in PQO
+    // If you change this pattern also change it in PowerQuery\Web's MLanguage.ts
     // (built-in identifier)|(quoted identifier)|(each record field)|(number.float)|(number.hex)|(number)|(identifier)
     "wordPattern": "(#\\w+)|(#\".+?\")|(_?\\[\\w+\\])|(-?\\d*\\.\\d+(?:[eE][\\-+]?\\d+)?)|(-?0[xX][0-9a-fA-F]+)|(-?\\d+(?:[eE][\\-+]?\\d+)?)|([^\\[\\]\\`\\~\\!\\@\\%\\^\\&\\*\\(\\)\\-\\=\\+\\{\\}\\\\\\|\\;\\:\\'\\\"\\,\\<\\>\\/\\?\\s]+)"
 }
