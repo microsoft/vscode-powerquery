@@ -1,4 +1,6 @@
 name: Gated pull request
+permissions:
+  contents: read
 on:
   workflow_dispatch:
   pull_request:
