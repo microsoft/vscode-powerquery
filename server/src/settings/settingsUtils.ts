@@ -9,8 +9,6 @@ import { DefaultServerSettings, ServerSettings } from "./settings";
 import { ExternalLibraryUtils, LibrarySymbolUtils, LibraryUtils, ModuleLibraryUtils } from "../library";
 import { CancellationTokenUtils } from "../cancellationToken";
 
-const LanguageId: string = "powerquery";
-
 let serverSettings: ServerSettings = DefaultServerSettings;
 let hasConfigurationCapability: boolean = false;
 
@@ -37,12 +35,14 @@ export function createCancellationToken(cancellationToken: LS.CancellationToken 
 export function createInspectionSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
+    cancellationToken?: PQP.ICancellationToken,
 ): PQLS.InspectionSettings {
     return PQLS.InspectionUtils.inspectionSettings(
         {
             ...PQP.DefaultSettings,
             locale: serverSettings.locale,
             traceManager,
+            cancellationToken,
         },
         {
             library,
@@ -55,17 +55,18 @@ export function createInspectionSettings(
 export function createValidationSettings(
     library: PQLS.Library.ILibrary,
     traceManager: PQP.Trace.TraceManager,
-    cancellationToken: PQP.ICancellationToken | undefined,
+    cancellationToken?: PQP.ICancellationToken,
 ): PQLS.ValidationSettings {
-    return PQLS.ValidationSettingsUtils.createValidationSettings(
-        createInspectionSettings(library, traceManager),
-        LanguageId,
-        {
-            cancellationToken,
-            checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
-            checkInvokeExpressions: serverSettings.checkInvokeExpressions,
-        },
+    const inspectionSettings: PQLS.InspectionSettings = createInspectionSettings(
+        library,
+        traceManager,
+        cancellationToken,
     );
+
+    return PQLS.ValidationSettingsUtils.createValidationSettings(inspectionSettings, {
+        checkForDuplicateIdentifiers: serverSettings.checkForDuplicateIdentifiers,
+        checkInvokeExpressions: serverSettings.checkInvokeExpressions,
+    });
 }
 
 export async function fetchConfigurationSettings(connection: LS.Connection): Promise<ServerSettings> {

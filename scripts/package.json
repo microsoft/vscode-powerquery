@@ -27,7 +27,7 @@
         "node": ">= 22"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "^0.11.1",
+        "@microsoft/powerquery-language-services": "^0.11.6",
         "@microsoft/powerquery-parser": "^0.18.1",
         "vscode-languageserver-textdocument": "^1.0.4"
     },
@@ -41,7 +41,7 @@
         "eslint-plugin-prettier": "^5.5.4",
         "eslint-plugin-promise": "^7.2.1",
         "eslint-plugin-security": "^3.0.1",
-        "mocha": "^10.8.2",
+        "mocha": "^11.7.5",
         "prettier": "^3.6.2",
         "ts-loader": "^9.5.4",
         "ts-node": "^10.9.2",
