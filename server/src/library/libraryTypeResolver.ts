@@ -19,15 +19,28 @@ export function wrapSmartTypeResolver(
             return type;
         }
 
-        const key: string = TypeUtils.nameOf(type, PQP.Trace.NoOpTraceManagerInstance, undefined);
+        // The external resolver may return just the return type for invocation requests
+        // (e.g. `table` instead of the full DefinedFunction signature). To look up and
+        // type-check against a smart resolver we need the full function signature, so
+        // fall back to a Value request when the invocation result isn't a DefinedFunction.
+        const functionType: PQP.Language.Type.TPowerQueryType | undefined = TypeUtils.isDefinedFunction(type)
+            ? type
+            : externalTypeResolver({
+                  kind: ExternalType.ExternalTypeRequestKind.Value,
+                  identifierLiteral: request.identifierLiteral,
+              });
+
+        if (!functionType || !TypeUtils.isDefinedFunction(functionType)) {
+            return type;
+        }
+
+        const key: string = TypeUtils.nameOf(functionType, PQP.Trace.NoOpTraceManagerInstance, undefined);
         const maybeSmartTypeResolverFn: SmartTypeResolverFn | undefined = SmartTypeResolverFns.get(key);
 
         if (maybeSmartTypeResolverFn) {
             const typeChecked: TypeUtils.CheckedInvocation = TypeUtils.typeCheckInvocation(
                 request.args,
-                // If it's an invocation type then it's assumed we
-                // already confirmed the request is about a DefinedFunction.
-                TypeUtils.assertAsDefinedFunction(type),
+                TypeUtils.assertAsDefinedFunction(functionType),
                 PQP.Trace.NoOpTraceManagerInstance,
                 undefined,
             );
