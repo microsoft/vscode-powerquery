@@ -29,8 +29,8 @@
         "vscode": "^1.100.0"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "^0.11.6",
-        "@microsoft/powerquery-parser": "^0.18.1",
+        "@microsoft/powerquery-language-services": "^0.11.9",
+        "@microsoft/powerquery-parser": "^0.18.5",
         "vscode-languageclient": "^9.0.1"
     },
     "devDependencies": {
