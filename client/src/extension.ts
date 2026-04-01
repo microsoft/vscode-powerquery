@@ -60,15 +60,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     // Start the client. This will also launch the server.
     await client.start();
 
-    // TODO: Move this to the LSP based API.
-    // context.subscriptions.push(
-    //     vscode.languages.registerDocumentSemanticTokensProvider(
-    //         { language: "powerquery" },
-    //         Subscriptions.createDocumentSemanticTokensProvider(client),
-    //         Subscriptions.SemanticTokensLegend,
-    //     ),
-    // );
-
     librarySymbolClient = new LibrarySymbolClient(client);
     librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);
 
