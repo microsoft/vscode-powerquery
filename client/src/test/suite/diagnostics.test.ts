@@ -18,7 +18,7 @@ suite("Diagnostics: Simple", () => {
         await testDiagnostics(docUri, [
             {
                 message:
-                    "Expected to find a equal operator <'='>, but a not equal to operator ('<>') was found instead",
+                    "Expected to find a equal operator <'='>, but a keyword <'not'> was found instead",
                 range: new vscode.Range(0, 9, 0, 12),
                 severity: vscode.DiagnosticSeverity.Error,
             },
