@@ -282,6 +282,27 @@
                 "scopeName": "source.powerquery",
                 "path": "./syntaxes/powerquery.tmLanguage.json"
             }
+        ],
+        "semanticTokenScopes": [
+            {
+                "language": "powerquery",
+                "scopes": {
+                    "variable": ["variable.other.readwrite.powerquery"],
+                    "function": ["entity.name.function.powerquery"],
+                    "function.defaultLibrary": ["support.function.powerquery"],
+                    "parameter": ["variable.parameter.powerquery"],
+                    "property": ["variable.other.property.powerquery"],
+                    "keyword": ["keyword.control.powerquery"],
+                    "number": ["constant.numeric.powerquery"],
+                    "string": ["string.quoted.powerquery"],
+                    "comment": ["comment.powerquery"],
+                    "type": ["entity.name.type.powerquery"],
+                    "namespace": ["entity.name.namespace.powerquery"],
+                    "operator": ["keyword.operator.powerquery"],
+                    "typeParameter": ["entity.name.type.parameter.powerquery"],
+                    "modifier": ["keyword.modifier.powerquery"]
+                }
+            }
         ]
     },
     "devDependencies": {

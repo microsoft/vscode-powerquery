@@ -9,16 +9,12 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 
 import * as ErrorUtils from "./errorUtils";
 import * as EventHandlerUtils from "./eventHandlerUtils";
+import * as SemanticTokens from "./semanticTokens";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
 import { SettingsUtils } from "./settings";
 
 type LibraryJson = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
-
-// interface SemanticTokenParams {
-//     readonly textDocumentUri: string;
-//     readonly cancellationToken: LS.CancellationToken;
-// }
 
 interface ModuleLibraryUpdatedParams {
     readonly workspaceUriPath: string;
@@ -309,6 +305,10 @@ connection.onInitialize((params: LS.InitializeParams) => {
         },
         hoverProvider: true,
         renameProvider: true,
+        semanticTokensProvider: {
+            full: true,
+            legend: SemanticTokens.semanticTokensLegend,
+        },
         signatureHelpProvider: {
             triggerCharacters: ["(", ","],
         },
@@ -379,28 +379,42 @@ connection.onRenameRequest((params: LS.RenameParams, cancellationToken: LS.Cance
     ),
 );
 
-// connection.onRequest("powerquery/semanticTokens", async (params: SemanticTokenParams) => {
-//     const document: TextDocument | undefined = documents.get(params.textDocumentUri);
+connection.languages.semanticTokens.on((params: LS.SemanticTokensParams, cancellationToken: LS.CancellationToken) =>
+    EventHandlerUtils.runSafeAsync<LS.SemanticTokens, void>(
+        runtime,
+        async (): Promise<LS.SemanticTokens> => {
+            const document: TextDocument | undefined = documents.get(params.textDocument.uri);
 
-//     if (document === undefined) {
-//         return [];
-//     }
+            if (document === undefined) {
+                return { data: [] };
+            }
 
-//     const pqpCancellationToken: PQP.ICancellationToken = SettingsUtils.createCancellationToken(undefined);
-//     const traceManager: PQP.Trace.TraceManager =TraceManagerUtils.createTraceManager(document.uri, "semanticTokens");
-//     const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
+            const pqpCancellationToken: PQP.ICancellationToken =
+                SettingsUtils.createCancellationToken(cancellationToken);
 
-//     const result: PQP.Result<PQLS.PartialSemanticToken[] | undefined, PQP.CommonError.CommonError> =
-//         await analysis.getPartialSemanticTokens(pqpCancellationToken);
+            const traceManager: PQP.Trace.TraceManager = TraceManagerUtils.createTraceManager(
+                params.textDocument.uri,
+                "onSemanticTokens",
+            );
 
-//     if (PQP.ResultUtils.isOk(result)) {
-//         return result.value ?? [];
-//     } else {
-//         ErrorUtils.handleError(connection, result.error, "semanticTokens", traceManager);
+            const analysis: PQLS.Analysis = createAnalysis(document, traceManager);
 
-//         return [];
-//     }
-// });
+            const result: PQP.Result<PQLS.PartialSemanticToken[] | undefined, PQP.CommonError.CommonError> =
+                await analysis.getPartialSemanticTokens(pqpCancellationToken);
+
+            if (PQP.ResultUtils.isOk(result) && result.value) {
+                return { data: SemanticTokens.encodeSemanticTokens(result.value) };
+            } else if (PQP.ResultUtils.isError(result)) {
+                ErrorUtils.handleError(connection, result.error, "onSemanticTokens", traceManager);
+            }
+
+            return { data: [] };
+        },
+        { data: [] },
+        `Error while computing semantic tokens for ${params.textDocument.uri}`,
+        cancellationToken,
+    ),
+);
 
 connection.onRequest(
     "powerquery/moduleLibraryUpdated",
