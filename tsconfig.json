@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "declaration": true,
-        "downlevelIteration": true,
         "incremental": true,
         "lib": ["ES2023"],
         "module": "node16",

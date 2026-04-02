@@ -35,7 +35,7 @@
             "type": "node",
             "request": "launch",
             "name": "Run server unit tests",
-            "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "cwd": "${workspaceFolder}/server",
             "args": ["--inspect", "--colors", "--timeout", "999999"],
             "internalConsoleOptions": "openOnSessionStart"
