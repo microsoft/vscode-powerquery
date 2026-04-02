@@ -1,0 +1,9 @@
+{
+    "folders": [
+        { "path": "workspaceA" },
+        { "path": "workspaceB" }
+    ],
+    "settings": {
+        "git.enabled": false
+    }
+}
