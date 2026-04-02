@@ -419,9 +419,15 @@ connection.languages.semanticTokens.on((params: LS.SemanticTokensParams, cancell
 connection.onRequest(
     "powerquery/moduleLibraryUpdated",
     EventHandlerUtils.genericRequestHandler((params: ModuleLibraryUpdatedParams) => {
+        connection.console.log(
+            `[Library] moduleLibraryUpdated: workspaceUri=${params.workspaceUriPath}, symbolCount=${params.library.length}`,
+        );
+
         ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
         LibraryUtils.clearCache();
         connection.languages.diagnostics.refresh();
+
+        connection.console.log(`[Library] Module libraries registered: ${ModuleLibraryUtils.getModuleCount()} total`);
     }),
 );
 
@@ -430,18 +436,57 @@ connection.onRequest(
     EventHandlerUtils.genericRequestHandler((params: AddLibrarySymbolsParams) => {
         // JSON-RPC doesn't support sending Maps, so we have to convert from tuple array.
         const symbolMaps: ReadonlyMap<string, LibraryJson> = new Map(params.librarySymbols);
+
+        const moduleDetails: string = Array.from(symbolMaps.entries())
+            .map(([name, symbols]: [string, LibraryJson]) => `${name}(${symbols.length})`)
+            .join(", ");
+
+        connection.console.log(`[Library] addLibrarySymbols: modules=[${moduleDetails}]`);
+
+        // Check for modules that will be overwritten
+        const existingModules: ReadonlyArray<string> = ExternalLibraryUtils.getRegisteredModuleNames();
+
+        const overwritten: string[] = Array.from(symbolMaps.keys()).filter((name: string) =>
+            existingModules.includes(name),
+        );
+
+        if (overwritten.length > 0) {
+            connection.console.warn(`[Library] Overwriting existing modules: [${overwritten.join(", ")}]`);
+        }
+
         ExternalLibraryUtils.addLibaries(symbolMaps);
         LibraryUtils.clearCache();
         connection.languages.diagnostics.refresh();
+
+        // Check for symbol name overlaps across modules
+        const overlaps: ReadonlyMap<string, ReadonlyArray<string>> = ExternalLibraryUtils.getOverlappingSymbols();
+
+        if (overlaps.size > 0) {
+            for (const [symbolName, modules] of overlaps) {
+                connection.console.warn(
+                    `[Library] Overlapping symbol '${symbolName}' registered by modules: [${modules.join(", ")}]`,
+                );
+            }
+        }
+
+        connection.console.log(
+            `[Library] External libraries registered: [${ExternalLibraryUtils.getRegisteredModuleNames().join(", ")}]`,
+        );
     }),
 );
 
 connection.onRequest(
     "powerquery/removeLibrarySymbols",
     EventHandlerUtils.genericRequestHandler((params: RemoveLibrarySymbolsParams) => {
+        connection.console.log(`[Library] removeLibrarySymbols: modules=[${params.librariesToRemove.join(", ")}]`);
+
         ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
         LibraryUtils.clearCache();
         connection.languages.diagnostics.refresh();
+
+        const remaining: ReadonlyArray<string> = ExternalLibraryUtils.getRegisteredModuleNames();
+
+        connection.console.log(`[Library] External libraries remaining: [${remaining.join(", ")}]`);
     }),
 );
 
