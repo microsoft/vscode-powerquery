@@ -1,5 +1,5 @@
 {
     "require": ["ts-node/register"],
-    "extensions": ["ts"],
-    "spec": "src/test/**/*.test.ts"
+    "extensions": ["ts", "js"],
+    "spec": ["src/test/*.test.ts", "lib/test/grammar/**/*.test.js"]
 }
