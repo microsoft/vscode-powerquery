@@ -63,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
     librarySymbolClient = new LibrarySymbolClient(client);
     librarySymbolManager = new LibrarySymbolManager(librarySymbolClient, client);
 
-    await configureSymbolDirectories();
+    await configureAllFolderSymbolDirectories();
 
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async (event: vscode.ConfigurationChangeEvent) => {
@@ -73,8 +73,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<PowerQ
             );
 
             if (event.affectsConfiguration(symbolDirs)) {
-                await configureSymbolDirectories();
+                await configureAllFolderSymbolDirectories();
             }
+        }),
+        vscode.workspace.onDidChangeWorkspaceFolders(async (event: vscode.WorkspaceFoldersChangeEvent) => {
+            await Promise.all(
+                event.removed.map((folder: vscode.WorkspaceFolder) =>
+                    librarySymbolManager.removeSymbolsForFolder(folder.uri.toString()),
+                ),
+            );
+
+            await Promise.all(
+                event.added.map((folder: vscode.WorkspaceFolder) => configureSymbolDirectoriesForFolder(folder)),
+            );
         }),
     );
 
@@ -85,18 +96,37 @@ export function deactivate(): Thenable<void> | undefined {
     return client?.stop();
 }
 
-async function configureSymbolDirectories(): Promise<void> {
-    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstant.BasePath);
+async function configureAllFolderSymbolDirectories(): Promise<void> {
+    const folders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
+
+    if (!folders || folders.length === 0) {
+        // No workspace folders — read global config
+        const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(ConfigurationConstant.BasePath);
+
+        const additionalSymbolsDirectories: string[] | undefined = config.get(
+            ConfigurationConstant.AdditionalSymbolsDirectories,
+        );
+
+        await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories ?? []);
+
+        return;
+    }
+
+    await Promise.all(folders.map((folder: vscode.WorkspaceFolder) => configureSymbolDirectoriesForFolder(folder)));
+}
+
+async function configureSymbolDirectoriesForFolder(folder: vscode.WorkspaceFolder): Promise<void> {
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(
+        ConfigurationConstant.BasePath,
+        folder.uri,
+    );
 
     const additionalSymbolsDirectories: string[] | undefined = config.get(
         ConfigurationConstant.AdditionalSymbolsDirectories,
     );
 
-    // TODO: Should we fix/remove invalid and malformed directory path values?
-    // For example, a quoted path "c:\path\to\file" will be considered invalid and reported as an error.
-    // We could modify values and write them back to the original config locations.
-
-    await librarySymbolManager.refreshSymbolDirectories(additionalSymbolsDirectories ?? []);
-
-    // TODO: Configure file system watchers to detect library file changes.
+    await librarySymbolManager.refreshSymbolDirectoriesForFolder(
+        folder.uri.toString(),
+        additionalSymbolsDirectories ?? [],
+    );
 }

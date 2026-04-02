@@ -134,7 +134,7 @@
                     "description": "Recommended always off. Enables benchmark traces to be generated for the extension."
                 },
                 "powerquery.client.additionalSymbolsDirectories": {
-                    "scope": "machine-overridable",
+                    "scope": "resource",
                     "type": "array",
                     "items": {
                         "type": "string"

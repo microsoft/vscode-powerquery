@@ -314,9 +314,9 @@ connection.onInitialize((params: LS.InitializeParams) => {
         },
         textDocumentSync: LS.TextDocumentSyncKind.Incremental,
         workspace: {
-            // TODO: Disabling until we've fully tested support for multiple workspace folders
             workspaceFolders: {
-                supported: false,
+                supported: true,
+                changeNotifications: true,
             },
         },
     };
