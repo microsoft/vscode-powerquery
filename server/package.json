@@ -28,7 +28,6 @@
         "node": ">= 22"
     },
     "dependencies": {
-        "@microsoft/powerquery-formatter": "^1.0.0",
         "vscode-languageserver": "^9.0.1",
         "vscode-languageserver-types": "^3.17.5"
     },
