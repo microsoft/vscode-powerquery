@@ -104,6 +104,20 @@ suite("LibrarySymbolManager.refreshSymbolDirectories", () => {
         assert.equal(resetModules.length, 0, "Expected empty string array");
         assert.equal(mockClient.registeredSymbols.size, 0, "Expected registered symbols to be cleared");
     });
+
+    test("Duplicate directories are deduplicated", async () => {
+        const fixturePath: string = TestUtils.getTestFixturePath();
+
+        const modules: ReadonlyArray<string> = await librarySymbolManager.refreshSymbolDirectories([
+            fixturePath,
+            fixturePath,
+        ]);
+
+        assert.equal(modules.length, 1, "Expected one module despite duplicate directories");
+        assert.equal(mockClient.registeredSymbols.size, 1, "Expected one registered symbol set");
+
+        await librarySymbolManager.refreshSymbolDirectories([]);
+    });
 });
 
 suite("LibrarySymbolManager.refreshSymbolDirectoriesForFolder", () => {

@@ -187,8 +187,8 @@ export class LibrarySymbolManager {
             return normalized;
         });
 
-        const dedupedDirectoryUris: ReadonlyArray<vscode.Uri> = Array.from(new Set(normalizedPaths)).map(
-            (p: string) => vscode.Uri.file(p),
+        const dedupedDirectoryUris: ReadonlyArray<vscode.Uri> = Array.from(new Set(normalizedPaths)).map((p: string) =>
+            vscode.Uri.file(p),
         );
 
         for (const uri of dedupedDirectoryUris) {
