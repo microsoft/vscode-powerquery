@@ -30,12 +30,12 @@ export function getRegisteredModuleNames(): ReadonlyArray<string> {
  * Key: symbol name, Value: array of module names that contain it.
  */
 export function getOverlappingSymbols(): ReadonlyMap<string, ReadonlyArray<string>> {
-    const symbolToModules: Map<string, string[]> = new Map();
+    const symbolToModules: Map<string, Set<string>> = new Map();
 
     for (const [moduleName, symbols] of externalLibraryByName) {
         for (const symbol of symbols) {
-            const modules: string[] = symbolToModules.get(symbol.name) ?? [];
-            modules.push(moduleName);
+            const modules: Set<string> = symbolToModules.get(symbol.name) ?? new Set();
+            modules.add(moduleName);
             symbolToModules.set(symbol.name, modules);
         }
     }
@@ -43,8 +43,8 @@ export function getOverlappingSymbols(): ReadonlyMap<string, ReadonlyArray<strin
     const overlaps: Map<string, ReadonlyArray<string>> = new Map();
 
     for (const [symbolName, modules] of symbolToModules) {
-        if (modules.length > 1) {
-            overlaps.set(symbolName, modules);
+        if (modules.size > 1) {
+            overlaps.set(symbolName, Array.from(modules));
         }
     }
 

@@ -112,6 +112,10 @@ async function configureAllFolderSymbolDirectories(): Promise<void> {
         return;
     }
 
+    // Clear any previously-registered global or stale folder symbols before
+    // rebuilding the current workspace-folder registrations.
+    await librarySymbolManager.removeAllSymbols();
+
     await Promise.all(folders.map((folder: vscode.WorkspaceFolder) => configureSymbolDirectoriesForFolder(folder)));
 }
 

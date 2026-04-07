@@ -316,7 +316,7 @@ connection.onInitialize((params: LS.InitializeParams) => {
         workspace: {
             workspaceFolders: {
                 supported: true,
-                changeNotifications: true,
+                changeNotifications: false,
             },
         },
     };

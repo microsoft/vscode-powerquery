@@ -258,7 +258,7 @@ describe(`ExternalLibraryUtils overlap detection`, () => {
     const symbolA: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(additionalSymbolJsonStr);
 
     afterEach(() => {
-        ExternalLibraryUtils.removeLibraries(ExternalLibraryUtils.getRegisteredModuleNames() as string[]);
+        ExternalLibraryUtils.removeLibraries(ExternalLibraryUtils.getRegisteredModuleNames());
     });
 
     it(`getRegisteredModuleNames returns all registered module names`, () => {
