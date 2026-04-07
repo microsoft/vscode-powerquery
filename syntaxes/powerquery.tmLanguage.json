@@ -243,7 +243,7 @@
       }
     },
     "Identifier": {
-      "match": "(?x:(?<![\\._\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Nd}\\p{Pc}\\p{Mn}\\p{Mc}\\p{Cf}])(@?)([_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}][_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Nd}\\p{Pc}\\p{Mn}\\p{Mc}\\p{Cf}]*(?:\\.[_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}][_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Nd}\\p{Pc}\\p{Mn}\\p{Mc}\\p{Cf}])*)\\b)",
+      "match": "(?x:(?<![\\._\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Nd}\\p{Pc}\\p{Mn}\\p{Mc}\\p{Cf}])(@?)([_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}][_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Nd}\\p{Pc}\\p{Mn}\\p{Mc}\\p{Cf}]*(?:\\.[_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}][_\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Nd}\\p{Pc}\\p{Mn}\\p{Mc}\\p{Cf}]*)*)\\b)",
       "captures": {
         "1": {
           "name": "keyword.operator.inclusiveidentifier.powerquery"
@@ -254,7 +254,7 @@
       }
     },
     "Operators": {
-      "match": "(=>)|(=)|(<>|<|>|<=|>=)|(&)|(\\+|-|\\*|\\/)|(!)|(\\?)",
+      "match": "(=>)|(=)|(<>|<=|>=|<|>)|(&)|(\\+|-|\\*|\\/)|(!)|(\\?\\?)|(\\?)",
       "captures": {
         "1": {
           "name": "keyword.operator.function.powerquery"
@@ -275,6 +275,9 @@
           "name": "keyword.operator.sectionaccess.powerquery"
         },
         "7": {
+          "name": "keyword.operator.nullcoalescing.powerquery"
+        },
+        "8": {
           "name": "keyword.operator.optional.powerquery"
         }
       }
@@ -311,21 +314,24 @@
       "contentName": "meta.recordexpression.powerquery"
     },
     "Punctuation": {
-      "match": "(,)|(\\()|(\\))|({)|(})",
+      "match": "(;)|(,)|(\\()|(\\))|({)|(})",
       "captures": {
         "1": {
-          "name": "punctuation.separator.powerquery"
+          "name": "punctuation.terminator.powerquery"
         },
         "2": {
-          "name": "punctuation.section.parens.begin.powerquery"
+          "name": "punctuation.separator.powerquery"
         },
         "3": {
-          "name": "punctuation.section.parens.end.powerquery"
+          "name": "punctuation.section.parens.begin.powerquery"
         },
         "4": {
-          "name": "punctuation.section.braces.begin.powerquery"
+          "name": "punctuation.section.parens.end.powerquery"
         },
         "5": {
+          "name": "punctuation.section.braces.begin.powerquery"
+        },
+        "6": {
           "name": "punctuation.section.braces.end.powerquery"
         }
       }

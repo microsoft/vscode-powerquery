@@ -253,3 +253,66 @@ describe(`setLibrarySymbols`, () => {
         expect(ExternalLibraryUtils.getSymbols().length).to.equal(0, "expected 0 libraries");
     });
 });
+
+describe(`ExternalLibraryUtils overlap detection`, () => {
+    const symbolA: PQLS.LibrarySymbol.LibrarySymbol[] = JSON.parse(additionalSymbolJsonStr);
+
+    afterEach(() => {
+        ExternalLibraryUtils.removeLibraries(ExternalLibraryUtils.getRegisteredModuleNames());
+    });
+
+    it(`getRegisteredModuleNames returns all registered module names`, () => {
+        ExternalLibraryUtils.addLibaries(new Map([["ModuleA", symbolA]]));
+        ExternalLibraryUtils.addLibaries(new Map([["ModuleB", symbolA]]));
+
+        const names: ReadonlyArray<string> = ExternalLibraryUtils.getRegisteredModuleNames();
+        expect(names).to.have.lengthOf(2);
+        expect(names).to.include("ModuleA");
+        expect(names).to.include("ModuleB");
+    });
+
+    it(`getOverlappingSymbols returns empty when no overlaps`, () => {
+        const uniqueSymbol: PQLS.LibrarySymbol.LibrarySymbol[] = [{ ...symbolA[0], name: "UniqueConnector.Contents" }];
+
+        ExternalLibraryUtils.addLibaries(new Map([["ModuleA", symbolA]]));
+        ExternalLibraryUtils.addLibaries(new Map([["ModuleB", uniqueSymbol]]));
+
+        const overlaps: ReadonlyMap<string, ReadonlyArray<string>> = ExternalLibraryUtils.getOverlappingSymbols();
+        expect(overlaps.size).to.equal(0);
+    });
+
+    it(`getOverlappingSymbols detects same symbol registered by different modules`, () => {
+        ExternalLibraryUtils.addLibaries(new Map([["folderA::ConnectorX", symbolA]]));
+        ExternalLibraryUtils.addLibaries(new Map([["folderB::ConnectorX", symbolA]]));
+
+        const overlaps: ReadonlyMap<string, ReadonlyArray<string>> = ExternalLibraryUtils.getOverlappingSymbols();
+        expect(overlaps.size).to.equal(1);
+
+        const modules: ReadonlyArray<string> | undefined = overlaps.get("ExtensionTest.Contents");
+        assert(modules !== undefined, "expected overlapping entry for ExtensionTest.Contents");
+        expect(modules).to.have.lengthOf(2);
+        expect(modules).to.include("folderA::ConnectorX");
+        expect(modules).to.include("folderB::ConnectorX");
+    });
+
+    it(`getOverlappingSymbols does not flag same module overwriting itself`, () => {
+        ExternalLibraryUtils.addLibaries(new Map([["ModuleA", symbolA]]));
+        // Overwrite with same key — still only one module
+        ExternalLibraryUtils.addLibaries(new Map([["ModuleA", symbolA]]));
+
+        const overlaps: ReadonlyMap<string, ReadonlyArray<string>> = ExternalLibraryUtils.getOverlappingSymbols();
+        expect(overlaps.size).to.equal(0);
+    });
+
+    it(`removeLibraries clears overlap`, () => {
+        ExternalLibraryUtils.addLibaries(new Map([["folderA::ConnectorX", symbolA]]));
+        ExternalLibraryUtils.addLibaries(new Map([["folderB::ConnectorX", symbolA]]));
+
+        expect(ExternalLibraryUtils.getOverlappingSymbols().size).to.equal(1);
+
+        ExternalLibraryUtils.removeLibraries(["folderA::ConnectorX"]);
+
+        expect(ExternalLibraryUtils.getOverlappingSymbols().size).to.equal(0);
+        expect(ExternalLibraryUtils.getRegisteredModuleNames()).to.have.lengthOf(1);
+    });
+});

@@ -1,0 +1,25 @@
+[
+    {
+        "name": "ConnectorA.Contents",
+        "documentation": null,
+        "completionItemKind": 3,
+        "functionParameters": [
+            {
+                "name": "url",
+                "type": "text",
+                "isRequired": true,
+                "isNullable": false,
+                "caption": null,
+                "description": null,
+                "sampleValues": null,
+                "allowedValues": null,
+                "defaultValue": null,
+                "fields": null,
+                "enumNames": null,
+                "enumCaptions": null
+            }
+        ],
+        "isDataSource": true,
+        "type": "any"
+    }
+]

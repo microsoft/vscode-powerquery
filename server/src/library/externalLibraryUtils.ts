@@ -21,4 +21,34 @@ export function removeLibraries(libraryNames: ReadonlyArray<string>): void {
     }
 }
 
+export function getRegisteredModuleNames(): ReadonlyArray<string> {
+    return Array.from(externalLibraryByName.keys());
+}
+
+/**
+ * Returns a map of symbol names that appear in more than one registered module.
+ * Key: symbol name, Value: array of module names that contain it.
+ */
+export function getOverlappingSymbols(): ReadonlyMap<string, ReadonlyArray<string>> {
+    const symbolToModules: Map<string, Set<string>> = new Map();
+
+    for (const [moduleName, symbols] of externalLibraryByName) {
+        for (const symbol of symbols) {
+            const modules: Set<string> = symbolToModules.get(symbol.name) ?? new Set();
+            modules.add(moduleName);
+            symbolToModules.set(symbol.name, modules);
+        }
+    }
+
+    const overlaps: Map<string, ReadonlyArray<string>> = new Map();
+
+    for (const [symbolName, modules] of symbolToModules) {
+        if (modules.size > 1) {
+            overlaps.set(symbolName, Array.from(modules));
+        }
+    }
+
+    return overlaps;
+}
+
 const externalLibraryByName: Map<string, ExternalSymbolLibrary> = new Map();
