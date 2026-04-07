@@ -177,17 +177,19 @@ export class LibrarySymbolManager {
     private async loadSymbolsFromDirectories(directories: ReadonlyArray<string>): Promise<Map<string, LibraryJson>> {
         const fileDiscoveryActions: Promise<ReadonlyArray<vscode.Uri>>[] = [];
 
-        const normalizedDirectoryUris: ReadonlyArray<vscode.Uri> = directories.map((directory: string) => {
+        const normalizedPaths: string[] = directories.map((directory: string) => {
             const normalized: string = path.normalize(directory);
 
             if (directory !== normalized) {
                 this.clientTrace?.info(`Normalized symbol file path '${directory}' => '${normalized}'`);
             }
 
-            return vscode.Uri.file(normalized);
+            return normalized;
         });
 
-        const dedupedDirectoryUris: ReadonlyArray<vscode.Uri> = Array.from(new Set(normalizedDirectoryUris));
+        const dedupedDirectoryUris: ReadonlyArray<vscode.Uri> = Array.from(new Set(normalizedPaths)).map(
+            (p: string) => vscode.Uri.file(p),
+        );
 
         for (const uri of dedupedDirectoryUris) {
             fileDiscoveryActions.push(this.getSymbolFilesFromDirectory(uri));
