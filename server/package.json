@@ -16,7 +16,7 @@
         "init": "npm install-clean",
         "build": ".\\node_modules\\.bin\\tsc",
         "watch": ".\\node_modules\\.bin\\tsc -watch",
-        "test": "mocha --no-package --reporter xunit --reporter-option output=test-results.xml",
+        "test": "mocha --no-package --reporter ./mochaReporter.js --reporter-option output=test-results.xml",
         "link:start": "npm link && npm uninstall @microsoft/powerquery-parser @microsoft/powerquery-formatter @microsoft/powerquery-language-services && git clean -xdf && npm install && npm link @microsoft/powerquery-parser @microsoft/powerquery-formatter @microsoft/powerquery-language-services",
         "link:stop": "npm unlink @microsoft/powerquery-parser @microsoft/powerquery-formatter @microsoft/powerquery-language-services && git clean -xdf && npm install && npm install @microsoft/powerquery-parser@latest @microsoft/powerquery-formatter@latest @microsoft/powerquery-language-services@latest --save-exact",
         "lint": "eslint src --ext ts",
