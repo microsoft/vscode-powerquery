@@ -56,6 +56,7 @@
         "webpack": "^5.105.1",
         "webpack-cli": "^6.0.1"
     },
+    "//": "Remove the @vscode/test-cli Mocha override once @vscode/test-cli publishes a release with Mocha 12 support.",
     "overrides": {
         "@vscode/test-cli": {
             "mocha": "^12.0.0"
