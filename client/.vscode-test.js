@@ -3,6 +3,7 @@
  
 // Guidance from https://code.visualstudio.com/api/working-with-extensions/testing-extension
 const { defineConfig } = require('@vscode/test-cli');
+const path = require('path');
  
 module.exports = defineConfig([
   {
@@ -17,6 +18,10 @@ module.exports = defineConfig([
       ui: "tdd",
       timeout: 20000,
       slow: 10000,
+      reporter: path.resolve(__dirname, "mochaReporter.js"),
+      reporterOptions: {
+        output: path.resolve(__dirname, "test-results/ui/test-results.xml"),
+      },
     }
   },
   {
@@ -31,6 +36,10 @@ module.exports = defineConfig([
       ui: "tdd",
       timeout: 20000,
       slow: 10000,
+      reporter: path.resolve(__dirname, "mochaReporter.js"),
+      reporterOptions: {
+        output: path.resolve(__dirname, "test-results/multi-root/test-results.xml"),
+      },
     }
   }
 ]);
