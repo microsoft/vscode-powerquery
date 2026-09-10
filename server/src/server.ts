@@ -560,7 +560,6 @@ connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellati
                     ...PQP.DefaultSettings,
                     ...PQF.DefaultSettings,
                     cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
-                    traceManager,
                 },
             );
 

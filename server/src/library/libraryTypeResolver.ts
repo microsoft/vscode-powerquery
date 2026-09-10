@@ -91,13 +91,19 @@ function resolveTableAddColumn(args: ReadonlyArray<Type.TPowerQueryType>): Type.
             return Type.NoneInstance;
         }
 
-        return TypeUtils.definedTable(
-            table.isNullable,
-            new PQP.OrderedMap([...table.fields.entries(), [normalizedColumnName, columnType]]),
-            table.isOpen,
-        );
+        return {
+            ...table,
+            fields: new PQP.OrderedMap([...table.fields.entries(), [normalizedColumnName, columnType]]),
+            rows: undefined,
+        };
     } else {
-        return TypeUtils.definedTable(table.isNullable, new PQP.OrderedMap([[normalizedColumnName, columnType]]), true);
+        return {
+            extendedKind: Type.ExtendedTypeKind.DefinedTable,
+            fields: new PQP.OrderedMap([[normalizedColumnName, columnType]]),
+            isNullable: table.isNullable,
+            isOpen: true,
+            kind: Type.TypeKind.Table,
+        };
     }
 }
 
