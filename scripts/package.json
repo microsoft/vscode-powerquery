@@ -27,8 +27,8 @@
         "node": ">= 22"
     },
     "dependencies": {
-        "@microsoft/powerquery-language-services": "^1.1.0",
-        "@microsoft/powerquery-parser": "^2.0.0",
+        "@microsoft/powerquery-language-services": "^1.3.0",
+        "@microsoft/powerquery-parser": "^4.0.0",
         "vscode-languageserver-textdocument": "^1.0.4"
     },
     "devDependencies": {
