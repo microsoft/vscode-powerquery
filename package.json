@@ -268,12 +268,19 @@
                 ],
                 "extensions": [
                     ".pq",
+                    ".pqpart",
                     ".pqout",
                     ".pqm",
                     ".m",
                     ".mout"
                 ],
                 "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "xml",
+                "extensions": [
+                    ".resxpart"
+                ]
             }
         ],
         "grammars": [
