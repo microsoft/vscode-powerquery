@@ -618,7 +618,7 @@
     "documentation": {
       "description": "Specifies the kind of access control.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -774,7 +774,7 @@
   {
     "name": "Action.ViewError",
     "documentation": {
-      "description": "Creates a modified error record which won't trigger a fallback when thrown by a handler defined on a view (via Action.View).",
+      "description": "Creates a modified error record which won't trigger a fallback when raised by a handler defined on a view (via Action.View).",
       "longDescription": null,
       "category": "Action"
     },
@@ -892,30 +892,6 @@
     "completionItemKind": 3,
     "isDataSource": true,
     "type": "table"
-  },
-  {
-    "name": "Adbc.DataSource",
-    "documentation": {
-      "description": "Returns a table of SQL tables and views from the ADBC data source. ",
-      "longDescription": null,
-      "category": "Accessing data"
-    },
-    "functionParameters": [],
-    "completionItemKind": 3,
-    "isDataSource": false,
-    "type": "nullable none"
-  },
-  {
-    "name": "Adbc.Query",
-    "documentation": {
-      "description": "Returns the result of running a native query on an ADBC data source.",
-      "longDescription": null,
-      "category": "Accessing data"
-    },
-    "functionParameters": [],
-    "completionItemKind": 3,
-    "isDataSource": false,
-    "type": "nullable none"
   },
   {
     "name": "AdoDotNet.DataSource",
@@ -1334,6 +1310,145 @@
     "completionItemKind": 25,
     "isDataSource": false,
     "type": "type"
+  },
+  {
+    "name": "Arrow.Document",
+    "documentation": {
+      "description": "Returns the contents of an Apache Arrow document as a table.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [
+      {
+        "name": "binary",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "Compression",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
+  },
+  {
+    "name": "Arrow.FromBinary",
+    "documentation": {
+      "description": "Returns a table from an Apache Arrow IPC stream.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [
+      {
+        "name": "binary",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
+  },
+  {
+    "name": "Arrow.ToBinary",
+    "documentation": {
+      "description": "Produces an Apache Arrow IPC stream from a table.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [
+      {
+        "name": "table",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "Compression",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
   },
   {
     "name": "AzureStorage.BlobContents",
@@ -2291,7 +2406,7 @@
   {
     "name": "Binary.ViewError",
     "documentation": {
-      "description": "Creates a modified error record which won't trigger a fallback when thrown by a handler defined on a view (via Binary.View).",
+      "description": "Creates a modified error record which won't trigger a fallback when raised by a handler defined on a view (via Binary.View).",
       "longDescription": null,
       "category": "Binary"
     },
@@ -2371,7 +2486,7 @@
     "documentation": {
       "description": "Specifies the type of binary encoding.",
       "longDescription": null,
-      "category": null
+      "category": "Binary"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -3197,7 +3312,7 @@
     "documentation": {
       "description": "Specifies how many times the item is expected to appear in the group.",
       "longDescription": null,
-      "category": null
+      "category": "Binary Formats.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -3233,7 +3348,7 @@
     "documentation": {
       "description": "Describes the type of buffering to be performed.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -3354,7 +3469,7 @@
     "documentation": {
       "description": "Specifies the byte order.",
       "longDescription": null,
-      "category": null
+      "category": "Binary Formats.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -3368,10 +3483,25 @@
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [],
+    "functionParameters": [
+      {
+        "name": "table",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "nullable none"
+    "type": "table"
   },
   {
     "name": "Cdpa.Database",
@@ -3399,6 +3529,18 @@
     "completionItemKind": 3,
     "isDataSource": true,
     "type": "any"
+  },
+  {
+    "name": "Certificate.Type",
+    "documentation": {
+      "description": "The type that represents a pkcs8 Certificate Text.",
+      "longDescription": null,
+      "category": ""
+    },
+    "functionParameters": null,
+    "completionItemKind": 25,
+    "isDataSource": false,
+    "type": "type"
   },
   {
     "name": "Character.FromNumber",
@@ -3944,7 +4086,7 @@
     "documentation": {
       "description": "Specifies the type of compression.",
       "longDescription": null,
-      "category": null
+      "category": "Binary.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -4094,9 +4236,9 @@
   {
     "name": "CsvStyle.Type",
     "documentation": {
-      "description": "Specifies the significance of quotes in Csv documents.",
+      "description": "Specifies the significance of quotes in CSV documents.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -4106,7 +4248,7 @@
   {
     "name": "Cube.AddAndExpandDimensionColumn",
     "documentation": {
-      "description": "Merges the specified dimension table into the cube’s filter context and changes the dimensional granularity of the filter context by expanding the specified set of dimension attributes.",
+      "description": "Merges the specified dimension table into the cube's filter context and changes the dimensional granularity of the filter context by expanding the specified set of dimension attributes.",
       "longDescription": null,
       "category": "Cube"
     },
@@ -8203,7 +8345,7 @@
   {
     "name": "DateTimeZone.ZoneMinutes",
     "documentation": {
-      "description": "Gets the timezone minute of the value.",
+      "description": "Gets the timezone minutes of the value.",
       "longDescription": null,
       "category": "DateTimeZone"
     },
@@ -8304,7 +8446,7 @@
     "documentation": {
       "description": "Specifies a day of week.",
       "longDescription": null,
-      "category": null
+      "category": "Date.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -8377,16 +8519,101 @@
     "type": "type"
   },
   {
-    "name": "DeltaLake.Table",
+    "name": "DeltaLake.Metadata",
     "documentation": {
-      "description": null,
+      "description": "Given a Delta Lake table, returns the log entries for that table.",
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [],
+    "functionParameters": [
+      {
+        "name": "table",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "nullable none"
+    "type": "table"
+  },
+  {
+    "name": "DeltaLake.Table",
+    "documentation": {
+      "description": "Returns the contents of the Delta Lake table.",
+      "longDescription": null,
+      "category": "Accessing data"
+    },
+    "functionParameters": [
+      {
+        "name": "directory",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "MaxDepth",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "Compression",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "PreserveOrder",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "ColumnMappingMode",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
   },
   {
     "name": "Diagnostics.ActivityId",
@@ -8914,7 +9141,7 @@
   {
     "name": "Embedded.Value",
     "documentation": {
-      "description": "Accesses a value by name in an embedded mashup.",
+      "description": "This function is intended for internal use only.",
       "longDescription": null,
       "category": "Values.Implementation"
     },
@@ -8955,7 +9182,7 @@
   {
     "name": "Error.Record",
     "documentation": {
-      "description": "Returns an error record from the provided text values for reason, message, detail and error code.",
+      "description": "Returns an error record from the provided text values for reason, message, detail, and error code.",
       "longDescription": null,
       "category": "Error"
     },
@@ -9083,6 +9310,14 @@
     "completionItemKind": 3,
     "isDataSource": true,
     "type": "table"
+  },
+  {
+    "name": "Excel.RichDocument",
+    "documentation": null,
+    "functionParameters": null,
+    "completionItemKind": 21,
+    "isDataSource": false,
+    "type": "nullable none"
   },
   {
     "name": "Excel.ShapeTable",
@@ -9365,7 +9600,7 @@
     "documentation": {
       "description": "Specifies the expected action for extra values in a row that contains columns more than expected.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -9522,7 +9757,7 @@
   {
     "name": "Function.From",
     "documentation": {
-      "description": "Creates a function with a specific parameter signature on top of a function that takes a single list argument",
+      "description": "Creates a function with a specific parameter signature on top of a function that takes a single list argument.",
       "longDescription": null,
       "category": "Function"
     },
@@ -9563,7 +9798,7 @@
   {
     "name": "Function.Invoke",
     "documentation": {
-      "description": "Invokes the given function",
+      "description": "Invokes the given function.",
       "longDescription": null,
       "category": "Function"
     },
@@ -10153,7 +10388,7 @@
   {
     "name": "GroupKind.Global",
     "documentation": {
-      "description": "A global group is formed from all rows in an input table with the same key value.",
+      "description": "A global group is formed from all rows in an input table with the same key value. Note that only a single global group is produced for a given key value.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -10165,7 +10400,7 @@
   {
     "name": "GroupKind.Local",
     "documentation": {
-      "description": "A local group is formed from a consecutive sequence of rows from an input table with the same key value.",
+      "description": "A local group is formed from a consecutive sequence of rows from an input table with the same key value. Note that multiple local groups may be produced with the same key value.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -10179,7 +10414,7 @@
     "documentation": {
       "description": "Specifies the kind of grouping.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -11151,7 +11386,7 @@
     "documentation": {
       "description": "Specifies the join algorithm to be used in the join operation.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -11259,7 +11494,7 @@
     "documentation": {
       "description": "Specifies the kind of join operation.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -11295,7 +11530,7 @@
     "documentation": {
       "description": "Specifies the left or right table of a join.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -11427,6 +11662,62 @@
     "type": "binary"
   },
   {
+    "name": "Json.SchemaFromType",
+    "documentation": {
+      "description": "Produces a JSON Schema that describes a given type.",
+      "longDescription": null,
+      "category": "Text.Conversions from and to text"
+    },
+    "functionParameters": [
+      {
+        "name": "type",
+        "type": "type",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "SchemaVersion",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "MaxDepth",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "record"
+  },
+  {
     "name": "LimitClauseKind.AnsiSql2008",
     "documentation": {
       "description": "This SQL dialect supports an ANSI SQL-compatible LIMIT N ROWS specifier to limit the number of rows returned.",
@@ -11491,7 +11782,7 @@
     "documentation": {
       "description": "Describes the type of limit clause supported by the SQL dialect used by this data source.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -11736,7 +12027,7 @@
   {
     "name": "Lines.ToText",
     "documentation": {
-      "description": "Converts a list of text into a single text.  The specified lineSeparator is appended to each line.  If not specified then the carriage return and line feed characters are used.",
+      "description": "Converts a list of text values into a single text value. The specified line separator is appended to each line. If not specified, then the carriage return and line feed characters are used as the line separator.",
       "longDescription": null,
       "category": "Lines"
     },
@@ -11859,7 +12150,7 @@
   {
     "name": "List.Alternate",
     "documentation": {
-      "description": "Returns a list comprised of all the odd numbered offset elements in a list.",
+      "description": "Returns a new list by alternatively keeping and skipping items.",
       "longDescription": null,
       "category": "List.Selection"
     },
@@ -13046,7 +13337,7 @@
   {
     "name": "List.LastN",
     "documentation": {
-      "description": "Returns the last value in the list.  Can optionally specify how many values to return or a qualifying condition.",
+      "description": "Returns a list of the last item or items in the specified list. Can optionally specify how many values to return or a qualifying condition.",
       "longDescription": null,
       "category": "List.Selection"
     },
@@ -13238,7 +13529,7 @@
   {
     "name": "List.MaxN",
     "documentation": {
-      "description": "Returns the maximum value(s) in the list. The number of values to return or a filtering condition must be specified.",
+      "description": "Returns the maximum value(s) in the list. The number of values to return or a filter condition must be specified.",
       "longDescription": null,
       "category": "List.Ordering"
     },
@@ -14356,7 +14647,7 @@
   {
     "name": "List.ReplaceMatchingItems",
     "documentation": {
-      "description": "Applies each replacement of { old, new }.",
+      "description": "Applies replacements to a list.",
       "longDescription": null,
       "category": "List.Transformation functions"
     },
@@ -14617,7 +14908,7 @@
   {
     "name": "List.Single",
     "documentation": {
-      "description": "Returns the one list item for a list of length one, otherwise throws an exception.",
+      "description": "Returns the one list item for a list of length one, otherwise raises an error.",
       "longDescription": null,
       "category": "List.Selection"
     },
@@ -15114,6 +15405,47 @@
     "type": "list {any}"
   },
   {
+    "name": "ListAction.ParallelExecute",
+    "documentation": {
+      "description": null,
+      "longDescription": null,
+      "category": "List"
+    },
+    "functionParameters": [
+      {
+        "name": "actions",
+        "type": "list {any}",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "concurrency",
+        "type": "nullable number",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "action"
+  },
+  {
     "name": "Logical.From",
     "documentation": {
       "description": "Creates a logical from the given value.",
@@ -15314,7 +15646,7 @@
   {
     "name": "MissingField.Error",
     "documentation": {
-      "description": "An optional parameter in record and table functions indicating that missing fields should result in an error. (This is the default parameter value.)",
+      "description": "Indicates that missing fields should result in an error. (This is the default value.)",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -15326,7 +15658,7 @@
   {
     "name": "MissingField.Ignore",
     "documentation": {
-      "description": "An optional parameter in record and table functions indicating that missing fields should be ignored.",
+      "description": "Indicates that missing fields should be ignored.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -15340,7 +15672,7 @@
     "documentation": {
       "description": "Specifies the expected action for missing values in a row that contains columns less than expected.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -15350,7 +15682,7 @@
   {
     "name": "MissingField.UseNull",
     "documentation": {
-      "description": "An optional parameter in record and table functions indicating that missing fields should be included as null values.",
+      "description": "Indicates that missing fields should be included as null values.",
       "longDescription": null,
       "category": "Table.Parameter values"
     },
@@ -17182,7 +17514,7 @@
     "documentation": {
       "description": "Specifies the kinds of values an OData service can omit.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -17266,7 +17598,7 @@
     "documentation": {
       "description": "Specifies the occurrence of an element in a sequence.",
       "longDescription": null,
-      "category": null
+      "category": "Text.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -17337,6 +17669,13 @@
           {
             "name": "SqlCompatibleWindowsAuth",
             "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "TableTypes",
+            "type": "any",
             "isRequired": false,
             "caption": null,
             "description": null
@@ -17453,6 +17792,14 @@
     "completionItemKind": 3,
     "isDataSource": true,
     "type": "table"
+  },
+  {
+    "name": "Office.InferChartPropertiesGenerator",
+    "documentation": null,
+    "functionParameters": null,
+    "completionItemKind": 21,
+    "isDataSource": false,
+    "type": "nullable none"
   },
   {
     "name": "OleDb.DataSource",
@@ -17735,7 +18082,7 @@
     "documentation": {
       "description": "Specifies the direction of sorting.",
       "longDescription": null,
-      "category": null
+      "category": "List.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -17745,26 +18092,106 @@
   {
     "name": "Parquet.Document",
     "documentation": {
-      "description": null,
+      "description": "Returns the contents of the Parquet document as a table.",
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [],
+    "functionParameters": [
+      {
+        "name": "binary",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "MaxDepth",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "Compression",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "PreserveOrder",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "LegacyColumnNameEncoding",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "TypeMapping",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "nullable none"
+    "type": "any"
   },
   {
     "name": "Parquet.Metadata",
     "documentation": {
-      "description": null,
+      "description": "This function is intended for internal use only.",
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [],
+    "functionParameters": [
+      {
+        "name": "binary",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "nullable none"
+    "type": "any"
   },
   {
     "name": "Password.Type",
@@ -17781,14 +18208,79 @@
   {
     "name": "Pdf.Tables",
     "documentation": {
-      "description": null,
+      "description": "Returns any tables found in a PDF file.",
       "longDescription": null,
       "category": "Accessing data"
     },
-    "functionParameters": [],
+    "functionParameters": [
+      {
+        "name": "pdf",
+        "type": "binary",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "options",
+        "type": "nullable record",
+        "isRequired": false,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": [
+          {
+            "name": "Implementation",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "StartPage",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "EndPage",
+            "type": "nullable number",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "MultiPageTables",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          },
+          {
+            "name": "EnforceBorderLines",
+            "type": "nullable logical",
+            "isRequired": false,
+            "caption": null,
+            "description": null
+          }
+        ],
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
     "completionItemKind": 3,
     "isDataSource": false,
-    "type": "nullable none"
+    "type": "table"
   },
   {
     "name": "Percentage.From",
@@ -17896,7 +18388,7 @@
     "documentation": {
       "description": "Specifies the percentile mode type.",
       "longDescription": null,
-      "category": null
+      "category": "List.Ordering"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -18009,9 +18501,17 @@
     "type": "table"
   },
   {
+    "name": "PowerPoint.Presentation",
+    "documentation": null,
+    "functionParameters": null,
+    "completionItemKind": 21,
+    "isDataSource": false,
+    "type": "nullable none"
+  },
+  {
     "name": "Precision.Decimal",
     "documentation": {
-      "description": "An optional parameter for the built-in arthimetic operators to specify decimal precision.",
+      "description": "An optional parameter for the built-in arithmetic operators to specify decimal precision.",
       "longDescription": null,
       "category": "Values.Parameter values"
     },
@@ -18023,7 +18523,7 @@
   {
     "name": "Precision.Double",
     "documentation": {
-      "description": "An optional parameter for the built-in arthimetic operators to specify double precision.",
+      "description": "An optional parameter for the built-in arithmetic operators to specify double precision.",
       "longDescription": null,
       "category": "Values.Parameter values"
     },
@@ -18037,7 +18537,7 @@
     "documentation": {
       "description": "Specifies the precision of comparison.",
       "longDescription": null,
-      "category": null
+      "category": "Values.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -18085,7 +18585,7 @@
     "documentation": {
       "description": "Specifies the quote style.",
       "longDescription": null,
-      "category": null
+      "category": "Splitter.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -18160,7 +18660,7 @@
     "documentation": {
       "description": "Specifies the type of ranking.",
       "longDescription": null,
-      "category": null
+      "category": "Table.Ordering"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -18686,7 +19186,7 @@
   {
     "name": "Record.ReorderFields",
     "documentation": {
-      "description": "Reorders the field(s) specified into the new order.",
+      "description": "Reorders the record fields to match the order of a list of field names.",
       "longDescription": null,
       "category": "Record.Transformations"
     },
@@ -19149,7 +19649,7 @@
     "documentation": {
       "description": "Specifies rounding direction when there is a tie between the possible numbers to round to.",
       "longDescription": null,
-      "category": null
+      "category": "Number.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -19534,7 +20034,7 @@
     "documentation": {
       "description": "Valid options for SAP Business Warehouse execution mode option.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -19678,7 +20178,7 @@
     "documentation": {
       "description": "Valid options for SAP HANA distribution option.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -19762,7 +20262,7 @@
     "documentation": {
       "description": "A range operator for SAP HANA range input parameters.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -19772,7 +20272,7 @@
   {
     "name": "SharePoint.Contents",
     "documentation": {
-      "description": "Returns a table containing content from a SharePoint site.",
+      "description": "Returns a hierarchical table containing the properties and contents of folders and files found at a SharePoint site.",
       "longDescription": null,
       "category": "Accessing data"
     },
@@ -19808,6 +20308,13 @@
             "isRequired": false,
             "caption": null,
             "description": null
+          },
+          {
+            "name": "Implementation",
+            "type": "nullable text",
+            "isRequired": false,
+            "caption": null,
+            "description": null
           }
         ],
         "enumNames": null,
@@ -19821,7 +20328,7 @@
   {
     "name": "SharePoint.Files",
     "documentation": {
-      "description": "Returns a table containing documents from a SharePoint site.",
+      "description": "Returns a table containing the properties and contents of the files found at the specified SharePoint site and its subfolders.",
       "longDescription": null,
       "category": "Accessing data"
     },
@@ -21590,6 +22097,47 @@
     "type": "table"
   },
   {
+    "name": "Table.ClearDown",
+    "documentation": {
+      "description": "Clears repeating sets of column values.",
+      "longDescription": null,
+      "category": "Table.Transformation"
+    },
+    "functionParameters": [
+      {
+        "name": "table",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "columns",
+        "type": "list {any}",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "table"
+  },
+  {
     "name": "Table.Column",
     "documentation": {
       "description": "Returns a specified column of data from the table as a list.",
@@ -21728,7 +22276,7 @@
   {
     "name": "Table.Combine",
     "documentation": {
-      "description": "Returns a table that is the result of merging a list of tables.",
+      "description": "Returns a table that is the result of appending a list of tables.",
       "longDescription": null,
       "category": "Table.Row operations"
     },
@@ -22360,7 +22908,7 @@
   {
     "name": "Table.ExpandTableColumn",
     "documentation": {
-      "description": "Expands a column of records or a column of tables into multiple columns in the containing table.",
+      "description": "Expands a column of tables into multiple rows and columns.",
       "longDescription": null,
       "category": "Table.Transformation"
     },
@@ -22974,7 +23522,7 @@
   {
     "name": "Table.FromRows",
     "documentation": {
-      "description": "Creates a table from a list of row values and optional columns",
+      "description": "Creates a table from a list of row values and optional columns.",
       "longDescription": null,
       "category": "Table.Table construction"
     },
@@ -24578,6 +25126,33 @@
     "type": "list {any}"
   },
   {
+    "name": "Table.PartitionKey",
+    "documentation": {
+      "description": "Returns the partition key of the specified table.",
+      "longDescription": null,
+      "category": "Table.Transformation"
+    },
+    "functionParameters": [
+      {
+        "name": "table",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "nullable list {any}"
+  },
+  {
     "name": "Table.PartitionValues",
     "documentation": {
       "description": "Returns information about how a table is partitioned.",
@@ -25616,6 +26191,47 @@
     "type": "table"
   },
   {
+    "name": "Table.ReplacePartitionKey",
+    "documentation": {
+      "description": "Replaces the partition key of the specified table.",
+      "longDescription": null,
+      "category": "Table.Transformation"
+    },
+    "functionParameters": [
+      {
+        "name": "table",
+        "type": "table",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "partitionKey",
+        "type": "nullable list {any}",
+        "isRequired": true,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "table"
+  },
+  {
     "name": "Table.ReplaceRelationshipIdentity",
     "documentation": {
       "description": "This function is intended for internal use only.",
@@ -26232,7 +26848,7 @@
   {
     "name": "Table.SplitColumn",
     "documentation": {
-      "description": "Splits the specified columns into a set of additional columns using the specified splitter function.",
+      "description": "Splits the specified column into a set of additional columns using the specified splitter function.",
       "longDescription": null,
       "category": "Table.Transformation"
     },
@@ -26568,7 +27184,7 @@
       },
       {
         "name": "culture",
-        "type": "nullable text",
+        "type": "any",
         "isRequired": false,
         "isNullable": true,
         "caption": null,
@@ -26942,7 +27558,7 @@
   {
     "name": "Table.ViewError",
     "documentation": {
-      "description": "Creates a modified error record which won't trigger a fallback when thrown by a handler defined on a view (via Table.View).",
+      "description": "Creates a modified error record which won't trigger a fallback when raised by a handler defined on a view (via Table.View).",
       "longDescription": null,
       "category": "Table.Table construction"
     },
@@ -29320,7 +29936,7 @@
     "documentation": {
       "description": "Specifies the text encoding type.",
       "longDescription": null,
-      "category": null
+      "category": "Text.Parameter values"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -29739,7 +30355,7 @@
     "documentation": {
       "description": "Specifies the trace level.",
       "longDescription": null,
-      "category": null
+      "category": "Diagnostics"
     },
     "functionParameters": null,
     "completionItemKind": 13,
@@ -30328,6 +30944,47 @@
     "type": "type"
   },
   {
+    "name": "Type.ReplaceTablePartitionKey",
+    "documentation": {
+      "description": "Returns a new table type with the partition key replaced by the specified partition key.",
+      "longDescription": null,
+      "category": "Type"
+    },
+    "functionParameters": [
+      {
+        "name": "tableType",
+        "type": "type",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "partitionKey",
+        "type": "nullable list {any}",
+        "isRequired": true,
+        "isNullable": true,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "type"
+  },
+  {
     "name": "Type.TableColumn",
     "documentation": {
       "description": "Returns the type of a column in a table.",
@@ -30394,6 +31051,33 @@
     "completionItemKind": 3,
     "isDataSource": false,
     "type": "list {any}"
+  },
+  {
+    "name": "Type.TablePartitionKey",
+    "documentation": {
+      "description": "Returns the partition key for the given table type if it has one.",
+      "longDescription": null,
+      "category": "Type"
+    },
+    "functionParameters": [
+      {
+        "name": "tableType",
+        "type": "type",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "nullable list {any}"
   },
   {
     "name": "Type.TableRow",
@@ -30716,7 +31400,7 @@
   {
     "name": "Value.As",
     "documentation": {
-      "description": "Returns the value if it is compatible with the specified type.",
+      "description": "Returns the value if it's compatible with the specified type.",
       "longDescription": null,
       "category": "Values.Types"
     },
@@ -31604,7 +32288,7 @@
   {
     "name": "Value.VersionIdentity",
     "documentation": {
-      "description": null,
+      "description": "Returns the version identity of the value.",
       "longDescription": null,
       "category": "Action"
     },
@@ -31631,7 +32315,7 @@
   {
     "name": "Value.Versions",
     "documentation": {
-      "description": null,
+      "description": "Returns a navigation table containing the available versions of the value.",
       "longDescription": null,
       "category": "Action"
     },
@@ -31876,7 +32560,7 @@
   {
     "name": "Variable.Value",
     "documentation": {
-      "description": "This function is intended for internal use only.",
+      "description": "Returns the value of the specified variable.",
       "longDescription": null,
       "category": "Values.Implementation"
     },
@@ -31886,6 +32570,47 @@
         "type": "text",
         "isRequired": true,
         "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      }
+    ],
+    "completionItemKind": 3,
+    "isDataSource": false,
+    "type": "any"
+  },
+  {
+    "name": "Variable.ValueOrDefault",
+    "documentation": {
+      "description": "Returns the value of the specified variable or the default value if the variable is not defined.",
+      "longDescription": null,
+      "category": "Values.Implementation"
+    },
+    "functionParameters": [
+      {
+        "name": "identifier",
+        "type": "text",
+        "isRequired": true,
+        "isNullable": false,
+        "caption": null,
+        "description": null,
+        "sampleValues": null,
+        "allowedValues": null,
+        "defaultValue": null,
+        "fields": null,
+        "enumNames": null,
+        "enumCaptions": null
+      },
+      {
+        "name": "defaultValue",
+        "type": "any",
+        "isRequired": false,
+        "isNullable": true,
         "caption": null,
         "description": null,
         "sampleValues": null,
@@ -32382,7 +33107,7 @@
     "documentation": {
       "description": "Specifies an HTTP method.",
       "longDescription": null,
-      "category": null
+      "category": "Accessing data"
     },
     "functionParameters": null,
     "completionItemKind": 13,
