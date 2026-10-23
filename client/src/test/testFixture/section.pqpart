@@ -1,0 +1,3 @@
+section Section1;
+
+shared Greeting = "Hello";

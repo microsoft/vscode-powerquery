@@ -11,6 +11,11 @@ suite("DocumentSymbols", () => {
 
     suiteSetup(async () => await TestUtils.closeFileIfOpen(docUri));
 
+    test("section.pqpart", async () =>
+        await DocumentSymbolUtils.testDocumentSymbols(TestUtils.getDocUri("section.pqpart"), [
+            { name: "Greeting", kind: vscode.SymbolKind.String },
+        ]));
+
     test("DocumentSymbols.pq", async () =>
         await DocumentSymbolUtils.testDocumentSymbols(docUri, [
             { name: "firstMember", kind: vscode.SymbolKind.Number },
