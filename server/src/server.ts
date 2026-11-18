@@ -10,6 +10,7 @@ import * as ErrorUtils from "./errorUtils";
 import * as EventHandlerUtils from "./eventHandlerUtils";
 import * as SemanticTokens from "./semanticTokens";
 import * as TraceManagerUtils from "./traceManagerUtils";
+import { CacheLifecycle, clearAnalysisAndLibraryCaches, invalidateClosedDocumentCache } from "./cacheLifecycle";
 import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
 import { DiagnosticCancellationTracker } from "./diagnosticCancellationTracker";
 import { SettingsUtils } from "./settings";
@@ -63,6 +64,12 @@ let isServerReady: boolean = false;
 
 // Track active diagnostic operations for cancellation
 const activeDiagnosticOperations: DiagnosticCancellationTracker = new DiagnosticCancellationTracker();
+
+const cacheLifecycle: CacheLifecycle = {
+    clearAnalysisCache: () => PQLS.AnalysisUtils.clearCache(),
+    clearLibraryCache: () => LibraryUtils.clearCache(),
+    invalidateAnalysisCache: (uri: string) => PQLS.AnalysisUtils.invalidateCache(uri),
+};
 
 connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
@@ -142,12 +149,14 @@ connection.onDefinition((params: LS.DefinitionParams, cancellationToken: LS.Canc
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
+    clearAnalysisAndLibraryCaches(cacheLifecycle);
     await connection.languages.diagnostics.refresh();
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
     // Cancel any active diagnostic operation for this document
     cancelActiveDiagnostics(event.document.uri, "onDidClose");
+    invalidateClosedDocumentCache(cacheLifecycle, event.document.uri);
 
     // Clear any errors associated with this file
     await connection.sendDiagnostics({
@@ -424,7 +433,7 @@ connection.onRequest(
         );
 
         ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
-        LibraryUtils.clearCache();
+        clearAnalysisAndLibraryCaches(cacheLifecycle);
         void connection.languages.diagnostics.refresh();
 
         connection.console.log(`[Library] Module libraries registered: ${ModuleLibraryUtils.getModuleCount()} total`);
@@ -455,7 +464,7 @@ connection.onRequest(
         }
 
         ExternalLibraryUtils.addLibaries(symbolMaps);
-        LibraryUtils.clearCache();
+        clearAnalysisAndLibraryCaches(cacheLifecycle);
         void connection.languages.diagnostics.refresh();
 
         // Check for symbol name overlaps across modules
@@ -481,7 +490,7 @@ connection.onRequest(
         connection.console.log(`[Library] removeLibrarySymbols: modules=[${params.librariesToRemove.join(", ")}]`);
 
         ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
-        LibraryUtils.clearCache();
+        clearAnalysisAndLibraryCaches(cacheLifecycle);
         void connection.languages.diagnostics.refresh();
 
         const remaining: ReadonlyArray<string> = ExternalLibraryUtils.getRegisteredModuleNames();
