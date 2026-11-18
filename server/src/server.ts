@@ -142,7 +142,7 @@ connection.onDefinition((params: LS.DefinitionParams, cancellationToken: LS.Canc
 
 connection.onDidChangeConfiguration(async () => {
     await SettingsUtils.initializeServerSettings(connection);
-    connection.languages.diagnostics.refresh();
+    await connection.languages.diagnostics.refresh();
 });
 
 documents.onDidClose(async (event: LS.TextDocumentChangeEvent<TextDocument>) => {
@@ -339,7 +339,7 @@ connection.onInitialized(async () => {
     isServerReady = true;
 
     // Trigger initial diagnostics for all open documents
-    connection.languages.diagnostics.refresh();
+    await connection.languages.diagnostics.refresh();
 });
 
 connection.onRenameRequest((params: LS.RenameParams, cancellationToken: LS.CancellationToken) =>
@@ -425,7 +425,7 @@ connection.onRequest(
 
         ModuleLibraryUtils.onModuleAdded(params.workspaceUriPath, params.library);
         LibraryUtils.clearCache();
-        connection.languages.diagnostics.refresh();
+        void connection.languages.diagnostics.refresh();
 
         connection.console.log(`[Library] Module libraries registered: ${ModuleLibraryUtils.getModuleCount()} total`);
     }),
@@ -456,7 +456,7 @@ connection.onRequest(
 
         ExternalLibraryUtils.addLibaries(symbolMaps);
         LibraryUtils.clearCache();
-        connection.languages.diagnostics.refresh();
+        void connection.languages.diagnostics.refresh();
 
         // Check for symbol name overlaps across modules
         const overlaps: ReadonlyMap<string, ReadonlyArray<string>> = ExternalLibraryUtils.getOverlappingSymbols();
@@ -482,7 +482,7 @@ connection.onRequest(
 
         ExternalLibraryUtils.removeLibraries(params.librariesToRemove);
         LibraryUtils.clearCache();
-        connection.languages.diagnostics.refresh();
+        void connection.languages.diagnostics.refresh();
 
         const remaining: ReadonlyArray<string> = ExternalLibraryUtils.getRegisteredModuleNames();
 

@@ -19,8 +19,8 @@ export interface RuntimeEnvironment {
     readonly console: Pick<RemoteConsole, "error" | "log">;
 }
 
-export function genericRequestHandler<T, R>(func: (params: T) => R): GenericRequestHandler<R, unknown> {
-    const handler: GenericRequestHandler<R, unknown> = (params: T): R | ResponseError<unknown> => {
+export function genericRequestHandler<T>(func: (params: T) => void): GenericRequestHandler<null, unknown> {
+    const handler: GenericRequestHandler<null, unknown> = (params: T): void | ResponseError<unknown> => {
         try {
             return func(params);
         } catch (error: unknown) {

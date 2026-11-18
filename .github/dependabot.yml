@@ -1,11 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directories:
-      - "/"
-      - "/client"
-      - "/server"
-      - "/scripts"
+    directory: "/"
     groups:
       npm:
         patterns: ["*"]
