@@ -54,7 +54,7 @@
     "types": "./client/dist/extension.d.ts",
     "engines": {
         "node": ">=26.13.1",
-        "vscode": "^1.100.0"
+        "vscode": "^1.146.0"
     },
     "capabilities": {
         "untrustedWorkspaces": {
@@ -312,7 +312,7 @@
         "@types/chai": "^4.3.20",
         "@types/mocha": "^10.0.8",
         "@types/node": "^26.6.6",
-        "@types/vscode": "1.100.0",
+        "@types/vscode": "^1.146.0",
         "@typescript-eslint/eslint-plugin": "^8.72.2",
         "@typescript-eslint/parser": "^8.72.2",
         "chai": "^6.3.0",
