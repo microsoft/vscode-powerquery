@@ -49,13 +49,28 @@ export function createFormattingSettings(
         indentationLiteral: formattingOptions.insertSpaces
             ? PQF.IndentationLiteral.SpaceX4
             : PQF.IndentationLiteral.Tab,
-        newlineLiteral:
-            firstNewline === PQF.NewlineLiteral.Windows ? PQF.NewlineLiteral.Windows : PQF.NewlineLiteral.Unix,
+        newlineLiteral: deriveNewlineLiteral(firstNewline),
         cancellationToken: CancellationTokenUtils.createAdapterOrTimedCancellation(
             cancellationToken,
             settings.symbolTimeoutInMs,
         ),
     };
+}
+
+function deriveNewlineLiteral(newline: string | undefined): PQF.NewlineLiteral {
+    switch (newline) {
+        case PQF.NewlineLiteral.Unix:
+            return PQF.NewlineLiteral.Unix;
+
+        case PQF.NewlineLiteral.Windows:
+            return PQF.NewlineLiteral.Windows;
+
+        case undefined:
+            return PQF.DefaultSettings.newlineLiteral;
+
+        default:
+            return PQF.DefaultSettings.newlineLiteral;
+    }
 }
 
 export function createInspectionSettings(

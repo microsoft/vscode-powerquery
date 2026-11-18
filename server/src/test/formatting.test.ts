@@ -52,10 +52,10 @@ describe("formatting", () => {
         expect(createSettings("let x = 1 in x", false, 8).indentationLiteral).to.equal(PQF.IndentationLiteral.Tab);
     });
 
-    it("uses the document's line endings and defaults documents without line endings to LF", () => {
+    it("uses the document's line endings and defaults to the formatter policy", () => {
         expect(createSettings("let\r\nx = 1\r\nin x", true).newlineLiteral).to.equal(PQF.NewlineLiteral.Windows);
         expect(createSettings("let\nx = 1\nin x", true).newlineLiteral).to.equal(PQF.NewlineLiteral.Unix);
-        expect(createSettings("let x = 1 in x", true).newlineLiteral).to.equal(PQF.NewlineLiteral.Unix);
+        expect(createSettings("let x = 1 in x", true).newlineLiteral).to.equal(PQF.DefaultSettings.newlineLiteral);
     });
 
     it("preserves language server cancellation", () => {
