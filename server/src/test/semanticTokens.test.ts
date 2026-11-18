@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import * as LS from "vscode-languageserver-types";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { expect } from "chai";
@@ -61,6 +62,25 @@ function abridgeToken(token: PQLS.PartialSemanticToken): AbridgedSemanticToken {
 
 function abridgeTokens(tokens: ReadonlyArray<PQLS.PartialSemanticToken>): ReadonlyArray<AbridgedSemanticToken> {
     return tokens.map(abridgeToken);
+}
+
+function createToken(
+    tokenType: keyof typeof LS.SemanticTokenTypes,
+    start: Readonly<LS.Position>,
+    end: Readonly<LS.Position>,
+    tokenModifiers: ReadonlyArray<keyof typeof LS.SemanticTokenModifiers> = [],
+): PQLS.PartialSemanticToken {
+    return {
+        tokenType: LS.SemanticTokenTypes[tokenType],
+        tokenModifiers: tokenModifiers.map(
+            (modifier: keyof typeof LS.SemanticTokenModifiers): LS.SemanticTokenModifiers =>
+                LS.SemanticTokenModifiers[modifier],
+        ),
+        range: {
+            start,
+            end,
+        },
+    };
 }
 
 /** Sort tokens by position for deterministic assertions. */
@@ -352,6 +372,124 @@ describe("semanticTokens", () => {
                 expect(encoded[i]).to.be.at.least(0);
                 expect(encoded[i]).to.be.lessThan(semanticTokensLegend.tokenTypes.length);
             }
+        });
+
+        it("prefers function tokens over variable tokens for duplicate ranges", () => {
+            const variable: PQLS.PartialSemanticToken = createToken(
+                "variable",
+                { line: 0, character: 4 },
+                { line: 0, character: 5 },
+                ["defaultLibrary"],
+            );
+
+            const invocation: PQLS.PartialSemanticToken = createToken(
+                "function",
+                { line: 0, character: 4 },
+                { line: 0, character: 5 },
+            );
+
+            const expected: ReadonlyArray<number> = [0, 4, 1, semanticTokensLegend.tokenTypes.indexOf("function"), 0];
+
+            expect(encodeSemanticTokens([variable, invocation])).to.deep.equal(expected);
+            expect(encodeSemanticTokens([invocation, variable])).to.deep.equal(expected);
+        });
+
+        it("removes partial overlaps deterministically", () => {
+            const first: PQLS.PartialSemanticToken = createToken(
+                "variable",
+                { line: 0, character: 1 },
+                { line: 0, character: 5 },
+            );
+
+            const overlapping: PQLS.PartialSemanticToken = createToken(
+                "property",
+                { line: 0, character: 3 },
+                { line: 0, character: 6 },
+            );
+
+            const adjacent: PQLS.PartialSemanticToken = createToken(
+                "number",
+                { line: 0, character: 6 },
+                { line: 0, character: 7 },
+            );
+
+            expect(encodeSemanticTokens([overlapping, adjacent, first])).to.deep.equal([
+                0,
+                1,
+                4,
+                semanticTokensLegend.tokenTypes.indexOf("variable"),
+                0,
+                0,
+                5,
+                1,
+                semanticTokensLegend.tokenTypes.indexOf("number"),
+                0,
+            ]);
+        });
+
+        it("prefers the longer token when overlapping tokens start at the same position", () => {
+            const shorter: PQLS.PartialSemanticToken = createToken(
+                "variable",
+                { line: 0, character: 1 },
+                { line: 0, character: 3 },
+            );
+
+            const longer: PQLS.PartialSemanticToken = createToken(
+                "property",
+                { line: 0, character: 1 },
+                { line: 0, character: 5 },
+            );
+
+            expect(encodeSemanticTokens([shorter, longer])).to.deep.equal([
+                0,
+                1,
+                4,
+                semanticTokensLegend.tokenTypes.indexOf("property"),
+                0,
+            ]);
+        });
+
+        it("preserves sorted non-overlapping tokens", () => {
+            const tokens: ReadonlyArray<PQLS.PartialSemanticToken> = [
+                createToken("keyword", { line: 1, character: 2 }, { line: 1, character: 5 }),
+                createToken("number", { line: 3, character: 0 }, { line: 3, character: 1 }),
+            ];
+
+            expect(encodeSemanticTokens(tokens)).to.deep.equal([
+                1,
+                2,
+                3,
+                semanticTokensLegend.tokenTypes.indexOf("keyword"),
+                0,
+                2,
+                0,
+                1,
+                semanticTokensLegend.tokenTypes.indexOf("number"),
+                0,
+            ]);
+        });
+
+        it("rejects invalid ranges before encoding", () => {
+            const valid: PQLS.PartialSemanticToken = createToken(
+                "number",
+                { line: 0, character: 1 },
+                { line: 0, character: 2 },
+            );
+
+            const invalid: ReadonlyArray<PQLS.PartialSemanticToken> = [
+                createToken("number", { line: -1, character: 0 }, { line: -1, character: 1 }),
+                createToken("number", { line: 0, character: 1.5 }, { line: 0, character: 2.5 }),
+                createToken("number", { line: 0, character: 2 }, { line: 1, character: 3 }),
+                createToken("number", { line: 0, character: 2 }, { line: 0, character: 2 }),
+            ];
+
+            expect(encodeSemanticTokens([...invalid, valid])).to.deep.equal([
+                0,
+                1,
+                1,
+                semanticTokensLegend.tokenTypes.indexOf("number"),
+                0,
+            ]);
         });
 
         it("does not mutate the input array", async () => {
