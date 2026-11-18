@@ -95,15 +95,15 @@ export class LibrarySymbolManager {
      */
     public async removeSymbolsForFolder(folderKey: string): Promise<void> {
         this.nextRefreshGeneration(folderKey);
-        await this.enqueueSymbolMutation(async () => await this.clearRegisteredSymbolModulesForFolder(folderKey));
+        await this.enqueueSymbolMutation(() => this.clearRegisteredSymbolModulesForFolder(folderKey));
     }
 
     /**
      * Removes all registered symbol modules across all folders.
      */
     public async removeAllSymbols(): Promise<void> {
-        for (const [folderKey, refreshGeneration] of this.refreshGenerationByFolder) {
-            this.refreshGenerationByFolder.set(folderKey, refreshGeneration + 1);
+        for (const folderKey of this.refreshGenerationByFolder.keys()) {
+            this.nextRefreshGeneration(folderKey);
         }
 
         await this.enqueueSymbolMutation(async () => {
