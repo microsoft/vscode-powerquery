@@ -19,6 +19,7 @@
         "scripts"
     ],
     "scripts": {
+        "postinstall": "node -e \"console.log('Workspace dependencies are installed from the root lockfile')\"",
         "audit": "npm audit",
         "audit:fix": "npm audit fix",
         "build": "npm run build:client && npm run build:server && npm run build:scripts",
