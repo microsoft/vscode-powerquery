@@ -2,8 +2,10 @@
 // Licensed under the MIT license.
 
 import * as LS from "vscode-languageserver/node";
+import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 import { DefaultServerSettings, ServerSettings } from "./settings";
 import { ExternalLibraryUtils, LibrarySymbolUtils, LibraryUtils, ModuleLibraryUtils } from "../library";
@@ -30,6 +32,30 @@ export function createAnalysisSettings(
 
 export function createCancellationToken(cancellationToken: LS.CancellationToken | undefined): PQP.ICancellationToken {
     return CancellationTokenUtils.createAdapterOrTimedCancellation(cancellationToken, serverSettings.symbolTimeoutInMs);
+}
+
+export function createFormattingSettings(
+    document: TextDocument,
+    formattingOptions: LS.FormattingOptions,
+    cancellationToken: LS.CancellationToken | undefined,
+    settings: ServerSettings = serverSettings,
+): PQF.FormatSettings {
+    const firstNewline: string | undefined = document.getText().match(/\r?\n/)?.[0];
+
+    return {
+        ...PQP.DefaultSettings,
+        ...PQF.DefaultSettings,
+        locale: settings.locale,
+        indentationLiteral: formattingOptions.insertSpaces
+            ? PQF.IndentationLiteral.SpaceX4
+            : PQF.IndentationLiteral.Tab,
+        newlineLiteral:
+            firstNewline === PQF.NewlineLiteral.Windows ? PQF.NewlineLiteral.Windows : PQF.NewlineLiteral.Unix,
+        cancellationToken: CancellationTokenUtils.createAdapterOrTimedCancellation(
+            cancellationToken,
+            settings.symbolTimeoutInMs,
+        ),
+    };
 }
 
 export function createInspectionSettings(

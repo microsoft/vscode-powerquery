@@ -25,6 +25,11 @@ Displays function documentation if it exists, and validates the types for functi
 
 Provides a formatter for the "Format Document" (Alt + Shift + F) command.
 
+Formatting follows the configured locale and uses the document's first LF or CRLF line ending (defaulting to LF for
+a document without line endings). The formatter honors LSP `insertSpaces` by using either tabs or its fixed
+four-space indentation. Other formatting options, including arbitrary `tabSize` values and additional
+whitespace/final-newline properties, are not supported.
+
 ![Format Document](imgs/formatDocument.gif)
 
 ## Commands
