@@ -324,6 +324,42 @@ suite("LibrarySymbolManager.refreshSymbolDirectoriesForFolder", () => {
 
         assert.equal(testClient.registeredSymbols.size, 0, "Expected the removed refresh to remain unregistered");
     });
+
+    test("Removing all symbols waits for an in-progress registration", async () => {
+        let releaseAdd: () => void = (): void => undefined;
+        let signalAddStarted: () => void = (): void => undefined;
+
+        const addReleased: Promise<void> = new Promise<void>((resolve: () => void) => {
+            releaseAdd = resolve;
+        });
+
+        const addStarted: Promise<void> = new Promise<void>((resolve: () => void) => {
+            signalAddStarted = resolve;
+        });
+
+        class DeferredAddLibrarySymbolClient extends MockLibararySymbolClient {
+            public override async addLibrarySymbols(librarySymbols: ReadonlyMap<string, LibraryJson>): Promise<void> {
+                signalAddStarted();
+                await addReleased;
+                await super.addLibrarySymbols(librarySymbols);
+            }
+        }
+
+        const testClient: MockLibararySymbolClient = new DeferredAddLibrarySymbolClient();
+        const manager: LibrarySymbolManager = new LibrarySymbolManager(testClient);
+
+        const refresh: Promise<ReadonlyArray<string>> = manager.refreshSymbolDirectories([
+            TestUtils.getTestFixturePath(),
+        ]);
+
+        await addStarted;
+        const removal: Promise<void> = manager.removeAllSymbols();
+
+        releaseAdd();
+        await Promise.all([refresh, removal]);
+
+        assert.equal(testClient.registeredSymbols.size, 0, "Expected removal to follow the pending registration");
+    });
 });
 
 suite("LibrarySymbolManager.getSymbolFilesFromDirectory", () => {
