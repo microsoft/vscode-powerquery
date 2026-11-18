@@ -16,7 +16,7 @@ export interface RuntimeEnvironment {
         readonly setImmediate: (callback: (...args: unknown[]) => void, ...args: unknown[]) => Disposable;
         readonly setTimeout: (callback: (...args: unknown[]) => void, ms: number, ...args: unknown[]) => Disposable;
     };
-    readonly console: RemoteConsole;
+    readonly console: Pick<RemoteConsole, "error" | "log">;
 }
 
 export function genericRequestHandler<T, R>(func: (params: T) => R): GenericRequestHandler<R, unknown> {
@@ -60,6 +60,12 @@ export function runSafeAsync<T, E>(
                     }
                 },
                 (e: Error) => {
+                    if (token.isCancellationRequested) {
+                        resolve(cancelValue());
+
+                        return;
+                    }
+
                     runtime.console.error(formatError(errorMessage, e));
                     resolve(errorVal);
                 },
