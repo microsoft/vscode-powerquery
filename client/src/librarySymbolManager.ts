@@ -26,6 +26,10 @@ export class LibrarySymbolManager {
     // Tracks registered module names per workspace folder key.
     private readonly registeredModulesByFolder: Map<string, string[]> = new Map();
 
+    // Tracks the latest requested refresh for each folder. Scans may complete out of order.
+    private readonly refreshGenerationByFolder: Map<string, number> = new Map();
+    private symbolMutationQueue: Promise<void> = Promise.resolve();
+
     constructor(
         private librarySymbolClient: PowerQueryApi,
         private clientTrace?: MinimalClientTrace,
@@ -42,34 +46,41 @@ export class LibrarySymbolManager {
         folderKey: string,
         directories: ReadonlyArray<string>,
     ): Promise<ReadonlyArray<string>> {
-        await this.clearRegisteredSymbolModulesForFolder(folderKey);
+        const refreshGeneration: number = this.nextRefreshGeneration(folderKey);
 
-        if (!directories || directories.length === 0) {
-            return [];
-        }
+        const validSymbolLibraries: Map<string, LibraryJson> =
+            directories && directories.length > 0 ? await this.loadSymbolsFromDirectories(directories) : new Map();
 
-        const validSymbolLibraries: Map<string, LibraryJson> = await this.loadSymbolsFromDirectories(directories);
+        return await this.enqueueSymbolMutation(async () => {
+            if (refreshGeneration !== this.refreshGenerationByFolder.get(folderKey)) {
+                return this.registeredModulesByFolder.get(folderKey) ?? [];
+            }
 
-        // Prefix module names with the folder key to avoid cross-folder collisions.
-        const namespacedLibraries: Map<string, LibraryJson> = new Map();
+            await this.clearRegisteredSymbolModulesForFolder(folderKey);
 
-        for (const [moduleName, library] of validSymbolLibraries) {
-            const namespacedName: string = LibrarySymbolManager.namespacedModuleName(folderKey, moduleName);
-            namespacedLibraries.set(namespacedName, library);
-        }
+            if (refreshGeneration !== this.refreshGenerationByFolder.get(folderKey)) {
+                return this.registeredModulesByFolder.get(folderKey) ?? [];
+            }
 
-        this.clientTrace?.info(
-            `Registering symbol files for folder '${folderKey}'. Total file count: ${namespacedLibraries.size}`,
-        );
+            // Prefix module names with the folder key to avoid cross-folder collisions.
+            const namespacedLibraries: Map<string, LibraryJson> = new Map();
 
-        if (namespacedLibraries.size > 0) {
-            await this.librarySymbolClient.addLibrarySymbols(namespacedLibraries);
-            const folderModules: string[] = this.registeredModulesByFolder.get(folderKey) ?? [];
-            folderModules.push(...namespacedLibraries.keys());
-            this.registeredModulesByFolder.set(folderKey, folderModules);
-        }
+            for (const [moduleName, library] of validSymbolLibraries) {
+                const namespacedName: string = LibrarySymbolManager.namespacedModuleName(folderKey, moduleName);
+                namespacedLibraries.set(namespacedName, library);
+            }
 
-        return this.registeredModulesByFolder.get(folderKey) ?? [];
+            this.clientTrace?.info(
+                `Registering symbol files for folder '${folderKey}'. Total file count: ${namespacedLibraries.size}`,
+            );
+
+            if (namespacedLibraries.size > 0) {
+                await this.librarySymbolClient.addLibrarySymbols(namespacedLibraries);
+                this.registeredModulesByFolder.set(folderKey, Array.from(namespacedLibraries.keys()));
+            }
+
+            return this.registeredModulesByFolder.get(folderKey) ?? [];
+        });
     }
 
     /**
@@ -83,21 +94,26 @@ export class LibrarySymbolManager {
      * Removes all registered symbol modules for a specific workspace folder.
      */
     public async removeSymbolsForFolder(folderKey: string): Promise<void> {
-        await this.clearRegisteredSymbolModulesForFolder(folderKey);
+        this.nextRefreshGeneration(folderKey);
+        await this.enqueueSymbolMutation(() => this.clearRegisteredSymbolModulesForFolder(folderKey));
     }
 
     /**
      * Removes all registered symbol modules across all folders.
      */
     public async removeAllSymbols(): Promise<void> {
-        const allModules: string[] = Array.from(this.registeredModulesByFolder.values()).flat();
-
-        if (allModules.length === 0) {
-            return;
+        for (const folderKey of this.refreshGenerationByFolder.keys()) {
+            this.nextRefreshGeneration(folderKey);
         }
 
-        await this.librarySymbolClient.removeLibrarySymbols(allModules);
-        this.registeredModulesByFolder.clear();
+        await this.enqueueSymbolMutation(async () => {
+            const allModules: string[] = Array.from(this.registeredModulesByFolder.values()).flat();
+
+            if (allModules.length > 0) {
+                await this.librarySymbolClient.removeLibrarySymbols(allModules);
+                this.registeredModulesByFolder.clear();
+            }
+        });
     }
 
     public async getSymbolFilesFromDirectory(directory: vscode.Uri): Promise<ReadonlyArray<vscode.Uri>> {
@@ -172,6 +188,30 @@ export class LibrarySymbolManager {
 
     private static getModuleNameFromFileUri(fileUri: vscode.Uri): string {
         return path.basename(fileUri.fsPath, LibrarySymbolManager.SymbolFileExtension);
+    }
+
+    private nextRefreshGeneration(folderKey: string): number {
+        const nextGeneration: number = (this.refreshGenerationByFolder.get(folderKey) ?? 0) + 1;
+        this.refreshGenerationByFolder.set(folderKey, nextGeneration);
+
+        return nextGeneration;
+    }
+
+    private async enqueueSymbolMutation<T>(action: () => Promise<T>): Promise<T> {
+        const previousMutation: Promise<void> = this.symbolMutationQueue;
+        let releaseMutation: () => void = (): void => undefined;
+
+        this.symbolMutationQueue = new Promise<void>((resolve: () => void) => {
+            releaseMutation = resolve;
+        });
+
+        await previousMutation;
+
+        try {
+            return await action();
+        } finally {
+            releaseMutation();
+        }
     }
 
     private async loadSymbolsFromDirectories(directories: ReadonlyArray<string>): Promise<Map<string, LibraryJson>> {

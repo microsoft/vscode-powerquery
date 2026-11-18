@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
 import assert from "assert";
 
@@ -228,6 +229,136 @@ suite("LibrarySymbolManager.refreshSymbolDirectoriesForFolder", () => {
         assert.equal(mockClient.registeredSymbols.size, 1, "Expected exactly one symbol set after re-refresh");
         const key: string = Array.from(mockClient.registeredSymbols.keys())[0];
         assert.ok(key.startsWith("file:///folderA::"), "Expected folderA namespace");
+    });
+
+    test("An older refresh cannot replace a newer folder refresh", async () => {
+        const testClient: MockLibararySymbolClient = new MockLibararySymbolClient();
+        let releaseOlderScan: () => void = (): void => undefined;
+        let signalOlderScanStarted: () => void = (): void => undefined;
+
+        const olderScanReleased: Promise<void> = new Promise<void>((resolve: () => void) => {
+            releaseOlderScan = resolve;
+        });
+
+        const olderScanStarted: Promise<void> = new Promise<void>((resolve: () => void) => {
+            signalOlderScanStarted = resolve;
+        });
+
+        class DelayedLibrarySymbolManager extends LibrarySymbolManager {
+            public override async processSymbolFile(
+                fileUri: vscode.Uri,
+            ): Promise<[vscode.Uri, LibraryJson] | undefined> {
+                if (fileUri.fsPath.endsWith("ExtensionTest.json")) {
+                    signalOlderScanStarted();
+                    await olderScanReleased;
+                }
+
+                return await super.processSymbolFile(fileUri);
+            }
+        }
+
+        const manager: LibrarySymbolManager = new DelayedLibrarySymbolManager(testClient);
+        const folderKey: string = "file:///folderA";
+
+        const olderRefresh: Promise<ReadonlyArray<string>> = manager.refreshSymbolDirectoriesForFolder(folderKey, [
+            TestUtils.getTestFixturePath(),
+        ]);
+
+        await olderScanStarted;
+
+        const newerSymbolsPath: string = path.resolve(
+            __dirname,
+            "../../../src/test/multiRootFixture/workspaceA/symbols",
+        );
+
+        const newerRefresh: Promise<ReadonlyArray<string>> = manager.refreshSymbolDirectoriesForFolder(folderKey, [
+            newerSymbolsPath,
+        ]);
+
+        await newerRefresh;
+        assert.equal(testClient.registeredSymbols.size, 1, "Expected only the newer symbols to be registered");
+        const newerModule: string = Array.from(testClient.registeredSymbols.keys())[0];
+        assert.ok(newerModule.endsWith("ConnectorA"), "Expected the newer module to remain registered");
+
+        releaseOlderScan();
+        await olderRefresh;
+
+        assert.equal(testClient.registeredSymbols.size, 1, "Expected stale symbols to remain unregistered");
+        assert.equal(Array.from(testClient.registeredSymbols.keys())[0], newerModule);
+    });
+
+    test("Removing all symbols invalidates an in-progress refresh", async () => {
+        const testClient: MockLibararySymbolClient = new MockLibararySymbolClient();
+        let releaseScan: () => void = (): void => undefined;
+        let signalScanStarted: () => void = (): void => undefined;
+
+        const scanReleased: Promise<void> = new Promise<void>((resolve: () => void) => {
+            releaseScan = resolve;
+        });
+
+        const scanStarted: Promise<void> = new Promise<void>((resolve: () => void) => {
+            signalScanStarted = resolve;
+        });
+
+        class DelayedLibrarySymbolManager extends LibrarySymbolManager {
+            public override async processSymbolFile(
+                fileUri: vscode.Uri,
+            ): Promise<[vscode.Uri, LibraryJson] | undefined> {
+                signalScanStarted();
+                await scanReleased;
+
+                return await super.processSymbolFile(fileUri);
+            }
+        }
+
+        const manager: LibrarySymbolManager = new DelayedLibrarySymbolManager(testClient);
+
+        const refresh: Promise<ReadonlyArray<string>> = manager.refreshSymbolDirectories([
+            TestUtils.getTestFixturePath(),
+        ]);
+
+        await scanStarted;
+        await manager.removeAllSymbols();
+        releaseScan();
+        await refresh;
+
+        assert.equal(testClient.registeredSymbols.size, 0, "Expected the removed refresh to remain unregistered");
+    });
+
+    test("Removing all symbols waits for an in-progress registration", async () => {
+        let releaseAdd: () => void = (): void => undefined;
+        let signalAddStarted: () => void = (): void => undefined;
+
+        const addReleased: Promise<void> = new Promise<void>((resolve: () => void) => {
+            releaseAdd = resolve;
+        });
+
+        const addStarted: Promise<void> = new Promise<void>((resolve: () => void) => {
+            signalAddStarted = resolve;
+        });
+
+        class DeferredAddLibrarySymbolClient extends MockLibararySymbolClient {
+            public override async addLibrarySymbols(librarySymbols: ReadonlyMap<string, LibraryJson>): Promise<void> {
+                signalAddStarted();
+                await addReleased;
+                await super.addLibrarySymbols(librarySymbols);
+            }
+        }
+
+        const testClient: MockLibararySymbolClient = new DeferredAddLibrarySymbolClient();
+        const manager: LibrarySymbolManager = new LibrarySymbolManager(testClient);
+
+        const refresh: Promise<ReadonlyArray<string>> = manager.refreshSymbolDirectories([
+            TestUtils.getTestFixturePath(),
+        ]);
+
+        await addStarted;
+        const removal: Promise<void> = manager.removeAllSymbols();
+
+        releaseAdd();
+        await Promise.all([refresh, removal]);
+
+        assert.equal(testClient.registeredSymbols.size, 0, "Expected removal to follow the pending registration");
     });
 });
 
