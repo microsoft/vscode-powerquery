@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import * as LS from "vscode-languageserver/node";
-import * as PQF from "@microsoft/powerquery-formatter";
 import * as PQLS from "@microsoft/powerquery-language-services";
 import * as PQP from "@microsoft/powerquery-parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -557,11 +556,7 @@ connection.onDocumentFormatting((params: LS.DocumentFormattingParams, cancellati
 
             const result: PQP.Result<LS.TextEdit[] | undefined, PQP.CommonError.CommonError> = await PQLS.tryFormat(
                 document,
-                {
-                    ...PQP.DefaultSettings,
-                    ...PQF.DefaultSettings,
-                    cancellationToken: SettingsUtils.createCancellationToken(cancellationToken),
-                },
+                SettingsUtils.createFormattingSettings(document, params.options, cancellationToken),
             );
 
             if (PQP.ResultUtils.isOk(result)) {
