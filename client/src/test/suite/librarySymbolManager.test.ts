@@ -13,8 +13,8 @@ import { LibrarySymbolManager } from "../../librarySymbolManager";
 class MockLibararySymbolClient implements PowerQueryApi {
     public registeredSymbols: Map<string, LibraryJson> = new Map();
 
-    onModuleLibraryUpdated(_workspaceUriPath: string, _library: LibraryJson): void {
-        throw new Error("Function not implemented.");
+    onModuleLibraryUpdated(_workspaceUriPath: string, _library: LibraryJson): Promise<void> {
+        return Promise.reject(new Error("Function not implemented."));
     }
 
     addLibrarySymbols(librarySymbols: ReadonlyMap<string, LibraryJson>): Promise<void> {
