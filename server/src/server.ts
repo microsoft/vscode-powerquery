@@ -12,6 +12,7 @@ import * as EventHandlerUtils from "./eventHandlerUtils";
 import * as SemanticTokens from "./semanticTokens";
 import * as TraceManagerUtils from "./traceManagerUtils";
 import { ExternalLibraryUtils, LibraryUtils, ModuleLibraryUtils } from "./library";
+import { DiagnosticCancellationTracker } from "./diagnosticCancellationTracker";
 import { SettingsUtils } from "./settings";
 
 type LibraryJson = ReadonlyArray<PQLS.LibrarySymbol.LibrarySymbol>;
@@ -62,7 +63,7 @@ const runtime: EventHandlerUtils.RuntimeEnvironment = {
 let isServerReady: boolean = false;
 
 // Track active diagnostic operations for cancellation
-const activeDiagnosticOperations: Map<string, PQP.ICancellationToken> = new Map<string, PQP.ICancellationToken>();
+const activeDiagnosticOperations: DiagnosticCancellationTracker = new DiagnosticCancellationTracker();
 
 connection.onCompletion((params: LS.TextDocumentPositionParams, cancellationToken: LS.CancellationToken) =>
     EventHandlerUtils.runSafeAsync(
@@ -612,7 +613,7 @@ connection.languages.diagnostics.on((params: LS.DocumentDiagnosticParams, cancel
                     items: diagnostics,
                 };
             } finally {
-                activeDiagnosticOperations.delete(params.textDocument.uri);
+                activeDiagnosticOperations.delete(params.textDocument.uri, pqpCancellationToken);
             }
         },
         { kind: LS.DocumentDiagnosticReportKind.Full, items: [] },
@@ -640,7 +641,7 @@ function cancelActiveDiagnostics(uri: string, reason: string): void {
     if (activeOperation) {
         runtime.console.log(`[Diagnostics] Cancelling active operation for ${uri}: ${reason}`);
         activeOperation.cancel(reason);
-        activeDiagnosticOperations.delete(uri);
+        activeDiagnosticOperations.delete(uri, activeOperation);
     }
 }
 
