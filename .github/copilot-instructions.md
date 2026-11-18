@@ -2,12 +2,12 @@
 
 ## Build, Test, and Lint
 
-This is a multi-package monorepo (root, `client/`, `server/`, `scripts/`). Each has its own `node_modules` and `package.json`. The root `npm install` runs `npm install-clean` in all sub-packages via `postinstall`.
+This is an npm workspace monorepo (root, `client/`, `server/`, `scripts/`). Shared development dependencies and the single lockfile live at the root.
 
 **Before declaring a task complete**, always verify that changes pass `npm run build`, `npm run lint`, and `npm run test:server` with no errors. The PR gated build enforces all three.
 
 ```shell
-npm install          # install all packages (root + client + server + scripts)
+npm install          # install the root and all workspaces
 npm run build        # TypeScript compile all packages
 npm run lint         # ESLint all packages
 

@@ -6,4 +6,4 @@ Runs an lex/parse/inspection on a given file at the given location. Position is 
 
 ### Example
 
-`.\node_modules\.bin\ts-node .\src\benchmarkFile.ts C:\git\vscode-powerquery\scripts\foo.pq 12:45`
+`npx ts-node .\src\benchmarkFile.ts C:\git\vscode-powerquery\scripts\foo.pq 12:45`

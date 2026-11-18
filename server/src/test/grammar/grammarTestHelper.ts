@@ -6,9 +6,7 @@ import * as oniguruma from "vscode-oniguruma";
 import * as path from "path";
 import * as vsctm from "vscode-textmate";
 
-const wasmBin: Buffer = fs.readFileSync(
-    path.resolve(__dirname, "../../../node_modules/vscode-oniguruma/release/onig.wasm"),
-);
+const wasmBin: Buffer = fs.readFileSync(require.resolve("vscode-oniguruma/release/onig.wasm"));
 
 const vscodeOnigurumaLib: Promise<vsctm.IOnigLib> = oniguruma.loadWASM({ data: wasmBin }).then(() => ({
     createOnigScanner: (patterns: string[]) => new oniguruma.OnigScanner(patterns),
