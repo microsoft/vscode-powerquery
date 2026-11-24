@@ -10,6 +10,86 @@ import JSZip from "jszip";
 const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const baselinePath = path.join(rootDirectory, "scripts", "vsixContents.txt");
 const supportedArguments = new Set(["--update"]);
+
+function getZipEntryNames(contents) {
+    const endOfCentralDirectorySignature = 0x06054b50;
+    const centralDirectoryEntrySignature = 0x02014b50;
+    const maximumEndOfCentralDirectorySize = 22 + 0xffff;
+    let endOfCentralDirectoryOffset = -1;
+
+    for (
+        let offset = contents.length - 4;
+        offset >= Math.max(0, contents.length - maximumEndOfCentralDirectorySize);
+        offset -= 1
+    ) {
+        if (
+            contents.readUInt32LE(offset) === endOfCentralDirectorySignature &&
+            offset + 22 + contents.readUInt16LE(offset + 20) === contents.length
+        ) {
+            endOfCentralDirectoryOffset = offset;
+            break;
+        }
+    }
+
+    if (endOfCentralDirectoryOffset < 0) {
+        throw new Error("Could not find the VSIX central directory.");
+    }
+
+    const entryCount = contents.readUInt16LE(endOfCentralDirectoryOffset + 10);
+    const centralDirectorySize = contents.readUInt32LE(endOfCentralDirectoryOffset + 12);
+    const centralDirectoryOffset = contents.readUInt32LE(endOfCentralDirectoryOffset + 16);
+
+    if (entryCount === 0xffff || centralDirectorySize === 0xffffffff || centralDirectoryOffset === 0xffffffff) {
+        throw new Error("ZIP64 VSIX archives are not supported by the contents check.");
+    }
+
+    const fileNames = [];
+    const centralDirectoryEnd = centralDirectoryOffset + centralDirectorySize;
+    let entryOffset = centralDirectoryOffset;
+    let entriesSeen = 0;
+
+    while (entryOffset < centralDirectoryEnd) {
+        if (contents.readUInt32LE(entryOffset) !== centralDirectoryEntrySignature) {
+            throw new Error(`Invalid VSIX central directory entry at offset ${entryOffset}.`);
+        }
+
+        const fileNameLength = contents.readUInt16LE(entryOffset + 28);
+        const extraFieldLength = contents.readUInt16LE(entryOffset + 30);
+        const fileCommentLength = contents.readUInt16LE(entryOffset + 32);
+        const externalAttributes = contents.readUInt32LE(entryOffset + 38);
+        const fileNameStart = entryOffset + 46;
+        const fileName = contents.subarray(fileNameStart, fileNameStart + fileNameLength).toString("utf8");
+        const isDirectory = fileName.endsWith("/") || Boolean((externalAttributes >>> 16) & 0x4000);
+
+        if (!isDirectory) {
+            fileNames.push(fileName);
+        }
+
+        entryOffset = fileNameStart + fileNameLength + extraFieldLength + fileCommentLength;
+        entriesSeen += 1;
+    }
+
+    if (entryOffset !== centralDirectoryEnd || entriesSeen !== entryCount) {
+        throw new Error("The VSIX central directory length is invalid.");
+    }
+
+    const seenFileNames = new Set();
+    const duplicateFileNames = fileNames.filter(fileName => {
+        if (seenFileNames.has(fileName)) {
+            return true;
+        }
+
+        seenFileNames.add(fileName);
+        return false;
+    });
+
+    if (duplicateFileNames.length > 0) {
+        throw new Error(`VSIX contains duplicate file entries: ${[...new Set(duplicateFileNames)].join(", ")}`);
+    }
+
+    return fileNames.sort();
+}
+
 const updateBaseline = process.argv.includes("--update");
 const unsupportedArguments = process.argv.slice(2).filter(argument => !supportedArguments.has(argument));
 
@@ -36,15 +116,8 @@ try {
     );
 }
 
-const archive = await JSZip.loadAsync(vsixContents);
-const fileNames = Object.values(archive.files)
-    .filter(file => !file.dir)
-    .map(file => file.name)
-    .sort();
-
-for (const fileName of fileNames) {
-    await archive.file(fileName).async("uint8array");
-}
+await JSZip.loadAsync(vsixContents, { checkCRC32: true });
+const fileNames = getZipEntryNames(vsixContents);
 
 const actualBaseline = `${fileNames.join("\n")}\n`;
 
