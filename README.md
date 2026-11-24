@@ -76,6 +76,18 @@ Generate vsix package:
 npm run vsix
 ```
 
+Verify that the packaged files match the reviewed VSIX baseline:
+
+```cmd
+npm run test:vsix
+```
+
+After reviewing an intentional package-content change, update the baseline:
+
+```cmd
+npm run vsix:update-baseline
+```
+
 The .vsix can be installed into VS Code from the commandline:
 
 ```cmd

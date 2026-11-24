@@ -1,0 +1,10 @@
+[Content_Types].xml
+extension.vsixmanifest
+extension/LICENSE.txt
+extension/client/dist/extension.js
+extension/imgs/PQIcon_256.png
+extension/language-configuration.json
+extension/package.json
+extension/readme.md
+extension/server/dist/server.js
+extension/syntaxes/powerquery.tmLanguage.json
