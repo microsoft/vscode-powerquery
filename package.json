@@ -49,7 +49,7 @@
         "webpack-prod:client": "npm run webpack-prod --workspace vscode-powerquery-client",
         "webpack-prod:server": "npm run webpack-prod --workspace vscode-powerquery-server",
         "vscode:prepublish": "npm run webpack-prod",
-        "vsix": "npx @vscode/vsce@latest package",
+        "vsix": "vsce package",
         "vsix:update-baseline": "npm run vsix && node scripts/checkVsixContents.mjs --update"
     },
     "icon": "imgs/PQIcon_256.png",
@@ -318,6 +318,7 @@
         "@types/vscode": "^1.146.0",
         "@typescript-eslint/eslint-plugin": "^8.72.2",
         "@typescript-eslint/parser": "^8.72.2",
+        "@vscode/vsce": "4.1.1",
         "chai": "^6.3.0",
         "eslint": "^10.14.0",
         "eslint-config-prettier": "^10.1.8",
