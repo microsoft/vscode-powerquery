@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,7 +18,7 @@ function getZipEntryNames(contents) {
     let endOfCentralDirectoryOffset = -1;
 
     for (
-        let offset = contents.length - 4;
+        let offset = contents.length - 22;
         offset >= Math.max(0, contents.length - maximumEndOfCentralDirectorySize);
         offset -= 1
     ) {
@@ -87,7 +87,10 @@ function getZipEntryNames(contents) {
         throw new Error(`VSIX contains duplicate file entries: ${[...new Set(duplicateFileNames)].join(", ")}`);
     }
 
-    return fileNames.sort();
+    return {
+        endOfCentralDirectoryOffset,
+        fileNames: fileNames.sort(),
+    };
 }
 
 const updateBaseline = process.argv.includes("--update");
@@ -116,8 +119,11 @@ try {
     );
 }
 
-await JSZip.loadAsync(vsixContents, { checkCRC32: true });
-const fileNames = getZipEntryNames(vsixContents);
+const zipInfo = getZipEntryNames(vsixContents);
+const contentsWithoutComment = Buffer.from(vsixContents.subarray(0, zipInfo.endOfCentralDirectoryOffset + 22));
+contentsWithoutComment.writeUInt16LE(0, zipInfo.endOfCentralDirectoryOffset + 20);
+await JSZip.loadAsync(contentsWithoutComment, { checkCRC32: true });
+const { fileNames } = zipInfo;
 
 const actualBaseline = `${fileNames.join("\n")}\n`;
 
@@ -164,4 +170,8 @@ if (updateBaseline) {
     }
 
     console.log(`VSIX contents match ${path.relative(rootDirectory, baselinePath)} (${fileNames.length} files).`);
+}
+
+if (process.env.GITHUB_OUTPUT !== undefined) {
+    await appendFile(process.env.GITHUB_OUTPUT, `vsix-path=${path.basename(vsixPath)}\n`, "utf8");
 }

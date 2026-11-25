@@ -23,7 +23,9 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm run test:server
-      - run: npm run test:vsix
+      - name: test VSIX contents
+        id: test-vsix
+        run: npm run test:vsix
       - name: retry 5 times client UI tests
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
@@ -35,4 +37,4 @@ jobs:
         with:
           name: vsix-artifact
           path: |
-            *.vsix
+            ${{ steps.test-vsix.outputs.vsix-path }}
